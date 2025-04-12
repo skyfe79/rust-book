@@ -69,13 +69,13 @@ _rectangles_라는 이름의 새로운 바이너리 프로젝트를 Cargo로 생
 
 프로그램을 디버깅할 때 `Rectangle` 인스턴스를 출력하고 모든 필드의 값을 확인할 수 있다면 매우 유용할 것이다. 목록 5-11에서는 이전 장에서 사용했던 [`println!` 매크로][println]<!-- ignore -->를 사용해 보았다. 하지만 이 방법은 작동하지 않는다.
 
-<목록 번호="5-11" 파일 이름="src/main.rs" 설명="`Rectangle` 인스턴스를 출력하려는 시도">
+<Listing number="5-11" file-name="src/main.rs" caption="`Rectangle` 인스턴스를 출력하려는 시도">
 
 ```rust,ignore,does_not_compile
 {{#rustdoc_include ../listings/ch05-using-structs-to-structure-related-data/listing-05-11/src/main.rs}}
 ```
 
-</목록>
+</Listing>
 
 이 코드를 컴파일하면 다음과 같은 오류 메시지가 나타난다:
 
@@ -107,13 +107,13 @@ _rectangles_라는 이름의 새로운 바이너리 프로젝트를 Cargo로 생
 
 Rust는 디버깅 정보를 출력하는 기능을 포함하고 있지만, 우리의 구조체에 대해 이 기능을 사용하려면 명시적으로 선택해야 한다. 이를 위해 구조체 정의 바로 앞에 `#[derive(Debug)]` 외부 속성을 추가한다. 목록 5-12에서 이를 확인할 수 있다.
 
-<목록 번호="5-12" 파일 이름="src/main.rs" 설명="`Debug` 트레이트를 파생하기 위한 속성 추가 및 디버그 포맷팅을 사용해 `Rectangle` 인스턴스 출력">
+<Listing number="5-12" file-name="src/main.rs" caption="`Debug` 트레이트를 파생하기 위한 속성 추가 및 디버그 포맷팅을 사용해 `Rectangle` 인스턴스 출력">
 
 ```rust
 {{#rustdoc_include ../listings/ch05-using-structs-to-structure-related-data/listing-05-12/src/main.rs}}
 ```
 
-</목록>
+</Listing>
 
 이제 프로그램을 실행하면 오류가 발생하지 않으며 다음과 같은 출력을 확인할 수 있다:
 
