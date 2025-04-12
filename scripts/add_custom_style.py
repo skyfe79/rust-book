@@ -33,6 +33,11 @@ def inject_custom_styles():
         font-family: 'RIDIBatang', -apple-system, BlinkMacSystemFont, sans-serif !important;
         line-height: 180% !important;
     }
+
+    .content p {
+        line-height: 2.0em;
+        font-size: 1.15em;
+    }
     </style>
     """
 
