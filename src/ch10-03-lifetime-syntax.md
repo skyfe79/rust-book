@@ -1,32 +1,17 @@
-## Validating References with Lifetimes
+## 수명을 이용한 참조 유효성 검증
 
-Lifetimes are another kind of generic that we’ve already been using. Rather
-than ensuring that a type has the behavior we want, lifetimes ensure that
-references are valid as long as we need them to be.
+수명(lifetime)은 이미 사용하고 있는 또 다른 종류의 제네릭이다. 타입이 원하는 동작을 보장하는 것과 달리, 수명은 참조가 필요한 동안 유효한지 확인한다.
 
-One detail we didn’t discuss in the [“References and
-Borrowing”][references-and-borrowing]<!-- ignore --> section in Chapter 4 is
-that every reference in Rust has a _lifetime_, which is the scope for which
-that reference is valid. Most of the time, lifetimes are implicit and inferred,
-just like most of the time, types are inferred. We only have to annotate types
-when multiple types are possible. In a similar way, we have to annotate lifetimes
-when the lifetimes of references could be related in a few different ways. Rust
-requires us to annotate the relationships using generic lifetime parameters to
-ensure the actual references used at runtime will definitely be valid.
+4장의 [“참조와 빌림”][references-and-borrowing]<!-- ignore --> 섹션에서 다루지 않은 한 가지 세부 사항은, Rust의 모든 참조는 _수명_을 가진다는 점이다. 수명은 해당 참조가 유효한 범위를 의미한다. 대부분의 경우, 타입이 추론되듯이 수명도 암묵적으로 추론된다. 여러 타입이 가능한 경우에만 타입을 명시해야 하듯이, 참조의 수명이 서로 여러 방식으로 연관될 가능성이 있는 경우에만 수명을 명시해야 한다. Rust는 제네릭 수명 매개변수를 사용해 이러한 관계를 명시하도록 요구하며, 이는 런타임에 사용되는 실제 참조가 확실히 유효하도록 보장하기 위함이다.
 
-Annotating lifetimes is not even a concept most other programming languages
-have, so this is going to feel unfamiliar. Although we won’t cover lifetimes in
-their entirety in this chapter, we’ll discuss common ways you might encounter
-lifetime syntax so you can get comfortable with the concept.
+수명을 명시하는 개념은 대부분의 다른 프로그래밍 언어에는 존재하지 않기 때문에 익숙하지 않을 수 있다. 이 장에서 수명의 모든 내용을 다루지는 않지만, 수명 문법을 접할 수 있는 일반적인 경우를 살펴보며 개념에 익숙해질 수 있도록 하겠다.
 
-### Preventing Dangling References with Lifetimes
 
-The main aim of lifetimes is to prevent _dangling references_, which cause a
-program to reference data other than the data it’s intended to reference.
-Consider the program in Listing 10-16, which has an outer scope and an inner
-scope.
+### 라이프타임을 통한 댕글링 참조 방지
 
-<Listing number="10-16" caption="An attempt to use a reference whose value has gone out of scope">
+라이프타임의 주요 목적은 **댕글링 참조(dangling references)**를 방지하는 것이다. 댕글링 참조는 프로그램이 의도한 데이터가 아닌 다른 데이터를 참조하게 만드는 문제를 일으킨다. 아래의 예제 코드를 살펴보자. 이 코드는 외부 스코프와 내부 스코프를 가지고 있다.
+
+<Listing number="10-16" caption="스코프를 벗어난 값을 참조하려는 시도">
 
 ```rust,ignore,does_not_compile
 {{#rustdoc_include ../listings/ch10-generic-types-traits-and-lifetimes/listing-10-16/src/main.rs}}
@@ -34,39 +19,22 @@ scope.
 
 </Listing>
 
-> Note: The examples in Listings 10-16, 10-17, and 10-23 declare variables
-> without giving them an initial value, so the variable name exists in the outer
-> scope. At first glance, this might appear to be in conflict with Rust’s having
-> no null values. However, if we try to use a variable before giving it a value,
-> we’ll get a compile-time error, which shows that Rust indeed does not allow
-> null values.
+> 참고: 예제 10-16, 10-17, 10-23에서는 변수를 초기화하지 않고 선언했다. 따라서 변수 이름은 외부 스코프에 존재한다. 언뜻 보면 이는 Rust가 null 값을 허용하지 않는 것과 충돌하는 것처럼 보일 수 있다. 하지만 값을 할당하기 전에 변수를 사용하려고 하면 컴파일 타임 오류가 발생한다. 이는 Rust가 실제로 null 값을 허용하지 않음을 보여준다.
 
-The outer scope declares a variable named `r` with no initial value, and the
-inner scope declares a variable named `x` with the initial value of `5`. Inside
-the inner scope, we attempt to set the value of `r` as a reference to `x`. Then
-the inner scope ends, and we attempt to print the value in `r`. This code won’t
-compile because the value that `r` is referring to has gone out of scope before
-we try to use it. Here is the error message:
+외부 스코프에서는 초기값 없이 `r`이라는 변수를 선언하고, 내부 스코프에서는 초기값 `5`를 가진 `x`라는 변수를 선언한다. 내부 스코프 안에서 `r`의 값을 `x`에 대한 참조로 설정하려고 시도한다. 그런 다음 내부 스코프가 종료되고, `r`의 값을 출력하려고 한다. 이 코드는 컴파일되지 않는다. 왜냐하면 `r`이 참조하는 값이 사용하려고 할 때 이미 스코프를 벗어났기 때문이다. 아래는 오류 메시지이다:
 
 ```console
 {{#include ../listings/ch10-generic-types-traits-and-lifetimes/listing-10-16/output.txt}}
 ```
 
-The error message says that the variable `x` “does not live long enough.” The
-reason is that `x` will be out of scope when the inner scope ends on line 7.
-But `r` is still valid for the outer scope; because its scope is larger, we say
-that it “lives longer.” If Rust allowed this code to work, `r` would be
-referencing memory that was deallocated when `x` went out of scope, and
-anything we tried to do with `r` wouldn’t work correctly. So how does Rust
-determine that this code is invalid? It uses a borrow checker.
+오류 메시지는 변수 `x`가 "충분히 오래 살지 못했다"고 말한다. 그 이유는 내부 스코프가 7번 줄에서 종료될 때 `x`가 스코프를 벗어나기 때문이다. 하지만 `r`은 여전히 외부 스코프에서 유효하다. 외부 스코프가 더 크기 때문에 `r`은 "더 오래 산다"고 표현할 수 있다. 만약 Rust가 이 코드를 허용했다면, `r`은 `x`가 스코프를 벗어날 때 해제된 메모리를 참조하게 될 것이고, `r`을 사용해 어떤 작업을 시도해도 제대로 동작하지 않을 것이다. 그렇다면 Rust는 어떻게 이 코드가 유효하지 않다고 판단할까? 바로 **빌림 검사기(borrow checker)**를 사용한다.
 
-### The Borrow Checker
 
-The Rust compiler has a _borrow checker_ that compares scopes to determine
-whether all borrows are valid. Listing 10-17 shows the same code as Listing
-10-16 but with annotations showing the lifetimes of the variables.
+### 대여 검사기
 
-<Listing number="10-17" caption="Annotations of the lifetimes of `r` and `x`, named `'a` and `'b`, respectively">
+Rust 컴파일러는 _대여 검사기_를 통해 스코프를 비교하여 모든 대여가 유효한지 확인한다. 목록 10-17은 목록 10-16과 동일한 코드이지만, 변수의 라이프타임을 보여주는 주석이 추가되었다.
+
+<Listing number="10-17" caption="`r`과 `x`의 라이프타임을 각각 `'a`와 `'b`로 명시한 예제">
 
 ```rust,ignore,does_not_compile
 {{#rustdoc_include ../listings/ch10-generic-types-traits-and-lifetimes/listing-10-17/src/main.rs}}
@@ -74,17 +42,11 @@ whether all borrows are valid. Listing 10-17 shows the same code as Listing
 
 </Listing>
 
-Here, we’ve annotated the lifetime of `r` with `'a` and the lifetime of `x`
-with `'b`. As you can see, the inner `'b` block is much smaller than the outer
-`'a` lifetime block. At compile time, Rust compares the size of the two
-lifetimes and sees that `r` has a lifetime of `'a` but that it refers to memory
-with a lifetime of `'b`. The program is rejected because `'b` is shorter than
-`'a`: the subject of the reference doesn’t live as long as the reference.
+여기서 `r`의 라이프타임은 `'a`로, `x`의 라이프타임은 `'b`로 주석 처리되었다. 보다시피, 내부의 `'b` 블록은 외부의 `'a` 라이프타임 블록보다 훨씬 작다. 컴파일 시 Rust는 두 라이프타임의 크기를 비교하고, `r`이 `'a` 라이프타임을 가지고 있지만 `'b` 라이프타임의 메모리를 참조한다는 것을 확인한다. `'b`가 `'a`보다 짧기 때문에 프로그램은 거부된다. 참조의 대상이 참조 자체만큼 오래 살아있지 않기 때문이다.
 
-Listing 10-18 fixes the code so it doesn’t have a dangling reference and it
-compiles without any errors.
+목록 10-18은 이 문제를 해결하여 댕글링 참조를 없애고, 오류 없이 컴파일되도록 수정한 코드이다.
 
-<Listing number="10-18" caption="A valid reference because the data has a longer lifetime than the reference">
+<Listing number="10-18" caption="참조보다 데이터의 라이프타임이 더 길어 유효한 참조가 된 예제">
 
 ```rust
 {{#rustdoc_include ../listings/ch10-generic-types-traits-and-lifetimes/listing-10-18/src/main.rs}}
@@ -92,22 +54,16 @@ compiles without any errors.
 
 </Listing>
 
-Here, `x` has the lifetime `'b`, which in this case is larger than `'a`. This
-means `r` can reference `x` because Rust knows that the reference in `r` will
-always be valid while `x` is valid.
+여기서 `x`는 `'b` 라이프타임을 가지며, 이 경우 `'a`보다 크다. 이는 `r`이 `x`를 참조할 수 있음을 의미한다. Rust는 `x`가 유효한 동안 `r`의 참조가 항상 유효할 것임을 알기 때문이다.
 
-Now that you know where the lifetimes of references are and how Rust analyzes
-lifetimes to ensure references will always be valid, let’s explore generic
-lifetimes of parameters and return values in the context of functions.
+이제 참조의 라이프타임이 어디에 위치하는지, 그리고 Rust가 라이프타임을 분석하여 참조가 항상 유효한지 확인하는 방법을 알았으니, 함수의 매개변수와 반환값의 제네릭 라이프타임을 탐구해보자.
 
-### Generic Lifetimes in Functions
 
-We’ll write a function that returns the longer of two string slices. This
-function will take two string slices and return a single string slice. After
-we’ve implemented the `longest` function, the code in Listing 10-19 should
-print `The longest string is abcd`.
+### 함수에서의 제네릭 라이프타임
 
-<Listing number="10-19" file-name="src/main.rs" caption="A `main` function that calls the `longest` function to find the longer of two string slices">
+두 문자열 슬라이스 중 더 긴 것을 반환하는 함수를 작성해 보자. 이 함수는 두 문자열 슬라이스를 받아서 하나의 문자열 슬라이스를 반환한다. `longest` 함수를 구현한 후, 리스트 10-19의 코드는 `The longest string is abcd`를 출력해야 한다.
+
+<Listing number="10-19" file-name="src/main.rs" caption="두 문자열 슬라이스 중 더 긴 것을 찾기 위해 `longest` 함수를 호출하는 `main` 함수">
 
 ```rust,ignore
 {{#rustdoc_include ../listings/ch10-generic-types-traits-and-lifetimes/listing-10-19/src/main.rs}}
@@ -115,17 +71,11 @@ print `The longest string is abcd`.
 
 </Listing>
 
-Note that we want the function to take string slices, which are references,
-rather than strings, because we don’t want the `longest` function to take
-ownership of its parameters. Refer to [“String Slices as
-Parameters”][string-slices-as-parameters]<!-- ignore --> in Chapter 4 for more
-discussion about why the parameters we use in Listing 10-19 are the ones we
-want.
+여기서 함수가 문자열 슬라이스(참조)를 받도록 하고, 문자열 자체를 받지 않는 이유는 `longest` 함수가 매개변수의 소유권을 가지지 않게 하기 위해서다. 리스트 10-19에서 사용한 매개변수가 왜 적합한지에 대한 더 자세한 설명은 4장의 ["문자열 슬라이스를 매개변수로 사용하기"][string-slices-as-parameters]<!-- ignore -->를 참고하자.
 
-If we try to implement the `longest` function as shown in Listing 10-20, it
-won’t compile.
+리스트 10-20과 같이 `longest` 함수를 구현하려고 하면 컴파일되지 않는다.
 
-<Listing number="10-20" file-name="src/main.rs" caption="An implementation of the `longest` function that returns the longer of two string slices but does not yet compile">
+<Listing number="10-20" file-name="src/main.rs" caption="두 문자열 슬라이스 중 더 긴 것을 반환하지만 아직 컴파일되지 않는 `longest` 함수 구현">
 
 ```rust,ignore,does_not_compile
 {{#rustdoc_include ../listings/ch10-generic-types-traits-and-lifetimes/listing-10-20/src/main.rs:here}}
@@ -133,71 +83,41 @@ won’t compile.
 
 </Listing>
 
-Instead, we get the following error that talks about lifetimes:
+대신, 다음과 같은 라이프타임 관련 오류가 발생한다:
 
 ```console
 {{#include ../listings/ch10-generic-types-traits-and-lifetimes/listing-10-20/output.txt}}
 ```
 
-The help text reveals that the return type needs a generic lifetime parameter
-on it because Rust can’t tell whether the reference being returned refers to
-`x` or `y`. Actually, we don’t know either, because the `if` block in the body
-of this function returns a reference to `x` and the `else` block returns a
-reference to `y`!
+도움말 텍스트를 보면 반환 타입에 제네릭 라이프타임 매개변수가 필요하다고 나와 있다. Rust는 반환되는 참조가 `x`를 가리키는지 `y`를 가리키는지 알 수 없기 때문이다. 사실 우리도 알 수 없다. 왜냐하면 함수 본문의 `if` 블록은 `x`에 대한 참조를 반환하고, `else` 블록은 `y`에 대한 참조를 반환하기 때문이다!
 
-When we’re defining this function, we don’t know the concrete values that will
-be passed into this function, so we don’t know whether the `if` case or the
-`else` case will execute. We also don’t know the concrete lifetimes of the
-references that will be passed in, so we can’t look at the scopes as we did in
-Listings 10-17 and 10-18 to determine whether the reference we return will
-always be valid. The borrow checker can’t determine this either, because it
-doesn’t know how the lifetimes of `x` and `y` relate to the lifetime of the
-return value. To fix this error, we’ll add generic lifetime parameters that
-define the relationship between the references so the borrow checker can
-perform its analysis.
+이 함수를 정의할 때, 어떤 구체적인 값이 함수에 전달될지 알 수 없으므로 `if` 케이스가 실행될지 `else` 케이스가 실행될지 알 수 없다. 또한 전달된 참조의 구체적인 라이프타임도 알 수 없으므로 리스트 10-17과 10-18에서 했던 것처럼 스코프를 보고 반환된 참조가 항상 유효한지 확인할 수 없다. 빌림 검사기(borrow checker)도 이를 결정할 수 없다. 왜냐하면 `x`와 `y`의 라이프타임이 반환 값의 라이프타임과 어떻게 관련되는지 알 수 없기 때문이다. 이 오류를 해결하기 위해, 참조 간의 관계를 정의하는 제네릭 라이프타임 매개변수를 추가해 빌림 검사기가 분석을 수행할 수 있도록 해야 한다.
 
-### Lifetime Annotation Syntax
 
-Lifetime annotations don’t change how long any of the references live. Rather,
-they describe the relationships of the lifetimes of multiple references to each
-other without affecting the lifetimes. Just as functions can accept any type
-when the signature specifies a generic type parameter, functions can accept
-references with any lifetime by specifying a generic lifetime parameter.
+### 라이프타임 주석 구문
 
-Lifetime annotations have a slightly unusual syntax: the names of lifetime
-parameters must start with an apostrophe (`'`) and are usually all lowercase
-and very short, like generic types. Most people use the name `'a` for the first
-lifetime annotation. We place lifetime parameter annotations after the `&` of a
-reference, using a space to separate the annotation from the reference’s type.
+라이프타임 주석은 참조의 수명을 변경하지 않는다. 대신, 여러 참조 간의 라이프타임 관계를 설명하며, 실제 라이프타임에는 영향을 미치지 않는다. 함수가 제네릭 타입 매개변수를 지정할 때 어떤 타입이든 받아들일 수 있는 것처럼, 함수는 제네릭 라이프타임 매개변수를 지정하여 어떤 라이프타임을 가진 참조든 받아들일 수 있다.
 
-Here are some examples: a reference to an `i32` without a lifetime parameter, a
-reference to an `i32` that has a lifetime parameter named `'a`, and a mutable
-reference to an `i32` that also has the lifetime `'a`.
+라이프타임 주석은 약간 독특한 구문을 가지고 있다. 라이프타임 매개변수의 이름은 반드시 아포스트로피(`'`)로 시작해야 하며, 일반적으로 모두 소문자로 짧게 작성한다. 대부분의 사람들은 첫 번째 라이프타임 주석으로 `'a`라는 이름을 사용한다. 라이프타임 매개변수 주석은 참조의 `&` 뒤에 위치하며, 주석과 참조의 타입을 공백으로 구분한다.
+
+다음은 몇 가지 예제이다. 라이프타임 매개변수가 없는 `i32`에 대한 참조, `'a`라는 라이프타임 매개변수가 있는 `i32`에 대한 참조, 그리고 `'a` 라이프타임을 가진 `i32`에 대한 가변 참조이다.
 
 ```rust,ignore
-&i32        // a reference
-&'a i32     // a reference with an explicit lifetime
-&'a mut i32 // a mutable reference with an explicit lifetime
+&i32        // 참조
+&'a i32     // 명시적 라이프타임이 있는 참조
+&'a mut i32 // 명시적 라이프타임이 있는 가변 참조
 ```
 
-One lifetime annotation by itself doesn’t have much meaning because the
-annotations are meant to tell Rust how generic lifetime parameters of multiple
-references relate to each other. Let’s examine how the lifetime annotations
-relate to each other in the context of the `longest` function.
+단일 라이프타임 주석은 그 자체로 큰 의미를 가지지 않는다. 주석은 여러 참조의 제네릭 라이프타임 매개변수가 서로 어떻게 관련되는지 Rust에게 알려주기 위한 것이기 때문이다. 이제 `longest` 함수의 맥락에서 라이프타임 주석이 서로 어떻게 관련되는지 살펴보자.
 
-### Lifetime Annotations in Function Signatures
 
-To use lifetime annotations in function signatures, we need to declare the
-generic _lifetime_ parameters inside angle brackets between the function name
-and the parameter list, just as we did with generic _type_ parameters.
+### 함수 시그니처에서의 라이프타임 주석
 
-We want the signature to express the following constraint: the returned
-reference will be valid as long as both the parameters are valid. This is the
-relationship between lifetimes of the parameters and the return value. We’ll
-name the lifetime `'a` and then add it to each reference, as shown in Listing
-10-21.
+함수 시그니처에서 라이프타임 주석을 사용하려면, 함수 이름과 매개변수 목록 사이의 꺾쇠 괄호 안에 제네릭 라이프타임 매개변수를 선언해야 한다. 이는 제네릭 타입 매개변수를 선언하는 방식과 동일하다.
 
-<Listing number="10-21" file-name="src/main.rs" caption="The `longest` function definition specifying that all the references in the signature must have the same lifetime `'a`">
+우리는 시그니처가 다음과 같은 제약을 표현하길 원한다: 반환된 참조는 두 매개변수가 유효한 동안 유효하다. 이는 매개변수와 반환 값의 라이프타임 간의 관계이다. 라이프타임을 `'a`로 명명한 후, 각 참조에 이를 추가한다. 이는 리스트 10-21에서 확인할 수 있다.
+
+<Listing number="10-21" file-name="src/main.rs" caption="시그니처의 모든 참조가 동일한 라이프타임 `'a`를 가져야 함을 지정한 `longest` 함수 정의">
 
 ```rust
 {{#rustdoc_include ../listings/ch10-generic-types-traits-and-lifetimes/listing-10-21/src/main.rs:here}}
@@ -205,49 +125,19 @@ name the lifetime `'a` and then add it to each reference, as shown in Listing
 
 </Listing>
 
-This code should compile and produce the result we want when we use it with the
-`main` function in Listing 10-19.
+이 코드는 리스트 10-19의 `main` 함수와 함께 사용할 때 컴파일되어 원하는 결과를 생성해야 한다.
 
-The function signature now tells Rust that for some lifetime `'a`, the function
-takes two parameters, both of which are string slices that live at least as
-long as lifetime `'a`. The function signature also tells Rust that the string
-slice returned from the function will live at least as long as lifetime `'a`.
-In practice, it means that the lifetime of the reference returned by the
-`longest` function is the same as the smaller of the lifetimes of the values
-referred to by the function arguments. These relationships are what we want
-Rust to use when analyzing this code.
+이제 함수 시그니처는 Rust에게 특정 라이프타임 `'a`에 대해, 함수가 두 매개변수를 받으며, 이 두 매개변수는 최소한 라이프타임 `'a`만큼 살아있는 문자열 슬라이스임을 알려준다. 또한 함수 시그니처는 함수에서 반환된 문자열 슬라이스가 최소한 라이프타임 `'a`만큼 살아있음을 알려준다. 실제로 이는 `longest` 함수가 반환한 참조의 라이프타임이 함수 인수로 전달된 값들의 라이프타임 중 더 짧은 것과 동일함을 의미한다. 이러한 관계는 Rust가 이 코드를 분석할 때 사용하길 원하는 것이다.
 
-Remember, when we specify the lifetime parameters in this function signature,
-we’re not changing the lifetimes of any values passed in or returned. Rather,
-we’re specifying that the borrow checker should reject any values that don’t
-adhere to these constraints. Note that the `longest` function doesn’t need to
-know exactly how long `x` and `y` will live, only that some scope can be
-substituted for `'a` that will satisfy this signature.
+기억해야 할 점은, 이 함수 시그니처에서 라이프타임 매개변수를 지정할 때, 전달되거나 반환된 값의 라이프타임을 변경하는 것이 아니라는 점이다. 오히려, 이 제약을 따르지 않는 값을 차단하도록 borrow checker에 지시하는 것이다. `longest` 함수는 `x`와 `y`가 정확히 얼마나 오래 살아있는지 알 필요는 없으며, 이 시그니처를 만족할 수 있는 어떤 스코프가 `'a`로 대체될 수 있음을 알면 된다.
 
-When annotating lifetimes in functions, the annotations go in the function
-signature, not in the function body. The lifetime annotations become part of
-the contract of the function, much like the types in the signature. Having
-function signatures contain the lifetime contract means the analysis the Rust
-compiler does can be simpler. If there’s a problem with the way a function is
-annotated or the way it is called, the compiler errors can point to the part of
-our code and the constraints more precisely. If, instead, the Rust compiler
-made more inferences about what we intended the relationships of the lifetimes
-to be, the compiler might only be able to point to a use of our code many steps
-away from the cause of the problem.
+함수에서 라이프타임을 주석 처리할 때, 주석은 함수 시그니처에 들어가며 함수 본문에는 들어가지 않는다. 라이프타임 주석은 시그니처의 타입과 마찬가지로 함수의 계약의 일부가 된다. 함수 시그니처에 라이프타임 계약이 포함되면 Rust 컴파일러가 수행하는 분석이 더 단순해질 수 있다. 함수가 주석 처리된 방식이나 호출된 방식에 문제가 있다면, 컴파일러 오류가 우리 코드의 특정 부분과 제약을 더 정확히 지적할 수 있다. 만약 Rust 컴파일러가 라이프타임 간의 관계에 대해 더 많은 추론을 했다면, 컴파일러는 문제의 원인에서 멀리 떨어진 코드 사용 부분만을 지적할 수 있었을 것이다.
 
-When we pass concrete references to `longest`, the concrete lifetime that is
-substituted for `'a` is the part of the scope of `x` that overlaps with the
-scope of `y`. In other words, the generic lifetime `'a` will get the concrete
-lifetime that is equal to the smaller of the lifetimes of `x` and `y`. Because
-we’ve annotated the returned reference with the same lifetime parameter `'a`,
-the returned reference will also be valid for the length of the smaller of the
-lifetimes of `x` and `y`.
+`longest`에 구체적인 참조를 전달할 때, `'a`로 대체되는 구체적인 라이프타임은 `x`의 스코프와 `y`의 스코프가 겹치는 부분이다. 즉, 제네릭 라이프타임 `'a`는 `x`와 `y`의 라이프타임 중 더 짧은 것과 동일한 구체적인 라이프타임을 얻는다. 반환된 참조에 동일한 라이프타임 매개변수 `'a`를 주석 처리했기 때문에, 반환된 참조는 `x`와 `y`의 라이프타임 중 더 짧은 동안 유효할 것이다.
 
-Let’s look at how the lifetime annotations restrict the `longest` function by
-passing in references that have different concrete lifetimes. Listing 10-22 is
-a straightforward example.
+라이프타임 주석이 `longest` 함수를 어떻게 제한하는지, 서로 다른 구체적인 라이프타임을 가진 참조를 전달하여 살펴보자. 리스트 10-22는 간단한 예제이다.
 
-<Listing number="10-22" file-name="src/main.rs" caption="Using the `longest` function with references to `String` values that have different concrete lifetimes">
+<Listing number="10-22" file-name="src/main.rs" caption="서로 다른 구체적인 라이프타임을 가진 `String` 값에 대한 참조와 함께 `longest` 함수 사용">
 
 ```rust
 {{#rustdoc_include ../listings/ch10-generic-types-traits-and-lifetimes/listing-10-22/src/main.rs:here}}
@@ -255,21 +145,11 @@ a straightforward example.
 
 </Listing>
 
-In this example, `string1` is valid until the end of the outer scope, `string2`
-is valid until the end of the inner scope, and `result` references something
-that is valid until the end of the inner scope. Run this code and you’ll see
-that the borrow checker approves; it will compile and print `The longest string
-is long string is long`.
+이 예제에서 `string1`은 외부 스코프가 끝날 때까지 유효하고, `string2`는 내부 스코프가 끝날 때까지 유효하며, `result`는 내부 스코프가 끝날 때까지 유효한 무언가를 참조한다. 이 코드를 실행하면 borrow checker가 승인할 것이며, 컴파일되어 `The longest string is long string is long`을 출력할 것이다.
 
-Next, let’s try an example that shows that the lifetime of the reference in
-`result` must be the smaller lifetime of the two arguments. We’ll move the
-declaration of the `result` variable outside the inner scope but leave the
-assignment of the value to the `result` variable inside the scope with
-`string2`. Then we’ll move the `println!` that uses `result` to outside the
-inner scope, after the inner scope has ended. The code in Listing 10-23 will
-not compile.
+다음으로, `result`의 참조 라이프타임이 두 인수의 더 짧은 라이프타임이어야 함을 보여주는 예제를 시도해보자. `result` 변수의 선언을 내부 스코프 밖으로 옮기지만, `result` 변수에 값을 할당하는 부분은 `string2`와 함께 내부 스코프에 남겨둘 것이다. 그런 다음 `result`를 사용하는 `println!`을 내부 스코프가 끝난 후 외부 스코프로 옮길 것이다. 리스트 10-23의 코드는 컴파일되지 않을 것이다.
 
-<Listing number="10-23" file-name="src/main.rs" caption="Attempting to use `result` after `string2` has gone out of scope">
+<Listing number="10-23" file-name="src/main.rs" caption="`string2`가 스코프를 벗어난 후 `result`를 사용하려는 시도">
 
 ```rust,ignore,does_not_compile
 {{#rustdoc_include ../listings/ch10-generic-types-traits-and-lifetimes/listing-10-23/src/main.rs:here}}
@@ -277,38 +157,22 @@ not compile.
 
 </Listing>
 
-When we try to compile this code, we get this error:
+이 코드를 컴파일하려고 하면 다음과 같은 오류가 발생한다:
 
 ```console
 {{#include ../listings/ch10-generic-types-traits-and-lifetimes/listing-10-23/output.txt}}
 ```
 
-The error shows that for `result` to be valid for the `println!` statement,
-`string2` would need to be valid until the end of the outer scope. Rust knows
-this because we annotated the lifetimes of the function parameters and return
-values using the same lifetime parameter `'a`.
+오류는 `result`가 `println!` 문에서 유효하려면 `string2`가 외부 스코프가 끝날 때까지 유효해야 함을 보여준다. Rust는 함수 매개변수와 반환 값의 라이프타임을 동일한 라이프타임 매개변수 `'a`로 주석 처리했기 때문에 이를 알고 있다.
 
-As humans, we can look at this code and see that `string1` is longer than
-`string2`, and therefore, `result` will contain a reference to `string1`.
-Because `string1` has not gone out of scope yet, a reference to `string1` will
-still be valid for the `println!` statement. However, the compiler can’t see
-that the reference is valid in this case. We’ve told Rust that the lifetime of
-the reference returned by the `longest` function is the same as the smaller of
-the lifetimes of the references passed in. Therefore, the borrow checker
-disallows the code in Listing 10-23 as possibly having an invalid reference.
+우리는 이 코드를 보고 `string1`이 `string2`보다 길기 때문에 `result`가 `string1`을 참조할 것임을 알 수 있다. `string1`은 아직 스코프를 벗어나지 않았기 때문에 `string1`에 대한 참조는 `println!` 문에서 여전히 유효할 것이다. 그러나 컴파일러는 이 경우 참조가 유효함을 알 수 없다. 우리는 Rust에게 `longest` 함수가 반환한 참조의 라이프타임이 전달된 참조의 라이프타임 중 더 짧은 것과 동일하다고 알렸다. 따라서 borrow checker는 리스트 10-23의 코드를 유효하지 않은 참조를 가질 가능성이 있다고 판단하여 허용하지 않는다.
 
-Try designing more experiments that vary the values and lifetimes of the
-references passed in to the `longest` function and how the returned reference
-is used. Make hypotheses about whether or not your experiments will pass the
-borrow checker before you compile; then check to see if you’re right!
+`longest` 함수에 전달된 참조의 값과 라이프타임을 다양하게 변경하고, 반환된 참조가 어떻게 사용되는지에 대한 실험을 더 설계해보자. 컴파일하기 전에 실험이 borrow checker를 통과할지에 대한 가설을 세우고, 그 후에 맞는지 확인해보자!
 
-### Thinking in Terms of Lifetimes
 
-The way in which you need to specify lifetime parameters depends on what your
-function is doing. For example, if we changed the implementation of the
-`longest` function to always return the first parameter rather than the longest
-string slice, we wouldn’t need to specify a lifetime on the `y` parameter. The
-following code will compile:
+### 수명(Lifetime) 개념으로 생각하기
+
+함수에서 수명 매개변수를 어떻게 지정해야 하는지는 함수가 무엇을 하는지에 따라 달라진다. 예를 들어, `longest` 함수의 구현을 변경해 항상 가장 긴 문자열 슬라이스 대신 첫 번째 매개변수를 반환하도록 하면, `y` 매개변수에 수명을 지정할 필요가 없다. 다음 코드는 정상적으로 컴파일된다:
 
 <Listing file-name="src/main.rs">
 
@@ -318,17 +182,9 @@ following code will compile:
 
 </Listing>
 
-We’ve specified a lifetime parameter `'a` for the parameter `x` and the return
-type, but not for the parameter `y`, because the lifetime of `y` does not have
-any relationship with the lifetime of `x` or the return value.
+여기서는 매개변수 `x`와 반환 타입에 대해 수명 매개변수 `'a`를 지정했지만, `y` 매개변수에는 지정하지 않았다. 왜냐하면 `y`의 수명은 `x`나 반환 값의 수명과 아무런 관련이 없기 때문이다.
 
-When returning a reference from a function, the lifetime parameter for the
-return type needs to match the lifetime parameter for one of the parameters. If
-the reference returned does _not_ refer to one of the parameters, it must refer
-to a value created within this function. However, this would be a dangling
-reference because the value will go out of scope at the end of the function.
-Consider this attempted implementation of the `longest` function that won’t
-compile:
+함수에서 참조를 반환할 때, 반환 타입의 수명 매개변수는 매개변수 중 하나의 수명 매개변수와 일치해야 한다. 만약 반환된 참조가 매개변수 중 하나를 가리키지 않는다면, 함수 내부에서 생성된 값을 가리켜야 한다. 그러나 이 경우 함수가 끝나면 값이 스코프를 벗어나게 되므로, 이 참조는 댕글링 참조(dangling reference)가 된다. 다음은 컴파일되지 않는 `longest` 함수의 구현 시도이다:
 
 <Listing file-name="src/main.rs">
 
@@ -338,36 +194,22 @@ compile:
 
 </Listing>
 
-Here, even though we’ve specified a lifetime parameter `'a` for the return
-type, this implementation will fail to compile because the return value
-lifetime is not related to the lifetime of the parameters at all. Here is the
-error message we get:
+여기서는 반환 타입에 대해 수명 매개변수 `'a`를 지정했지만, 이 구현은 컴파일되지 않는다. 반환 값의 수명이 매개변수의 수명과 전혀 관련이 없기 때문이다. 다음은 발생한 에러 메시지이다:
 
 ```console
 {{#include ../listings/ch10-generic-types-traits-and-lifetimes/no-listing-09-unrelated-lifetime/output.txt}}
 ```
 
-The problem is that `result` goes out of scope and gets cleaned up at the end
-of the `longest` function. We’re also trying to return a reference to `result`
-from the function. There is no way we can specify lifetime parameters that
-would change the dangling reference, and Rust won’t let us create a dangling
-reference. In this case, the best fix would be to return an owned data type
-rather than a reference so the calling function is then responsible for
-cleaning up the value.
+문제는 `result`가 `longest` 함수의 끝에서 스코프를 벗어나고 정리된다는 점이다. 그리고 함수에서 `result`에 대한 참조를 반환하려고 한다. 댕글링 참조를 변경할 수 있는 수명 매개변수를 지정할 방법이 없으며, Rust는 댕글링 참조를 생성하는 것을 허용하지 않는다. 이 경우, 참조 대신 소유된 데이터 타입을 반환하는 것이 가장 좋은 해결책이다. 그러면 호출 함수가 값을 정리할 책임을 지게 된다.
 
-Ultimately, lifetime syntax is about connecting the lifetimes of various
-parameters and return values of functions. Once they’re connected, Rust has
-enough information to allow memory-safe operations and disallow operations that
-would create dangling pointers or otherwise violate memory safety.
+결국, 수명 구문은 함수의 다양한 매개변수와 반환 값의 수명을 연결하는 것이다. 이들이 연결되면, Rust는 메모리 안전한 작업을 허용하고 댕글링 포인터를 생성하거나 메모리 안전을 위반하는 작업을 금지할 수 있는 충분한 정보를 갖게 된다.
 
-### Lifetime Annotations in Struct Definitions
 
-So far, the structs we’ve defined all hold owned types. We can define structs
-to hold references, but in that case we would need to add a lifetime annotation
-on every reference in the struct’s definition. Listing 10-24 has a struct named
-`ImportantExcerpt` that holds a string slice.
+### 구조체 정의에서의 라이프타임 주석
 
-<Listing number="10-24" file-name="src/main.rs" caption="A struct that holds a reference, requiring a lifetime annotation">
+지금까지 정의한 구조체는 모두 소유권을 가진 타입을 담고 있었다. 하지만 구조체가 참조를 담도록 정의할 수도 있다. 이 경우, 구조체 정의 내의 모든 참조에 라이프타임 주석을 추가해야 한다. 리스트 10-24는 문자열 슬라이스를 담는 `ImportantExcerpt`라는 구조체를 보여준다.
+
+<Listing number="10-24" file-name="src/main.rs" caption="참조를 담는 구조체로, 라이프타임 주석이 필요함">
 
 ```rust
 {{#rustdoc_include ../listings/ch10-generic-types-traits-and-lifetimes/listing-10-24/src/main.rs}}
@@ -375,28 +217,16 @@ on every reference in the struct’s definition. Listing 10-24 has a struct name
 
 </Listing>
 
-This struct has the single field `part` that holds a string slice, which is a
-reference. As with generic data types, we declare the name of the generic
-lifetime parameter inside angle brackets after the name of the struct so we can
-use the lifetime parameter in the body of the struct definition. This
-annotation means an instance of `ImportantExcerpt` can’t outlive the reference
-it holds in its `part` field.
+이 구조체는 문자열 슬라이스인 참조를 담는 `part`라는 단일 필드를 가지고 있다. 제네릭 데이터 타입과 마찬가지로, 구조체 이름 뒤에 꺾쇠 괄호 안에 제네릭 라이프타임 매개변수의 이름을 선언한다. 이렇게 하면 구조체 정의 본문에서 라이프타임 매개변수를 사용할 수 있다. 이 주석은 `ImportantExcerpt`의 인스턴스가 `part` 필드에 담긴 참조보다 오래 살 수 없음을 의미한다.
 
-The `main` function here creates an instance of the `ImportantExcerpt` struct
-that holds a reference to the first sentence of the `String` owned by the
-variable `novel`. The data in `novel` exists before the `ImportantExcerpt`
-instance is created. In addition, `novel` doesn’t go out of scope until after
-the `ImportantExcerpt` goes out of scope, so the reference in the
-`ImportantExcerpt` instance is valid.
+여기서 `main` 함수는 `novel` 변수가 소유한 `String`의 첫 번째 문장을 참조하는 `ImportantExcerpt` 구조체의 인스턴스를 생성한다. `novel`의 데이터는 `ImportantExcerpt` 인스턴스가 생성되기 전에 존재한다. 또한, `novel`은 `ImportantExcerpt`가 스코프를 벗어난 후에야 스코프를 벗어나므로, `ImportantExcerpt` 인스턴스의 참조는 유효하다.
 
-### Lifetime Elision
 
-You’ve learned that every reference has a lifetime and that you need to specify
-lifetime parameters for functions or structs that use references. However, we
-had a function in Listing 4-9, shown again in Listing 10-25, that compiled
-without lifetime annotations.
+### 수명 생략 규칙
 
-<Listing number="10-25" file-name="src/lib.rs" caption="A function we defined in Listing 4-9 that compiled without lifetime annotations, even though the parameter and return type are references">
+참조마다 수명이 있으며, 참조를 사용하는 함수나 구조체에 수명 매개변수를 명시해야 한다는 것을 배웠다. 하지만 리스트 4-9에서 다뤘던 함수는 수명을 명시하지 않았음에도 컴파일되었다. 이 함수를 리스트 10-25에서 다시 살펴보자.
+
+<Listing number="10-25" file-name="src/lib.rs" caption="리스트 4-9에서 정의한 함수로, 매개변수와 반환 타입이 참조임에도 수명을 명시하지 않았음">
 
 ```rust
 {{#rustdoc_include ../listings/ch10-generic-types-traits-and-lifetimes/listing-10-25/src/main.rs:here}}
@@ -404,213 +234,124 @@ without lifetime annotations.
 
 </Listing>
 
-The reason this function compiles without lifetime annotations is historical:
-in early versions (pre-1.0) of Rust, this code wouldn’t have compiled because
-every reference needed an explicit lifetime. At that time, the function
-signature would have been written like this:
+이 함수가 수명을 명시하지 않고도 컴파일되는 이유는 역사적 배경 때문이다. Rust 초기 버전(1.0 이전)에서는 모든 참조에 명시적인 수명이 필요했기 때문에 이 코드는 컴파일되지 않았다. 당시에는 함수 시그니처가 다음과 같이 작성되었다:
 
 ```rust,ignore
 fn first_word<'a>(s: &'a str) -> &'a str {
 ```
 
-After writing a lot of Rust code, the Rust team found that Rust programmers
-were entering the same lifetime annotations over and over in particular
-situations. These situations were predictable and followed a few deterministic
-patterns. The developers programmed these patterns into the compiler’s code so
-the borrow checker could infer the lifetimes in these situations and wouldn’t
-need explicit annotations.
+Rust 코드를 많이 작성한 후, Rust 팀은 개발자들이 특정 상황에서 동일한 수명을 반복적으로 명시하는 것을 발견했다. 이러한 상황은 예측 가능했고 몇 가지 결정론적인 패턴을 따랐다. 개발자들은 이러한 패턴을 컴파일러 코드에 추가해, 빌린 값 검사기가 이러한 상황에서 수명을 추론하도록 했고, 명시적인 수명이 필요 없게 되었다.
 
-This piece of Rust history is relevant because it’s possible that more
-deterministic patterns will emerge and be added to the compiler. In the future,
-even fewer lifetime annotations might be required.
+이 Rust 역사는 더 많은 결정론적인 패턴이 발견되고 컴파일러에 추가될 가능성이 있기 때문에 중요하다. 미래에는 더 적은 수명만 명시하면 될 수도 있다.
 
-The patterns programmed into Rust’s analysis of references are called the
-_lifetime elision rules_. These aren’t rules for programmers to follow; they’re
-a set of particular cases that the compiler will consider, and if your code
-fits these cases, you don’t need to write the lifetimes explicitly.
+Rust의 참조 분석에 프로그래밍된 이러한 패턴을 **수명 생략 규칙**이라고 한다. 이 규칙은 프로그래머가 따라야 하는 것이 아니라, 컴파일러가 고려하는 특정한 경우의 집합이다. 코드가 이 경우에 해당하면 수명을 명시적으로 작성할 필요가 없다.
 
-The elision rules don’t provide full inference. If there is still ambiguity
-about what lifetimes the references have after Rust applies the rules, the
-compiler won’t guess what the lifetime of the remaining references should be.
-Instead of guessing, the compiler will give you an error that you can resolve by
-adding the lifetime annotations.
+수명 생략 규칙은 완전한 추론을 제공하지 않는다. Rust가 규칙을 적용한 후에도 참조의 수명이 모호하면, 컴파일러는 남은 참조의 수명을 추측하지 않는다. 대신 컴파일러는 오류를 발생시키고, 수명을 명시하도록 요구한다.
 
-Lifetimes on function or method parameters are called _input lifetimes_, and
-lifetimes on return values are called _output lifetimes_.
+함수나 메서드 매개변수의 수명을 **입력 수명**이라고 하고, 반환 값의 수명을 **출력 수명**이라고 한다.
 
-The compiler uses three rules to figure out the lifetimes of the references
-when there aren’t explicit annotations. The first rule applies to input
-lifetimes, and the second and third rules apply to output lifetimes. If the
-compiler gets to the end of the three rules and there are still references for
-which it can’t figure out lifetimes, the compiler will stop with an error.
-These rules apply to `fn` definitions as well as `impl` blocks.
+컴파일러는 명시적인 수명이 없을 때 참조의 수명을 알아내기 위해 세 가지 규칙을 사용한다. 첫 번째 규칙은 입력 수명에 적용되고, 두 번째와 세 번째 규칙은 출력 수명에 적용된다. 컴파일러가 세 규칙을 적용한 후에도 수명을 알 수 없는 참조가 남아 있으면 컴파일러는 오류를 발생시킨다. 이 규칙은 `fn` 정의와 `impl` 블록에 모두 적용된다.
 
-The first rule is that the compiler assigns a lifetime parameter to each
-parameter that’s a reference. In other words, a function with one parameter
-gets one lifetime parameter: `fn foo<'a>(x: &'a i32)`; a function with two
-parameters gets two separate lifetime parameters: `fn foo<'a, 'b>(x: &'a i32,
-y: &'b i32)`; and so on.
+첫 번째 규칙은 컴파일러가 참조인 각 매개변수에 수명 매개변수를 할당한다는 것이다. 즉, 매개변수가 하나인 함수는 하나의 수명 매개변수를 가진다: `fn foo<'a>(x: &'a i32)`; 매개변수가 두 개인 함수는 두 개의 수명 매개변수를 가진다: `fn foo<'a, 'b>(x: &'a i32, y: &'b i32)`; 등.
 
-The second rule is that, if there is exactly one input lifetime parameter, that
-lifetime is assigned to all output lifetime parameters: `fn foo<'a>(x: &'a i32)
--> &'a i32`.
+두 번째 규칙은 입력 수명 매개변수가 정확히 하나일 때, 그 수명을 모든 출력 수명 매개변수에 할당한다는 것이다: `fn foo<'a>(x: &'a i32) -> &'a i32`.
 
-The third rule is that, if there are multiple input lifetime parameters, but
-one of them is `&self` or `&mut self` because this is a method, the lifetime of
-`self` is assigned to all output lifetime parameters. This third rule makes
-methods much nicer to read and write because fewer symbols are necessary.
+세 번째 규칙은 여러 입력 수명 매개변수가 있지만, 그 중 하나가 `&self` 또는 `&mut self`인 경우(메서드이기 때문에) `self`의 수명을 모든 출력 수명 매개변수에 할당한다는 것이다. 이 규칙은 메서드를 읽고 쓰기 훨씬 쉽게 만든다. 왜냐하면 더 적은 기호가 필요하기 때문이다.
 
-Let’s pretend we’re the compiler. We’ll apply these rules to figure out the
-lifetimes of the references in the signature of the `first_word` function in
-Listing 10-25. The signature starts without any lifetimes associated with the
-references:
+이제 컴파일러가 되어 리스트 10-25의 `first_word` 함수 시그니처에서 참조의 수명을 알아내는 과정을 살펴보자. 시그니처는 참조와 관련된 수명 없이 시작된다:
 
 ```rust,ignore
 fn first_word(s: &str) -> &str {
 ```
 
-Then the compiler applies the first rule, which specifies that each parameter
-gets its own lifetime. We’ll call it `'a` as usual, so now the signature is
-this:
+그런 다음 컴파일러는 첫 번째 규칙을 적용해 각 매개변수에 고유한 수명을 할당한다. 일반적으로 `'a`라고 부르므로, 이제 시그니처는 다음과 같다:
 
 ```rust,ignore
 fn first_word<'a>(s: &'a str) -> &str {
 ```
 
-The second rule applies because there is exactly one input lifetime. The second
-rule specifies that the lifetime of the one input parameter gets assigned to
-the output lifetime, so the signature is now this:
+두 번째 규칙은 입력 수명이 정확히 하나일 때 적용된다. 두 번째 규칙은 하나의 입력 매개변수의 수명을 출력 수명에 할당하므로, 시그니처는 이제 다음과 같다:
 
 ```rust,ignore
 fn first_word<'a>(s: &'a str) -> &'a str {
 ```
 
-Now all the references in this function signature have lifetimes, and the
-compiler can continue its analysis without needing the programmer to annotate
-the lifetimes in this function signature.
+이제 이 함수 시그니처의 모든 참조에 수명이 할당되었고, 컴파일러는 프로그래머가 수명을 명시하지 않아도 분석을 계속할 수 있다.
 
-Let’s look at another example, this time using the `longest` function that had
-no lifetime parameters when we started working with it in Listing 10-20:
+이번에는 리스트 10-20에서 다룬 `longest` 함수를 예로 들어보자. 이 함수는 처음에 수명 매개변수가 없었다:
 
 ```rust,ignore
 fn longest(x: &str, y: &str) -> &str {
 ```
 
-Let’s apply the first rule: each parameter gets its own lifetime. This time we
-have two parameters instead of one, so we have two lifetimes:
+첫 번째 규칙을 적용해보자: 각 매개변수에 고유한 수명을 할당한다. 이번에는 매개변수가 하나가 아니라 두 개이므로 두 개의 수명이 있다:
 
 ```rust,ignore
 fn longest<'a, 'b>(x: &'a str, y: &'b str) -> &str {
 ```
 
-You can see that the second rule doesn’t apply because there is more than one
-input lifetime. The third rule doesn’t apply either, because `longest` is a
-function rather than a method, so none of the parameters are `self`. After
-working through all three rules, we still haven’t figured out what the return
-type’s lifetime is. This is why we got an error trying to compile the code in
-Listing 10-20: the compiler worked through the lifetime elision rules but still
-couldn’t figure out all the lifetimes of the references in the signature.
+두 번째 규칙은 입력 수명이 하나보다 많기 때문에 적용되지 않는다. 세 번째 규칙도 적용되지 않는데, `longest`는 메서드가 아니라 함수이기 때문에 어떤 매개변수도 `self`가 아니다. 세 규칙을 모두 적용한 후에도 반환 타입의 수명을 알 수 없다. 이 때문에 리스트 10-20의 코드를 컴파일하려고 할 때 오류가 발생한 것이다: 컴파일러는 수명 생략 규칙을 적용했지만 여전히 시그니처의 모든 참조의 수명을 알 수 없었다.
 
-Because the third rule really only applies in method signatures, we’ll look at
-lifetimes in that context next to see why the third rule means we don’t have to
-annotate lifetimes in method signatures very often.
+세 번째 규칙은 실제로 메서드 시그니처에만 적용되므로, 다음으로는 메서드 시그니처에서 수명을 살펴보고, 세 번째 규칙이 왜 메서드 시그니처에서 수명을 자주 명시하지 않아도 되는지 알아보자.
 
-### Lifetime Annotations in Method Definitions
 
-When we implement methods on a struct with lifetimes, we use the same syntax as
-that of generic type parameters, as shown in Listing 10-11. Where we declare and
-use the lifetime parameters depends on whether they’re related to the struct
-fields or the method parameters and return values.
+### 메서드 정의에서의 수명 주석
 
-Lifetime names for struct fields always need to be declared after the `impl`
-keyword and then used after the struct’s name because those lifetimes are part
-of the struct’s type.
+구조체에 수명 주석을 사용해 메서드를 구현할 때, 일반적인 타입 매개변수와 동일한 문법을 사용한다. 수명 매개변수를 선언하고 사용하는 위치는 해당 수명이 구조체 필드와 관련이 있는지, 아니면 메서드 매개변수와 반환값과 관련이 있는지에 따라 달라진다.
 
-In method signatures inside the `impl` block, references might be tied to the
-lifetime of references in the struct’s fields, or they might be independent. In
-addition, the lifetime elision rules often make it so that lifetime annotations
-aren’t necessary in method signatures. Let’s look at some examples using the
-struct named `ImportantExcerpt` that we defined in Listing 10-24.
+구조체 필드의 수명 이름은 항상 `impl` 키워드 뒤에 선언하고, 구조체 이름 뒤에 사용한다. 이는 해당 수명이 구조체 타입의 일부이기 때문이다.
 
-First we’ll use a method named `level` whose only parameter is a reference to
-`self` and whose return value is an `i32`, which is not a reference to anything:
+`impl` 블록 내부의 메서드 시그니처에서 참조는 구조체 필드의 참조 수명에 묶일 수도 있고, 독립적일 수도 있다. 또한, 수명 생략 규칙에 따라 메서드 시그니처에서 수명 주석이 필요하지 않은 경우가 많다. Listing 10-24에서 정의한 `ImportantExcerpt` 구조체를 사용한 예제를 살펴보자.
+
+먼저, `level`이라는 메서드를 사용해 보자. 이 메서드는 `self`에 대한 참조만 매개변수로 받고, 반환값은 `i32` 타입으로, 어떤 것에 대한 참조도 아니다:
 
 ```rust
 {{#rustdoc_include ../listings/ch10-generic-types-traits-and-lifetimes/no-listing-10-lifetimes-on-methods/src/main.rs:1st}}
 ```
 
-The lifetime parameter declaration after `impl` and its use after the type name
-are required, but we’re not required to annotate the lifetime of the reference
-to `self` because of the first elision rule.
+`impl` 뒤에 수명 매개변수를 선언하고 타입 이름 뒤에 사용하는 것은 필수적이지만, 첫 번째 생략 규칙 때문에 `self` 참조의 수명을 주석으로 달 필요는 없다.
 
-Here is an example where the third lifetime elision rule applies:
+다음은 세 번째 수명 생략 규칙이 적용되는 예제다:
 
 ```rust
 {{#rustdoc_include ../listings/ch10-generic-types-traits-and-lifetimes/no-listing-10-lifetimes-on-methods/src/main.rs:3rd}}
 ```
 
-There are two input lifetimes, so Rust applies the first lifetime elision rule
-and gives both `&self` and `announcement` their own lifetimes. Then, because
-one of the parameters is `&self`, the return type gets the lifetime of `&self`,
-and all lifetimes have been accounted for.
+두 개의 입력 수명이 있으므로, Rust는 첫 번째 수명 생략 규칙을 적용해 `&self`와 `announcement`에 각각의 수명을 부여한다. 그리고 매개변수 중 하나가 `&self`이므로, 반환 타입은 `&self`의 수명을 가지며, 모든 수명이 처리된다.
 
-### The Static Lifetime
 
-One special lifetime we need to discuss is `'static`, which denotes that the
-affected reference _can_ live for the entire duration of the program. All
-string literals have the `'static` lifetime, which we can annotate as follows:
+### 정적 라이프타임
+
+특별히 다뤄야 할 라이프타임 중 하나는 `'static`이다. 이 라이프타임은 해당 참조가 프로그램 전체 실행 기간 동안 살아있을 수 있음을 나타낸다. 모든 문자열 리터럴은 `'static` 라이프타임을 가지며, 다음과 같이 명시할 수 있다:
 
 ```rust
 let s: &'static str = "I have a static lifetime.";
 ```
 
-The text of this string is stored directly in the program’s binary, which is
-always available. Therefore, the lifetime of all string literals is `'static`.
+이 문자열의 텍스트는 프로그램의 바이너리에 직접 저장되며, 항상 사용 가능하다. 따라서 모든 문자열 리터럴의 라이프타임은 `'static`이다.
 
-You might see suggestions in error messages to use the `'static` lifetime. But
-before specifying `'static` as the lifetime for a reference, think about
-whether the reference you have actually lives the entire lifetime of your
-program or not, and whether you want it to. Most of the time, an error message
-suggesting the `'static` lifetime results from attempting to create a dangling
-reference or a mismatch of the available lifetimes. In such cases, the solution
-is to fix those problems, not to specify the `'static` lifetime.
+에러 메시지에서 `'static` 라이프타임을 사용하라는 제안을 볼 수 있다. 하지만 참조에 `'static` 라이프타임을 지정하기 전에, 해당 참조가 실제로 프로그램 전체 실행 기간 동안 유효한지, 그리고 그렇게 의도한 것인지 고려해야 한다. 대부분의 경우, `'static` 라이프타임을 제안하는 에러 메시지는 댕글링 참조를 만들려고 하거나 사용 가능한 라이프타임이 맞지 않을 때 발생한다. 이러한 경우, 해결책은 `'static` 라이프타임을 지정하는 것이 아니라 문제를 해결하는 것이다.
 
-## Generic Type Parameters, Trait Bounds, and Lifetimes Together
 
-Let’s briefly look at the syntax of specifying generic type parameters, trait
-bounds, and lifetimes all in one function!
+## 제네릭 타입 매개변수, 트레이트 바운드, 라이프타임 함께 사용하기
+
+제네릭 타입 매개변수, 트레이트 바운드, 라이프타임을 한 함수에서 모두 지정하는 문법을 간단히 살펴보자!
 
 ```rust
 {{#rustdoc_include ../listings/ch10-generic-types-traits-and-lifetimes/no-listing-11-generics-traits-and-lifetimes/src/main.rs:here}}
 ```
 
-This is the `longest` function from Listing 10-21 that returns the longer of
-two string slices. But now it has an extra parameter named `ann` of the generic
-type `T`, which can be filled in by any type that implements the `Display`
-trait as specified by the `where` clause. This extra parameter will be printed
-using `{}`, which is why the `Display` trait bound is necessary. Because
-lifetimes are a type of generic, the declarations of the lifetime parameter
-`'a` and the generic type parameter `T` go in the same list inside the angle
-brackets after the function name.
+이 코드는 리스트 10-21의 `longest` 함수로, 두 문자열 슬라이스 중 더 긴 것을 반환한다. 하지만 이제는 `ann`이라는 추가 매개변수가 있는데, 이는 `where` 절에 지정된 대로 `Display` 트레이트를 구현한 어떤 타입이든 될 수 있는 제네릭 타입 `T`이다. 이 추가 매개변수는 `{}`를 사용해 출력되기 때문에 `Display` 트레이트 바운드가 필요하다. 라이프타임도 제네릭의 일종이므로, 라이프타임 매개변수 `'a`와 제네릭 타입 매개변수 `T`의 선언은 함수 이름 뒤의 꺾쇠 괄호 안에 같은 목록에 들어간다.
 
-## Summary
 
-We covered a lot in this chapter! Now that you know about generic type
-parameters, traits and trait bounds, and generic lifetime parameters, you’re
-ready to write code without repetition that works in many different situations.
-Generic type parameters let you apply the code to different types. Traits and
-trait bounds ensure that even though the types are generic, they’ll have the
-behavior the code needs. You learned how to use lifetime annotations to ensure
-that this flexible code won’t have any dangling references. And all of this
-analysis happens at compile time, which doesn’t affect runtime performance!
+## 요약
 
-Believe it or not, there is much more to learn on the topics we discussed in
-this chapter: Chapter 18 discusses trait objects, which are another way to use
-traits. There are also more complex scenarios involving lifetime annotations
-that you will only need in very advanced scenarios; for those, you should read
-the [Rust Reference][reference]. But next, you’ll learn how to write tests in
-Rust so you can make sure your code is working the way it should.
+이번 장에서는 많은 내용을 다뤘다. 여러분은 이제 제네릭 타입 매개변수, 트레이트와 트레이트 바운드, 제네릭 라이프타임 매개변수에 대해 알게 되었다. 이를 통해 다양한 상황에서 동작하는 반복 없는 코드를 작성할 준비가 되었다. 제네릭 타입 매개변수는 코드를 다양한 타입에 적용할 수 있게 해준다. 트레이트와 트레이트 바운드는 타입이 제네릭임에도 불구하고 코드가 필요로 하는 동작을 보장한다. 또한 라이프타임 어노테이션을 사용해 이 유연한 코드가 댕글링 참조를 발생시키지 않도록 하는 방법도 배웠다. 이 모든 분석은 컴파일 타임에 이루어지기 때문에 런타임 성능에 영향을 미치지 않는다!
+
+믿기 어려울지 모르지만, 이번 장에서 다룬 주제에는 더 많은 내용이 있다. 18장에서는 트레이트를 사용하는 또 다른 방법인 트레이트 객체에 대해 다룬다. 또한 매우 고급 시나리오에서만 필요한 라이프타임 어노테이션과 관련된 더 복잡한 경우도 있다. 이런 경우에는 [Rust Reference][reference]를 참고해야 한다. 하지만 다음으로는 Rust에서 테스트를 작성하는 방법을 배우게 될 것이다. 이를 통해 코드가 의도한 대로 동작하는지 확인할 수 있다.
 
 [references-and-borrowing]: ch04-02-references-and-borrowing.html#references-and-borrowing
 [string-slices-as-parameters]: ch04-03-slices.html#string-slices-as-parameters
 [reference]: ../reference/index.html
+
+

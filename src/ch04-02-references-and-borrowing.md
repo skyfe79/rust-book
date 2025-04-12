@@ -1,16 +1,8 @@
-## References and Borrowing
+## 참조와 빌림
 
-The issue with the tuple code in Listing 4-5 is that we have to return the
-`String` to the calling function so we can still use the `String` after the
-call to `calculate_length`, because the `String` was moved into
-`calculate_length`. Instead, we can provide a reference to the `String` value.
-A _reference_ is like a pointer in that it’s an address we can follow to access
-the data stored at that address; that data is owned by some other variable.
-Unlike a pointer, a reference is guaranteed to point to a valid value of a
-particular type for the life of that reference.
+리스트 4-5의 튜플 코드에서 문제는 `calculate_length` 함수를 호출한 후에도 `String`을 계속 사용할 수 있도록 `String`을 호출 함수로 반환해야 한다는 것이다. 왜냐하면 `String`이 `calculate_length`로 이동했기 때문이다. 대신, `String` 값에 대한 참조를 제공할 수 있다. 참조는 포인터와 유사하며, 해당 주소에 저장된 데이터에 접근할 수 있는 주소를 의미한다. 그 데이터는 다른 변수가 소유하고 있다. 포인터와 달리, 참조는 해당 참조의 수명 동안 유효한 특정 타입의 값을 가리키도록 보장된다.
 
-Here is how you would define and use a `calculate_length` function that has a
-reference to an object as a parameter instead of taking ownership of the value:
+다음은 값을 소유하지 않고 객체에 대한 참조를 매개변수로 사용하는 `calculate_length` 함수를 정의하고 사용하는 방법이다:
 
 <Listing file-name="src/main.rs">
 
@@ -20,56 +12,35 @@ reference to an object as a parameter instead of taking ownership of the value:
 
 </Listing>
 
-First, notice that all the tuple code in the variable declaration and the
-function return value is gone. Second, note that we pass `&s1` into
-`calculate_length` and, in its definition, we take `&String` rather than
-`String`. These ampersands represent _references_, and they allow you to refer
-to some value without taking ownership of it. Figure 4-6 depicts this concept.
+먼저, 변수 선언과 함수 반환 값에 있는 모든 튜플 코드가 사라졌다는 점을 확인한다. 두 번째로, `&s1`을 `calculate_length`에 전달하고, 함수 정의에서 `String` 대신 `&String`을 사용한다. 이 앰퍼샌드(&)는 참조를 나타내며, 값을 소유하지 않고도 값을 참조할 수 있게 한다. 그림 4-6은 이 개념을 보여준다.
 
-<img alt="Three tables: the table for s contains only a pointer to the table
-for s1. The table for s1 contains the stack data for s1 and points to the
-string data on the heap." src="img/trpl04-06.svg" class="center" />
+<img alt="세 개의 테이블: s 테이블은 s1 테이블에 대한 포인터만 포함한다. s1 테이블은 s1의 스택 데이터를 포함하고 힙에 있는 문자열 데이터를 가리킨다." src="img/trpl04-06.svg" class="center" />
 
-<span class="caption">Figure 4-6: A diagram of `&String s` pointing at `String
-s1`</span>
+<span class="caption">그림 4-6: `&String s`가 `String s1`을 가리키는 다이어그램</span>
 
-> Note: The opposite of referencing by using `&` is _dereferencing_, which is
-> accomplished with the dereference operator, `*`. We’ll see some uses of the
-> dereference operator in Chapter 8 and discuss details of dereferencing in
-> Chapter 15.
+> 참고: `&`를 사용한 참조의 반대는 역참조(dereferencing)이며, 역참조 연산자 `*`를 사용해 수행한다. 역참조 연산자의 사용은 8장에서, 역참조의 세부 사항은 15장에서 다룬다.
 
-Let’s take a closer look at the function call here:
+이제 함수 호출을 자세히 살펴보자:
 
 ```rust
 {{#rustdoc_include ../listings/ch04-understanding-ownership/no-listing-07-reference/src/main.rs:here}}
 ```
 
-The `&s1` syntax lets us create a reference that _refers_ to the value of `s1`
-but does not own it. Because the reference does not own it, the value it points
-to will not be dropped when the reference stops being used.
+`&s1` 구문은 `s1`의 값을 참조하지만 소유하지 않는 참조를 생성한다. 참조가 값을 소유하지 않기 때문에, 참조가 사용을 멈춰도 가리키는 값은 삭제되지 않는다.
 
-Likewise, the signature of the function uses `&` to indicate that the type of
-the parameter `s` is a reference. Let’s add some explanatory annotations:
+마찬가지로, 함수 시그니처는 매개변수 `s`의 타입이 참조임을 나타내기 위해 `&`를 사용한다. 설명을 추가해 보자:
 
 ```rust
 {{#rustdoc_include ../listings/ch04-understanding-ownership/no-listing-08-reference-with-annotations/src/main.rs:here}}
 ```
 
-The scope in which the variable `s` is valid is the same as any function
-parameter’s scope, but the value pointed to by the reference is not dropped
-when `s` stops being used, because `s` doesn’t have ownership. When functions
-have references as parameters instead of the actual values, we won’t need to
-return the values in order to give back ownership, because we never had
-ownership.
+변수 `s`가 유효한 범위는 다른 함수 매개변수의 범위와 동일하지만, 참조가 가리키는 값은 `s`가 사용을 멈춰도 삭제되지 않는다. 왜냐하면 `s`는 값을 소유하지 않기 때문이다. 함수가 실제 값 대신 참조를 매개변수로 사용할 때, 값을 반환하여 소유권을 돌려줄 필요가 없다. 왜냐하면 처음부터 소유권을 가지지 않았기 때문이다.
 
-We call the action of creating a reference _borrowing_. As in real life, if a
-person owns something, you can borrow it from them. When you’re done, you have
-to give it back. You don’t own it.
+참조를 생성하는 행위를 빌림(borrowing)이라고 한다. 실제 생활에서 누군가가 무언가를 소유하고 있다면, 당신은 그것을 빌릴 수 있다. 사용을 마치면 반환해야 한다. 당신은 그것을 소유하지 않는다.
 
-So, what happens if we try to modify something we’re borrowing? Try the code in
-Listing 4-6. Spoiler alert: it doesn’t work!
+그렇다면, 빌린 것을 수정하려고 하면 어떻게 될까? 리스트 4-6의 코드를 시도해보자. 스포일러 경고: 작동하지 않는다!
 
-<Listing number="4-6" file-name="src/main.rs" caption="Attempting to modify a borrowed value">
+<Listing number="4-6" file-name="src/main.rs" caption="빌린 값을 수정하려는 시도">
 
 ```rust,ignore,does_not_compile
 {{#rustdoc_include ../listings/ch04-understanding-ownership/listing-04-06/src/main.rs}}
@@ -77,19 +48,18 @@ Listing 4-6. Spoiler alert: it doesn’t work!
 
 </Listing>
 
-Here’s the error:
+다음은 오류 메시지다:
 
 ```console
 {{#include ../listings/ch04-understanding-ownership/listing-04-06/output.txt}}
 ```
 
-Just as variables are immutable by default, so are references. We’re not
-allowed to modify something we have a reference to.
+변수가 기본적으로 불변인 것처럼, 참조도 기본적으로 불변이다. 참조한 것을 수정하는 것은 허용되지 않는다.
 
-### Mutable References
 
-We can fix the code from Listing 4-6 to allow us to modify a borrowed value
-with just a few small tweaks that use, instead, a _mutable reference_:
+### 가변 참조
+
+리스트 4-6의 코드를 약간 수정하면 가변 참조(_mutable reference_)를 사용해 빌린 값을 수정할 수 있다.
 
 <Listing file-name="src/main.rs">
 
@@ -99,14 +69,9 @@ with just a few small tweaks that use, instead, a _mutable reference_:
 
 </Listing>
 
-First we change `s` to be `mut`. Then we create a mutable reference with `&mut
-s` where we call the `change` function, and update the function signature to
-accept a mutable reference with `some_string: &mut String`. This makes it very
-clear that the `change` function will mutate the value it borrows.
+먼저 `s`를 `mut`로 변경한다. 그런 다음 `change` 함수를 호출할 때 `&mut s`로 가변 참조를 생성하고, 함수 시그니처를 `some_string: &mut String`으로 업데이트해 가변 참조를 받도록 한다. 이렇게 하면 `change` 함수가 빌린 값을 변경한다는 사실을 명확히 알 수 있다.
 
-Mutable references have one big restriction: if you have a mutable reference to
-a value, you can have no other references to that value. This code that
-attempts to create two mutable references to `s` will fail:
+가변 참조에는 큰 제약이 하나 있다. 어떤 값에 대한 가변 참조가 존재한다면, 그 값에 대한 다른 참조를 가질 수 없다. 다음 코드는 `s`에 대한 두 개의 가변 참조를 생성하려고 시도하지만 실패한다:
 
 <Listing file-name="src/main.rs">
 
@@ -116,93 +81,60 @@ attempts to create two mutable references to `s` will fail:
 
 </Listing>
 
-Here’s the error:
+에러 메시지는 다음과 같다:
 
 ```console
 {{#include ../listings/ch04-understanding-ownership/no-listing-10-multiple-mut-not-allowed/output.txt}}
 ```
 
-This error says that this code is invalid because we cannot borrow `s` as
-mutable more than once at a time. The first mutable borrow is in `r1` and must
-last until it’s used in the `println!`, but between the creation of that
-mutable reference and its usage, we tried to create another mutable reference
-in `r2` that borrows the same data as `r1`.
+이 에러는 `s`를 동시에 여러 번 가변으로 빌릴 수 없기 때문에 코드가 유효하지 않다는 것을 알려준다. 첫 번째 가변 빌림은 `r1`에서 발생하며, `println!`에서 사용될 때까지 유효하다. 하지만 이 가변 참조가 생성된 후 사용되기 전에, `r2`에서 같은 데이터를 빌리는 또 다른 가변 참조를 생성하려고 시도했다.
 
-The restriction preventing multiple mutable references to the same data at the
-same time allows for mutation but in a very controlled fashion. It’s something
-that new Rustaceans struggle with because most languages let you mutate
-whenever you’d like. The benefit of having this restriction is that Rust can
-prevent data races at compile time. A _data race_ is similar to a race
-condition and happens when these three behaviors occur:
+동일한 데이터에 대한 여러 가변 참조를 동시에 허용하지 않는 제약은 변이를 허용하지만 매우 제어된 방식으로만 허용한다. 대부분의 언어에서는 원할 때마다 변이를 허용하기 때문에, 새로운 Rust 개발자들은 이 제약에 어려움을 겪는다. 이 제약의 장점은 Rust가 컴파일 타임에 데이터 경쟁(_data race_)을 방지할 수 있다는 것이다. _데이터 경쟁_은 경쟁 조건과 유사하며, 다음과 같은 세 가지 동작이 발생할 때 일어난다:
 
-- Two or more pointers access the same data at the same time.
-- At least one of the pointers is being used to write to the data.
-- There’s no mechanism being used to synchronize access to the data.
+- 두 개 이상의 포인터가 동시에 같은 데이터에 접근한다.
+- 최소 하나의 포인터가 데이터를 쓰기 위해 사용된다.
+- 데이터 접근을 동기화하는 메커니즘이 없다.
 
-Data races cause undefined behavior and can be difficult to diagnose and fix
-when you’re trying to track them down at runtime; Rust prevents this problem by
-refusing to compile code with data races!
+데이터 경쟁은 정의되지 않은 동작을 유발하며, 런타임에 이를 추적하고 수정하는 것은 어려울 수 있다. Rust는 데이터 경쟁이 있는 코드를 컴파일하지 않음으로써 이 문제를 방지한다!
 
-As always, we can use curly brackets to create a new scope, allowing for
-multiple mutable references, just not _simultaneous_ ones:
+언제나 중괄호를 사용해 새로운 스코프를 생성할 수 있으며, 이를 통해 여러 가변 참조를 허용할 수 있다. 단, 동시에 사용할 수는 없다:
 
 ```rust
 {{#rustdoc_include ../listings/ch04-understanding-ownership/no-listing-11-muts-in-separate-scopes/src/main.rs:here}}
 ```
 
-Rust enforces a similar rule for combining mutable and immutable references.
-This code results in an error:
+Rust는 가변 참조와 불변 참조를 결합하는 경우에도 비슷한 규칙을 적용한다. 다음 코드는 에러를 발생시킨다:
 
 ```rust,ignore,does_not_compile
 {{#rustdoc_include ../listings/ch04-understanding-ownership/no-listing-12-immutable-and-mutable-not-allowed/src/main.rs:here}}
 ```
 
-Here’s the error:
+에러 메시지는 다음과 같다:
 
 ```console
 {{#include ../listings/ch04-understanding-ownership/no-listing-12-immutable-and-mutable-not-allowed/output.txt}}
 ```
 
-Whew! We _also_ cannot have a mutable reference while we have an immutable one
-to the same value.
+휴! 같은 값에 대한 불변 참조가 존재하는 동안에는 가변 참조를 가질 수 없다.
 
-Users of an immutable reference don’t expect the value to suddenly change out
-from under them! However, multiple immutable references are allowed because no
-one who is just reading the data has the ability to affect anyone else’s
-reading of the data.
+불변 참조를 사용하는 사용자는 값이 갑자기 변경될 것을 예상하지 않는다! 그러나 여러 불변 참조는 허용된다. 데이터를 읽기만 하는 사용자는 다른 사용자의 데이터 읽기에 영향을 미칠 수 없기 때문이다.
 
-Note that a reference’s scope starts from where it is introduced and continues
-through the last time that reference is used. For instance, this code will
-compile because the last usage of the immutable references is in the `println!`,
-before the mutable reference is introduced:
+참조의 스코프는 참조가 도입된 지점부터 시작해 마지막으로 사용된 지점까지 계속된다. 예를 들어, 다음 코드는 불변 참조의 마지막 사용이 `println!`에서 이루어진 후 가변 참조가 도입되기 때문에 컴파일된다:
 
 ```rust
 {{#rustdoc_include ../listings/ch04-understanding-ownership/no-listing-13-reference-scope-ends/src/main.rs:here}}
 ```
 
-The scopes of the immutable references `r1` and `r2` end after the `println!`
-where they are last used, which is before the mutable reference `r3` is
-created. These scopes don’t overlap, so this code is allowed: the compiler can
-tell that the reference is no longer being used at a point before the end of
-the scope.
+불변 참조 `r1`과 `r2`의 스코프는 마지막으로 사용된 `println!` 이후에 끝나며, 이는 가변 참조 `r3`가 생성되기 전이다. 이 스코프들은 겹치지 않으므로 이 코드는 허용된다. 컴파일러는 스코프가 끝나기 전에 참조가 더 이상 사용되지 않는다는 것을 알 수 있다.
 
-Even though borrowing errors may be frustrating at times, remember that it’s
-the Rust compiler pointing out a potential bug early (at compile time rather
-than at runtime) and showing you exactly where the problem is. Then you don’t
-have to track down why your data isn’t what you thought it was.
+빌림 에러가 때로는 답답할 수 있지만, Rust 컴파일러가 잠재적인 버그를 조기에(런타임이 아닌 컴파일 타임에) 지적하고 문제가 있는 정확한 위치를 보여준다는 점을 기억하자. 그러면 데이터가 예상과 다를 때 그 이유를 추적할 필요가 없다.
 
-### Dangling References
 
-In languages with pointers, it’s easy to erroneously create a _dangling
-pointer_—a pointer that references a location in memory that may have been
-given to someone else—by freeing some memory while preserving a pointer to that
-memory. In Rust, by contrast, the compiler guarantees that references will
-never be dangling references: if you have a reference to some data, the
-compiler will ensure that the data will not go out of scope before the
-reference to the data does.
+### 댕글링 참조
 
-Let’s try to create a dangling reference to see how Rust prevents them with a
-compile-time error:
+포인터를 사용하는 언어에서는, 메모리를 해제한 후에도 그 메모리에 대한 포인터를 유지하는 실수를 통해 _댕글링 포인터_를 쉽게 만들 수 있다. 댕글링 포인터는 이미 다른 곳에 할당된 메모리 위치를 참조하는 포인터를 의미한다. 반면에 Rust에서는 컴파일러가 참조가 절대 댕글링 참조가 되지 않도록 보장한다. 즉, 어떤 데이터에 대한 참조가 있다면, 컴파일러는 그 데이터가 참조보다 먼저 스코프를 벗어나지 않도록 한다.
+
+Rust가 어떻게 컴파일 타임 오류를 통해 댕글링 참조를 방지하는지 확인해보자:
 
 <Listing file-name="src/main.rs">
 
@@ -212,23 +144,19 @@ compile-time error:
 
 </Listing>
 
-Here’s the error:
+발생한 오류는 다음과 같다:
 
 ```console
 {{#include ../listings/ch04-understanding-ownership/no-listing-14-dangling-reference/output.txt}}
 ```
 
-This error message refers to a feature we haven’t covered yet: lifetimes. We’ll
-discuss lifetimes in detail in Chapter 10. But, if you disregard the parts
-about lifetimes, the message does contain the key to why this code is a problem:
+이 오류 메시지는 아직 다루지 않은 기능인 '라이프타임'을 언급한다. 라이프타임에 대해서는 10장에서 자세히 설명할 것이다. 하지만 라이프타임에 대한 부분을 무시하더라도, 이 메시지는 왜 이 코드가 문제가 되는지에 대한 핵심을 담고 있다:
 
 ```text
-this function's return type contains a borrowed value, but there is no value
-for it to be borrowed from
+이 함수의 반환 타입은 빌린 값을 포함하지만, 빌릴 값이 존재하지 않습니다.
 ```
 
-Let’s take a closer look at exactly what’s happening at each stage of our
-`dangle` code:
+이제 `dangle` 코드의 각 단계에서 정확히 어떤 일이 일어나는지 자세히 살펴보자:
 
 <Listing file-name="src/main.rs">
 
@@ -238,26 +166,25 @@ Let’s take a closer look at exactly what’s happening at each stage of our
 
 </Listing>
 
-Because `s` is created inside `dangle`, when the code of `dangle` is finished,
-`s` will be deallocated. But we tried to return a reference to it. That means
-this reference would be pointing to an invalid `String`. That’s no good! Rust
-won’t let us do this.
+`s`는 `dangle` 함수 내부에서 생성되므로, `dangle`의 코드가 실행을 마치면 `s`는 해제된다. 하지만 우리는 `s`에 대한 참조를 반환하려고 했다. 이는 이 참조가 유효하지 않은 `String`을 가리키게 된다는 것을 의미한다. 이는 좋지 않은 상황이다! Rust는 이런 상황을 허용하지 않는다.
 
-The solution here is to return the `String` directly:
+여기서 해결책은 `String`을 직접 반환하는 것이다:
 
 ```rust
 {{#rustdoc_include ../listings/ch04-understanding-ownership/no-listing-16-no-dangle/src/main.rs:here}}
 ```
 
-This works without any problems. Ownership is moved out, and nothing is
-deallocated.
+이 코드는 아무런 문제 없이 동작한다. 소유권이 이동되고, 아무것도 해제되지 않는다.
 
-### The Rules of References
 
-Let’s recap what we’ve discussed about references:
+### 참조의 규칙
 
-- At any given time, you can have _either_ one mutable reference _or_ any
-  number of immutable references.
-- References must always be valid.
 
-Next, we’ll look at a different kind of reference: slices.
+지금까지 다룬 참조에 대한 내용을 다시 정리해 보자:
+
+- 특정 시점에 **하나의 가변 참조**를 가질 수 있거나, **여러 개의 불변 참조**를 가질 수 있다.
+- 모든 참조는 항상 유효해야 한다.
+
+다음으로, 다른 종류의 참조인 슬라이스에 대해 알아보자.
+
+

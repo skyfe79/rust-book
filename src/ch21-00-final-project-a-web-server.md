@@ -1,41 +1,25 @@
-# Final Project: Building a Multithreaded Web Server
+# 최종 프로젝트: 멀티스레드 웹 서버 구축
 
-It’s been a long journey, but we’ve reached the end of the book. In this
-chapter, we’ll build one more project together to demonstrate some of the
-concepts we covered in the final chapters, as well as recap some earlier
-lessons.
+긴 여정이었지만, 이제 책의 마지막에 도달했다. 이번 장에서는 앞서 다룬 개념들을 다시 정리하고, 마지막 몇 장에서 배운 내용을 활용해 하나의 프로젝트를 함께 만들어 볼 것이다.
 
-For our final project, we’ll make a web server that says “hello” and looks like
-Figure 21-1 in a web browser.
+최종 프로젝트로, 웹 브라우저에서 "hello"라고 말하는 웹 서버를 만들 것이다. 이 서버는 그림 21-1과 같은 모습을 보여줄 것이다.
 
 ![hello from rust](img/trpl21-01.png)
 
-<span class="caption">Figure 21-1: Our final shared project</span>
+<span class="caption">그림 21-1: 우리의 최종 공유 프로젝트</span>
 
-Here is our plan for building the web server:
+웹 서버를 구축하기 위한 계획은 다음과 같다:
 
-1. Learn a bit about TCP and HTTP.
-2. Listen for TCP connections on a socket.
-3. Parse a small number of HTTP requests.
-4. Create a proper HTTP response.
-5. Improve the throughput of our server with a thread pool.
+1. TCP와 HTTP에 대해 간단히 알아본다.
+2. 소켓에서 TCP 연결을 기다린다.
+3. 소수의 HTTP 요청을 파싱한다.
+4. 적절한 HTTP 응답을 생성한다.
+5. 스레드 풀을 사용해 서버의 처리량을 개선한다.
 
-Before we get started, we should mention two details. First, the method we’ll
-use won’t be the best way to build a web server with Rust. Community members
-have published a number of production-ready crates available on
-[crates.io](https://crates.io/) that provide more complete web server and thread
-pool implementations than we’ll build. However, our intention in this chapter is
-to help you learn, not to take the easy route. Because Rust is a systems
-programming language, we can choose the level of abstraction we want to work
-with and can go to a lower level than is possible or practical in other
-languages.
+시작하기 전에 두 가지 사항을 언급하고자 한다. 첫째, 우리가 사용할 방법은 Rust로 웹 서버를 구축하는 최선의 방법은 아니다. 커뮨리티에서 이미 [crates.io](https://crates.io/)에 프로덕션 준비가 된 여러 크레이트를 공개했으며, 이들은 우리가 구축할 것보다 더 완전한 웹 서버와 스레드 풀 구현을 제공한다. 그러나 이번 장의 목적은 배우는 것이지, 쉬운 길을 택하는 것이 아니다. Rust는 시스템 프로그래밍 언어이기 때문에, 우리는 원하는 추상화 수준을 선택할 수 있으며, 다른 언어에서는 불가능하거나 실용적이지 않은 낮은 수준으로 내려갈 수 있다.
 
-Second, we will not be using async and await here. Building a thread pool is a
-big enough challenge on its own, without adding in building an async runtime!
-However, we will note how async and await might be applicable to some of the
-same problems we will see in this chapter. Ultimately, as we noted back in
-Chapter 17, many async runtimes use thread pools for managing their work.
+둘째, 여기서는 async와 await를 사용하지 않을 것이다. 스레드 풀을 구축하는 것만으로도 충분히 큰 도전이기 때문에, async 런타임까지 추가로 구축하지는 않을 것이다! 그러나 이번 장에서 마주칠 몇 가지 문제에 async와 await가 어떻게 적용될 수 있는지 언급할 것이다. 궁극적으로, 17장에서 언급했듯이, 많은 async 런타임이 스레드 풀을 사용해 작업을 관리한다.
 
-We’ll therefore write the basic HTTP server and thread pool manually so you can
-learn the general ideas and techniques behind the crates you might use in the
-future.
+따라서 우리는 기본적인 HTTP 서버와 스레드 풀을 직접 작성할 것이다. 이를 통해 여러분이 앞으로 사용할 크레이트들 뒤에 숨은 일반적인 아이디어와 기술을 배울 수 있도록 하기 위함이다.
+
+

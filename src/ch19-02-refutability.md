@@ -1,33 +1,14 @@
-## Refutability: Whether a Pattern Might Fail to Match
+## 패턴의 실패 가능성: 패턴이 매칭되지 않을 수 있는 경우
 
-Patterns come in two forms: refutable and irrefutable. Patterns that will match
-for any possible value passed are _irrefutable_. An example would be `x` in the
-statement `let x = 5;` because `x` matches anything and therefore cannot fail
-to match. Patterns that can fail to match for some possible value are
-_refutable_. An example would be `Some(x)` in the expression `if let Some(x) =
-a_value` because if the value in the `a_value` variable is `None` rather than
-`Some`, the `Some(x)` pattern will not match.
+패턴은 두 가지 형태로 나뉜다: 실패할 수 없는 패턴(irrefutable)과 실패할 수 있는 패턴(refutable). 어떤 값이든 매칭되는 패턴은 _실패할 수 없는 패턴_이다. 예를 들어 `let x = 5;` 문에서 `x`는 어떤 값이든 매칭되므로 실패할 수 없다. 반면, 특정 값에 대해 매칭에 실패할 수 있는 패턴은 _실패할 수 있는 패턴_이다. 예를 들어 `if let Some(x) = a_value` 표현식에서 `Some(x)`는 `a_value` 변수의 값이 `Some`이 아닌 `None`일 경우 매칭에 실패한다.
 
-Function parameters, `let` statements, and `for` loops can only accept
-irrefutable patterns because the program cannot do anything meaningful when
-values don’t match. The `if let` and `while let` expressions and the
-`let...else` statement accept refutable and irrefutable patterns, but the
-compiler warns against irrefutable patterns because, by definition, they’re
-intended to handle possible failure: the functionality of a conditional is in
-its ability to perform differently depending on success or failure.
+함수 매개변수, `let` 문, `for` 루프는 오직 실패할 수 없는 패턴만 허용한다. 이는 값이 매칭되지 않을 경우 프로그램이 의미 있는 동작을 할 수 없기 때문이다. `if let`과 `while let` 표현식, 그리고 `let...else` 문은 실패할 수 있는 패턴과 실패할 수 없는 패턴을 모두 허용하지만, 컴파일러는 실패할 수 없는 패턴에 대해 경고를 발생시킨다. 이는 조건문의 기능이 성공 또는 실패에 따라 다르게 동작할 수 있도록 설계되었기 때문이다.
 
-In general, you shouldn’t have to worry about the distinction between refutable
-and irrefutable patterns; however, you do need to be familiar with the concept
-of refutability so you can respond when you see it in an error message. In
-those cases, you’ll need to change either the pattern or the construct you’re
-using the pattern with, depending on the intended behavior of the code.
+일반적으로 실패할 수 있는 패턴과 실패할 수 없는 패턴의 구분에 대해 크게 걱정할 필요는 없지만, 오류 메시지에서 이 개념을 접했을 때 대응할 수 있도록 기본적인 이해는 필요하다. 이 경우, 코드의 의도에 따라 패턴을 변경하거나 패턴을 사용하는 구문을 수정해야 한다.
 
-Let’s look at an example of what happens when we try to use a refutable pattern
-where Rust requires an irrefutable pattern and vice versa. Listing 19-8 shows a
-`let` statement, but for the pattern, we’ve specified `Some(x)`, a refutable
-pattern. As you might expect, this code will not compile.
+Rust에서 실패할 수 없는 패턴이 필요한 곳에 실패할 수 있는 패턴을 사용하거나 그 반대의 경우 어떤 일이 발생하는지 예제를 통해 살펴보자. 리스팅 19-8은 `let` 문을 보여주지만, 패턴으로 실패할 수 있는 패턴인 `Some(x)`를 지정했다. 예상대로 이 코드는 컴파일되지 않는다.
 
-<Listing number="19-8" caption="Attempting to use a refutable pattern with `let`">
+<Listing number="19-8" caption="`let` 문에서 실패할 수 있는 패턴 사용 시도">
 
 ```rust,ignore,does_not_compile
 {{#rustdoc_include ../listings/ch19-patterns-and-matching/listing-19-08/src/main.rs:here}}
@@ -35,26 +16,17 @@ pattern. As you might expect, this code will not compile.
 
 </Listing>
 
-If `some_option_value` were a `None` value, it would fail to match the pattern
-`Some(x)`, meaning the pattern is refutable. However, the `let` statement can
-only accept an irrefutable pattern because there is nothing valid the code can
-do with a `None` value. At compile time, Rust will complain that we’ve tried to
-use a refutable pattern where an irrefutable pattern is required:
+만약 `some_option_value`가 `None` 값이라면 `Some(x)` 패턴과 매칭되지 않아 패턴이 실패할 수 있음을 의미한다. 그러나 `let` 문은 실패할 수 없는 패턴만 허용한다. 왜냐하면 `None` 값에 대해 코드가 유효한 동작을 할 수 없기 때문이다. 컴파일 시 Rust는 실패할 수 없는 패턴이 필요한 곳에 실패할 수 있는 패턴을 사용하려 했다는 오류를 발생시킨다:
 
 ```console
 {{#include ../listings/ch19-patterns-and-matching/listing-19-08/output.txt}}
 ```
 
-Because we didn’t cover (and couldn’t cover!) every valid value with the
-pattern `Some(x)`, Rust rightfully produces a compiler error.
+`Some(x)` 패턴이 모든 유효한 값을 커버하지 못했기 때문에 Rust는 정당하게 컴파일 오류를 발생시킨다.
 
-If we have a refutable pattern where an irrefutable pattern is needed, we can
-fix it by changing the code that uses the pattern: instead of using `let`, we
-can use `if let`. Then if the pattern doesn’t match, the code will just skip
-the code in the curly brackets, giving it a way to continue validly. Listing
-19-9 shows how to fix the code in Listing 19-8.
+실패할 수 없는 패턴이 필요한 곳에 실패할 수 있는 패턴을 사용했다면, 패턴을 사용하는 코드를 변경해 문제를 해결할 수 있다. `let` 대신 `if let`을 사용하면 된다. 이렇게 하면 패턴이 매칭되지 않을 경우 중괄호 안의 코드를 건너뛰어 유효하게 동작할 수 있다. 리스팅 19-9는 리스팅 19-8의 코드를 어떻게 수정하는지 보여준다.
 
-<Listing number="19-9" caption="Using `let...else` and a block with refutable patterns instead of `let`">
+<Listing number="19-9" caption="`let` 대신 `let...else`와 실패할 수 있는 패턴 사용">
 
 ```rust
 {{#rustdoc_include ../listings/ch19-patterns-and-matching/listing-19-09/src/main.rs:here}}
@@ -62,12 +34,9 @@ the code in the curly brackets, giving it a way to continue validly. Listing
 
 </Listing>
 
-We’ve given the code an out! This code is perfectly valid now. However,
-if we give `if let` an irrefutable pattern (a pattern that will always
-match), such as `x`, as shown in Listing 19-10, the compiler will give a
-warning.
+이제 코드는 완벽하게 유효하다. 그러나 `if let`에 실패할 수 없는 패턴(항상 매칭되는 패턴)을 사용하면, 리스팅 19-10과 같이 `x`를 사용할 경우 컴파일러는 경고를 발생시킨다.
 
-<Listing number="19-10" caption="Attempting to use an irrefutable pattern with `if let`">
+<Listing number="19-10" caption="`if let`에 실패할 수 없는 패턴 사용 시도">
 
 ```rust
 {{#rustdoc_include ../listings/ch19-patterns-and-matching/listing-19-10/src/main.rs:here}}
@@ -75,19 +44,14 @@ warning.
 
 </Listing>
 
-Rust complains that it doesn’t make sense to use `if let` with an irrefutable
-pattern:
+Rust는 `if let`에 실패할 수 없는 패턴을 사용하는 것이 의미가 없다고 경고한다:
 
 ```console
 {{#include ../listings/ch19-patterns-and-matching/listing-19-10/output.txt}}
 ```
 
-For this reason, match arms must use refutable patterns, except for the last
-arm, which should match any remaining values with an irrefutable pattern. Rust
-allows us to use an irrefutable pattern in a `match` with only one arm, but
-this syntax isn’t particularly useful and could be replaced with a simpler
-`let` statement.
+이러한 이유로, `match`의 각 분기(arm)는 실패할 수 있는 패턴을 사용해야 한다. 단, 마지막 분기는 남은 모든 값을 매칭할 수 있는 실패할 수 없는 패턴을 사용해야 한다. Rust는 `match`에 단일 분기만 있을 경우 실패할 수 없는 패턴을 허용하지만, 이 구문은 특별히 유용하지 않으며 더 간단한 `let` 문으로 대체할 수 있다.
 
-Now that you know where to use patterns and the difference between refutable
-and irrefutable patterns, let’s cover all the syntax we can use to create
-patterns.
+이제 패턴을 사용할 위치와 실패할 수 있는 패턴과 실패할 수 없는 패턴의 차이를 알았으니, 패턴을 생성하는 데 사용할 수 있는 모든 구문을 살펴보자.
+
+

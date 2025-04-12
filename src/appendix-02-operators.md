@@ -1,206 +1,199 @@
-## Appendix B: Operators and Symbols
+## 부록 B: 연산자와 기호
 
-This appendix contains a glossary of Rust’s syntax, including operators and
-other symbols that appear by themselves or in the context of paths, generics,
-trait bounds, macros, attributes, comments, tuples, and brackets.
+이 부록은 Rust 문법의 용어집을 담고 있다. 단독으로 사용되거나 경로, 제네릭, 트레이트 바운드, 매크로, 속성, 주석, 튜플, 괄호 등의 문맥에서 사용되는 연산자와 기호를 설명한다.
 
-### Operators
 
-Table B-1 contains the operators in Rust, an example of how the operator would
-appear in context, a short explanation, and whether that operator is
-overloadable. If an operator is overloadable, the relevant trait to use to
-overload that operator is listed.
+### 연산자
 
-<span class="caption">Table B-1: Operators</span>
+표 B-1은 Rust의 연산자, 연산자가 사용되는 예제, 간단한 설명, 그리고 해당 연산자가 오버로드 가능한지 여부를 보여준다. 연산자가 오버로드 가능한 경우, 해당 연산자를 오버로드하기 위해 사용할 수 있는 트레이트를 함께 표시했다.
 
-| Operator                  | Example                                                 | Explanation                                                           | Overloadable?  |
+<span class="caption">표 B-1: 연산자</span>
+
+| 연산자                  | 예제                                                 | 설명                                                           | 오버로드 가능?  |
 | ------------------------- | ------------------------------------------------------- | --------------------------------------------------------------------- | -------------- |
-| `!`                       | `ident!(...)`, `ident!{...}`, `ident![...]`             | Macro expansion                                                       |                |
-| `!`                       | `!expr`                                                 | Bitwise or logical complement                                         | `Not`          |
-| `!=`                      | `expr != expr`                                          | Nonequality comparison                                                | `PartialEq`    |
-| `%`                       | `expr % expr`                                           | Arithmetic remainder                                                  | `Rem`          |
-| `%=`                      | `var %= expr`                                           | Arithmetic remainder and assignment                                   | `RemAssign`    |
-| `&`                       | `&expr`, `&mut expr`                                    | Borrow                                                                |                |
-| `&`                       | `&type`, `&mut type`, `&'a type`, `&'a mut type`        | Borrowed pointer type                                                 |                |
-| `&`                       | `expr & expr`                                           | Bitwise AND                                                           | `BitAnd`       |
-| `&=`                      | `var &= expr`                                           | Bitwise AND and assignment                                            | `BitAndAssign` |
-| `&&`                      | `expr && expr`                                          | Short-circuiting logical AND                                          |                |
-| `*`                       | `expr * expr`                                           | Arithmetic multiplication                                             | `Mul`          |
-| `*=`                      | `var *= expr`                                           | Arithmetic multiplication and assignment                              | `MulAssign`    |
-| `*`                       | `*expr`                                                 | Dereference                                                           | `Deref`        |
-| `*`                       | `*const type`, `*mut type`                              | Raw pointer                                                           |                |
-| `+`                       | `trait + trait`, `'a + trait`                           | Compound type constraint                                              |                |
-| `+`                       | `expr + expr`                                           | Arithmetic addition                                                   | `Add`          |
-| `+=`                      | `var += expr`                                           | Arithmetic addition and assignment                                    | `AddAssign`    |
-| `,`                       | `expr, expr`                                            | Argument and element separator                                        |                |
-| `-`                       | `- expr`                                                | Arithmetic negation                                                   | `Neg`          |
-| `-`                       | `expr - expr`                                           | Arithmetic subtraction                                                | `Sub`          |
-| `-=`                      | `var -= expr`                                           | Arithmetic subtraction and assignment                                 | `SubAssign`    |
-| `->`                      | `fn(...) -> type`, <code>&vert;...&vert; -> type</code> | Function and closure return type                                      |                |
-| `.`                       | `expr.ident`                                            | Field access                                                          |                |
-| `.`                       | `expr.ident(expr, ...)`                                 | Method call                                                           |                |
-| `.`                       | `expr.0`, `expr.1`, etc.                                | Tuple indexing                                                        |                |
-| `..`                      | `..`, `expr..`, `..expr`, `expr..expr`                  | Right-exclusive range literal                                         | `PartialOrd`   |
-| `..=`                     | `..=expr`, `expr..=expr`                                | Right-inclusive range literal                                         | `PartialOrd`   |
-| `..`                      | `..expr`                                                | Struct literal update syntax                                          |                |
-| `..`                      | `variant(x, ..)`, `struct_type { x, .. }`               | “And the rest” pattern binding                                        |                |
-| `...`                     | `expr...expr`                                           | (Deprecated, use `..=` instead) In a pattern: inclusive range pattern |                |
-| `/`                       | `expr / expr`                                           | Arithmetic division                                                   | `Div`          |
-| `/=`                      | `var /= expr`                                           | Arithmetic division and assignment                                    | `DivAssign`    |
-| `:`                       | `pat: type`, `ident: type`                              | Constraints                                                           |                |
-| `:`                       | `ident: expr`                                           | Struct field initializer                                              |                |
-| `:`                       | `'a: loop {...}`                                        | Loop label                                                            |                |
-| `;`                       | `expr;`                                                 | Statement and item terminator                                         |                |
-| `;`                       | `[...; len]`                                            | Part of fixed-size array syntax                                       |                |
-| `<<`                      | `expr << expr`                                          | Left-shift                                                            | `Shl`          |
-| `<<=`                     | `var <<= expr`                                          | Left-shift and assignment                                             | `ShlAssign`    |
-| `<`                       | `expr < expr`                                           | Less than comparison                                                  | `PartialOrd`   |
-| `<=`                      | `expr <= expr`                                          | Less than or equal to comparison                                      | `PartialOrd`   |
-| `=`                       | `var = expr`, `ident = type`                            | Assignment/equivalence                                                |                |
-| `==`                      | `expr == expr`                                          | Equality comparison                                                   | `PartialEq`    |
-| `=>`                      | `pat => expr`                                           | Part of match arm syntax                                              |                |
-| `>`                       | `expr > expr`                                           | Greater than comparison                                               | `PartialOrd`   |
-| `>=`                      | `expr >= expr`                                          | Greater than or equal to comparison                                   | `PartialOrd`   |
-| `>>`                      | `expr >> expr`                                          | Right-shift                                                           | `Shr`          |
-| `>>=`                     | `var >>= expr`                                          | Right-shift and assignment                                            | `ShrAssign`    |
-| `@`                       | `ident @ pat`                                           | Pattern binding                                                       |                |
-| `^`                       | `expr ^ expr`                                           | Bitwise exclusive OR                                                  | `BitXor`       |
-| `^=`                      | `var ^= expr`                                           | Bitwise exclusive OR and assignment                                   | `BitXorAssign` |
-| <code>&vert;</code>       | <code>pat &vert; pat</code>                             | Pattern alternatives                                                  |                |
-| <code>&vert;</code>       | <code>expr &vert; expr</code>                           | Bitwise OR                                                            | `BitOr`        |
-| <code>&vert;=</code>      | <code>var &vert;= expr</code>                           | Bitwise OR and assignment                                             | `BitOrAssign`  |
-| <code>&vert;&vert;</code> | <code>expr &vert;&vert; expr</code>                     | Short-circuiting logical OR                                           |                |
-| `?`                       | `expr?`                                                 | Error propagation                                                     |                |
+| `!`                       | `ident!(...)`, `ident!{...}`, `ident![...]`             | 매크로 확장                                                       |                |
+| `!`                       | `!expr`                                                 | 비트 단위 또는 논리적 보수                                         | `Not`          |
+| `!=`                      | `expr != expr`                                          | 비동등 비교                                                | `PartialEq`    |
+| `%`                       | `expr % expr`                                           | 산술 나머지                                                  | `Rem`          |
+| `%=`                      | `var %= expr`                                           | 산술 나머지 및 할당                                   | `RemAssign`    |
+| `&`                       | `&expr`, `&mut expr`                                    | 참조                                                                |                |
+| `&`                       | `&type`, `&mut type`, `&'a type`, `&'a mut type`        | 참조된 포인터 타입                                                 |                |
+| `&`                       | `expr & expr`                                           | 비트 단위 AND                                                           | `BitAnd`       |
+| `&=`                      | `var &= expr`                                           | 비트 단위 AND 및 할당                                            | `BitAndAssign` |
+| `&&`                      | `expr && expr`                                          | 단락 논리 AND                                          |                |
+| `*`                       | `expr * expr`                                           | 산술 곱셈                                             | `Mul`          |
+| `*=`                      | `var *= expr`                                           | 산술 곱셈 및 할당                              | `MulAssign`    |
+| `*`                       | `*expr`                                                 | 역참조                                                           | `Deref`        |
+| `*`                       | `*const type`, `*mut type`                              | 원시 포인터                                                           |                |
+| `+`                       | `trait + trait`, `'a + trait`                           | 복합 타입 제약                                              |                |
+| `+`                       | `expr + expr`                                           | 산술 덧셈                                                   | `Add`          |
+| `+=`                      | `var += expr`                                           | 산술 덧셈 및 할당                                    | `AddAssign`    |
+| `,`                       | `expr, expr`                                            | 인수 및 요소 구분자                                        |                |
+| `-`                       | `- expr`                                                | 산술 부정                                                   | `Neg`          |
+| `-`                       | `expr - expr`                                           | 산술 뺄셈                                                | `Sub`          |
+| `-=`                      | `var -= expr`                                           | 산술 뺄셈 및 할당                                 | `SubAssign`    |
+| `->`                      | `fn(...) -> type`, <code>&vert;...&vert; -> type</code> | 함수 및 클로저 반환 타입                                      |                |
+| `.`                       | `expr.ident`                                            | 필드 접근                                                          |                |
+| `.`                       | `expr.ident(expr, ...)`                                 | 메서드 호출                                                           |                |
+| `.`                       | `expr.0`, `expr.1`, etc.                                | 튜플 인덱싱                                                        |                |
+| `..`                      | `..`, `expr..`, `..expr`, `expr..expr`                  | 오른쪽 제외 범위 리터럴                                         | `PartialOrd`   |
+| `..=`                     | `..=expr`, `expr..=expr`                                | 오른쪽 포함 범위 리터럴                                         | `PartialOrd`   |
+| `..`                      | `..expr`                                                | 구조체 리터럴 업데이트 구문                                          |                |
+| `..`                      | `variant(x, ..)`, `struct_type { x, .. }`               | "그 외" 패턴 바인딩                                        |                |
+| `...`                     | `expr...expr`                                           | (더 이상 사용되지 않음, 대신 `..=` 사용) 패턴 내에서 포함 범위 패턴 |                |
+| `/`                       | `expr / expr`                                           | 산술 나눗셈                                                   | `Div`          |
+| `/=`                      | `var /= expr`                                           | 산술 나눗셈 및 할당                                    | `DivAssign`    |
+| `:`                       | `pat: type`, `ident: type`                              | 제약 조건                                                           |                |
+| `:`                       | `ident: expr`                                           | 구조체 필드 초기화                                              |                |
+| `:`                       | `'a: loop {...}`                                        | 루프 레이블                                                            |                |
+| `;`                       | `expr;`                                                 | 문장 및 아이템 종결자                                         |                |
+| `;`                       | `[...; len]`                                            | 고정 크기 배열 구문의 일부                                       |                |
+| `<<`                      | `expr << expr`                                          | 왼쪽 시프트                                                            | `Shl`          |
+| `<<=`                     | `var <<= expr`                                          | 왼쪽 시프트 및 할당                                             | `ShlAssign`    |
+| `<`                       | `expr < expr`                                           | 작음 비교                                                  | `PartialOrd`   |
+| `<=`                      | `expr <= expr`                                          | 작거나 같음 비교                                      | `PartialOrd`   |
+| `=`                       | `var = expr`, `ident = type`                            | 할당/동등성                                                |                |
+| `==`                      | `expr == expr`                                          | 동등 비교                                                   | `PartialEq`    |
+| `=>`                      | `pat => expr`                                           | 매치 암 구문의 일부                                              |                |
+| `>`                       | `expr > expr`                                           | 큼 비교                                               | `PartialOrd`   |
+| `>=`                      | `expr >= expr`                                          | 크거나 같음 비교                                   | `PartialOrd`   |
+| `>>`                      | `expr >> expr`                                          | 오른쪽 시프트                                                           | `Shr`          |
+| `>>=`                     | `var >>= expr`                                          | 오른쪽 시프트 및 할당                                            | `ShrAssign`    |
+| `@`                       | `ident @ pat`                                           | 패턴 바인딩                                                       |                |
+| `^`                       | `expr ^ expr`                                           | 비트 단위 배타적 OR                                                  | `BitXor`       |
+| `^=`                      | `var ^= expr`                                           | 비트 단위 배타적 OR 및 할당                                   | `BitXorAssign` |
+| <code>&vert;</code>       | <code>pat &vert; pat</code>                             | 패턴 대안                                                  |                |
+| <code>&vert;</code>       | <code>expr &vert; expr</code>                           | 비트 단위 OR                                                            | `BitOr`        |
+| <code>&vert;=</code>      | <code>var &vert;= expr</code>                           | 비트 단위 OR 및 할당                                             | `BitOrAssign`  |
+| <code>&vert;&vert;</code> | <code>expr &vert;&vert; expr</code>                     | 단락 논리 OR                                           |                |
+| `?`                       | `expr?`                                                 | 오류 전파                                                     |                |
 
-### Non-operator Symbols
 
-The following list contains all symbols that don’t function as operators; that
-is, they don’t behave like a function or method call.
+### 연산자가 아닌 심볼들
 
-Table B-2 shows symbols that appear on their own and are valid in a variety of
-locations.
+다음은 연산자로 동작하지 않는 심볼들의 목록이다. 즉, 이들은 함수나 메서드 호출처럼 동작하지 않는다.
 
-<span class="caption">Table B-2: Stand-Alone Syntax</span>
+표 B-2는 다양한 위치에서 유효한 독립적인 심볼들을 보여준다.
 
-| Symbol                                        | Explanation                                                            |
+<span class="caption">표 B-2: 독립적인 문법</span>
+
+| 심볼                                        | 설명                                                                 |
 | --------------------------------------------- | ---------------------------------------------------------------------- |
-| `'ident`                                      | Named lifetime or loop label                                           |
-| `...u8`, `...i32`, `...f64`, `...usize`, etc. | Numeric literal of specific type                                       |
-| `"..."`                                       | String literal                                                         |
-| `r"..."`, `r#"..."#`, `r##"..."##`, etc.      | Raw string literal, escape characters not processed                    |
-| `b"..."`                                      | Byte string literal; constructs an array of bytes instead of a string  |
-| `br"..."`, `br#"..."#`, `br##"..."##`, etc.   | Raw byte string literal, combination of raw and byte string literal    |
-| `'...'`                                       | Character literal                                                      |
-| `b'...'`                                      | ASCII byte literal                                                     |
-| <code>&vert;...&vert; expr</code>             | Closure                                                                |
-| `!`                                           | Always empty bottom type for diverging functions                       |
-| `_`                                           | “Ignored” pattern binding; also used to make integer literals readable |
+| `'ident`                                      | 명명된 라이프타임 또는 루프 레이블                                           |
+| `...u8`, `...i32`, `...f64`, `...usize`, etc. | 특정 타입의 숫자 리터럴                                       |
+| `"..."`                                       | 문자열 리터럴                                                         |
+| `r"..."`, `r#"..."#`, `r##"..."##`, etc.      | 원시 문자열 리터럴, 이스케이프 문자 처리 안 됨                    |
+| `b"..."`                                      | 바이트 문자열 리터럴; 문자열 대신 바이트 배열 생성  |
+| `br"..."`, `br#"..."#`, `br##"..."##`, etc.   | 원시 바이트 문자열 리터럴, 원시와 바이트 문자열 리터럴의 조합    |
+| `'...'`                                       | 문자 리터럴                                                      |
+| `b'...'`                                      | ASCII 바이트 리터럴                                                     |
+| <code>&vert;...&vert; expr</code>             | 클로저                                                                |
+| `!`                                           | 발산 함수를 위한 항상 비어 있는 바닥 타입                       |
+| `_`                                           | “무시된” 패턴 바인딩; 정수 리터럴을 읽기 쉽게 만드는 데도 사용 |
 
-Table B-3 shows symbols that appear in the context of a path through the module
-hierarchy to an item.
+표 B-3은 모듈 계층 구조를 통해 아이템에 이르는 경로와 관련된 심볼들을 보여준다.
 
-<span class="caption">Table B-3: Path-Related Syntax</span>
+<span class="caption">표 B-3: 경로 관련 문법</span>
 
-| Symbol                                  | Explanation                                                                                                                     |
+| 심볼                                  | 설명                                                                                                                     |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `ident::ident`                          | Namespace path                                                                                                                  |
-| `::path`                                | Path relative to the extern prelude, where all other crates are rooted (i.e., an explicitly absolute path including crate name) |
-| `self::path`                            | Path relative to the current module (i.e., an explicitly relative path).                                                        |
-| `super::path`                           | Path relative to the parent of the current module                                                                               |
-| `type::ident`, `<type as trait>::ident` | Associated constants, functions, and types                                                                                      |
-| `<type>::...`                           | Associated item for a type that cannot be directly named (e.g., `<&T>::...`, `<[T]>::...`, etc.)                                |
-| `trait::method(...)`                    | Disambiguating a method call by naming the trait that defines it                                                                |
-| `type::method(...)`                     | Disambiguating a method call by naming the type for which it’s defined                                                          |
-| `<type as trait>::method(...)`          | Disambiguating a method call by naming the trait and type                                                                       |
+| `ident::ident`                          | 네임스페이스 경로                                                                                                                  |
+| `::path`                                | 외부 프렐루드에 상대적인 경로, 모든 크레이트가 루트됨 (즉, 크레이트 이름을 포함한 명시적 절대 경로) |
+| `self::path`                            | 현재 모듈에 상대적인 경로 (즉, 명시적 상대 경로).                                                        |
+| `super::path`                           | 현재 모듈의 부모에 상대적인 경로                                                                               |
+| `type::ident`, `<type as trait>::ident` | 연관 상수, 함수, 타입                                                                                      |
+| `<type>::...`                           | 직접 명명할 수 없는 타입의 연관 아이템 (예: `<&T>::...`, `<[T]>::...`, 등)                                |
+| `trait::method(...)`                    | 메서드 호출을 정의한 트레이트를 명시하여 모호함 제거                                                                |
+| `type::method(...)`                     | 메서드 호출을 정의한 타입을 명시하여 모호함 제거                                                          |
+| `<type as trait>::method(...)`          | 메서드 호출을 정의한 트레이트와 타입을 명시하여 모호함 제거                                                                       |
 
-Table B-4 shows symbols that appear in the context of using generic type
-parameters.
+표 B-4는 제네릭 타입 매개변수를 사용하는 맥락에서 나타나는 심볼들을 보여준다.
 
-<span class="caption">Table B-4: Generics</span>
+<span class="caption">표 B-4: 제네릭</span>
 
-| Symbol                         | Explanation                                                                                                                              |
+| 심볼                         | 설명                                                                                                                              |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `path<...>`                    | Specifies parameters to generic type in a type (e.g., `Vec<u8>`)                                                                         |
-| `path::<...>`, `method::<...>` | Specifies parameters to generic type, function, or method in an expression; often referred to as turbofish (e.g., `"42".parse::<i32>()`) |
-| `fn ident<...> ...`            | Define generic function                                                                                                                  |
-| `struct ident<...> ...`        | Define generic structure                                                                                                                 |
-| `enum ident<...> ...`          | Define generic enumeration                                                                                                               |
-| `impl<...> ...`                | Define generic implementation                                                                                                            |
-| `for<...> type`                | Higher-ranked lifetime bounds                                                                                                            |
-| `type<ident=type>`             | A generic type where one or more associated types have specific assignments (e.g., `Iterator<Item=T>`)                                   |
+| `path<...>`                    | 타입에서 제네릭 타입에 매개변수 지정 (예: `Vec<u8>`)                                                                         |
+| `path::<...>`, `method::<...>` | 표현식에서 제네릭 타입, 함수, 또는 메서드에 매개변수 지정; 종종 터보피시라고 함 (예: `"42".parse::<i32>()`) |
+| `fn ident<...> ...`            | 제네릭 함수 정의                                                                                                                  |
+| `struct ident<...> ...`        | 제네릭 구조체 정의                                                                                                                 |
+| `enum ident<...> ...`          | 제네릭 열거형 정의                                                                                                               |
+| `impl<...> ...`                | 제네릭 구현 정의                                                                                                            |
+| `for<...> type`                | 고차 라이프타임 바운드                                                                                                            |
+| `type<ident=type>`             | 하나 이상의 연관 타입이 특정 값으로 할당된 제네릭 타입 (예: `Iterator<Item=T>`)                                   |
 
-Table B-5 shows symbols that appear in the context of constraining generic type
-parameters with trait bounds.
+표 B-5는 트레이트 바운드로 제네릭 타입 매개변수를 제한하는 맥락에서 나타나는 심볼들을 보여준다.
 
-<span class="caption">Table B-5: Trait Bound Constraints</span>
+<span class="caption">표 B-5: 트레이트 바운드 제약</span>
 
-| Symbol                        | Explanation                                                                                                                                |
+| 심볼                        | 설명                                                                                                                                |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `T: U`                        | Generic parameter `T` constrained to types that implement `U`                                                                              |
-| `T: 'a`                       | Generic type `T` must outlive lifetime `'a` (meaning the type cannot transitively contain any references with lifetimes shorter than `'a`) |
-| `T: 'static`                  | Generic type `T` contains no borrowed references other than `'static` ones                                                                 |
-| `'b: 'a`                      | Generic lifetime `'b` must outlive lifetime `'a`                                                                                           |
-| `T: ?Sized`                   | Allow generic type parameter to be a dynamically sized type                                                                                |
-| `'a + trait`, `trait + trait` | Compound type constraint                                                                                                                   |
+| `T: U`                        | 제네릭 매개변수 `T`가 `U`를 구현하는 타입으로 제한됨                                                                              |
+| `T: 'a`                       | 제네릭 타입 `T`가 라이프타임 `'a`보다 오래 살아야 함 (즉, 타입이 `'a`보다 짧은 라이프타임을 가진 참조를 포함할 수 없음) |
+| `T: 'static`                  | 제네릭 타입 `T`가 `'static` 이외의 빌린 참조를 포함하지 않음                                                                 |
+| `'b: 'a`                      | 제네릭 라이프타임 `'b`가 라이프타임 `'a`보다 오래 살아야 함                                                                                           |
+| `T: ?Sized`                   | 제네릭 타입 매개변수가 동적 크기 타입일 수 있도록 허용                                                                                |
+| `'a + trait`, `trait + trait` | 복합 타입 제약                                                                                                                   |
 
-Table B-6 shows symbols that appear in the context of calling or defining
-macros and specifying attributes on an item.
+표 B-6은 매크로를 호출하거나 정의하는 맥락, 그리고 아이템에 속성을 지정하는 맥락에서 나타나는 심볼들을 보여준다.
 
-<span class="caption">Table B-6: Macros and Attributes</span>
+<span class="caption">표 B-6: 매크로와 속성</span>
 
-| Symbol                                      | Explanation        |
+| 심볼                                      | 설명        |
 | ------------------------------------------- | ------------------ |
-| `#[meta]`                                   | Outer attribute    |
-| `#![meta]`                                  | Inner attribute    |
-| `$ident`                                    | Macro substitution |
-| `$ident:kind`                               | Macro capture      |
-| `$(…)…`                                     | Macro repetition   |
-| `ident!(...)`, `ident!{...}`, `ident![...]` | Macro invocation   |
+| `#[meta]`                                   | 외부 속성    |
+| `#![meta]`                                  | 내부 속성    |
+| `$ident`                                    | 매크로 치환 |
+| `$ident:kind`                               | 매크로 캡처      |
+| `$(…)…`                                     | 매크로 반복   |
+| `ident!(...)`, `ident!{...}`, `ident![...]` | 매크로 호출   |
 
-Table B-7 shows symbols that create comments.
+표 B-7은 주석을 생성하는 심볼들을 보여준다.
 
-<span class="caption">Table B-7: Comments</span>
+<span class="caption">표 B-7: 주석</span>
 
-| Symbol     | Explanation             |
+| 심볼     | 설명             |
 | ---------- | ----------------------- |
-| `//`       | Line comment            |
-| `//!`      | Inner line doc comment  |
-| `///`      | Outer line doc comment  |
-| `/*...*/`  | Block comment           |
-| `/*!...*/` | Inner block doc comment |
-| `/**...*/` | Outer block doc comment |
+| `//`       | 라인 주석            |
+| `//!`      | 내부 라인 문서 주석  |
+| `///`      | 외부 라인 문서 주석  |
+| `/*...*/`  | 블록 주석           |
+| `/*!...*/` | 내부 블록 문서 주석 |
+| `/**...*/` | 외부 블록 문서 주석 |
 
-Table B-8 shows the contexts in which parentheses are used.
+표 B-8은 괄호가 사용되는 맥락을 보여준다.
 
-<span class="caption">Table B-8: Parentheses</span>
+<span class="caption">표 B-8: 괄호</span>
 
-| Symbol                   | Explanation                                                                                 |
+| 심볼                   | 설명                                                                                 |
 | ------------------------ | ------------------------------------------------------------------------------------------- |
-| `()`                     | Empty tuple (aka unit), both literal and type                                               |
-| `(expr)`                 | Parenthesized expression                                                                    |
-| `(expr,)`                | Single-element tuple expression                                                             |
-| `(type,)`                | Single-element tuple type                                                                   |
-| `(expr, ...)`            | Tuple expression                                                                            |
-| `(type, ...)`            | Tuple type                                                                                  |
-| `expr(expr, ...)`        | Function call expression; also used to initialize tuple `struct`s and tuple `enum` variants |
+| `()`                     | 빈 튜플 (즉, 유닛), 리터럴 및 타입                                               |
+| `(expr)`                 | 괄호로 묶인 표현식                                                                    |
+| `(expr,)`                | 단일 요소 튜플 표현식                                                             |
+| `(type,)`                | 단일 요소 튜플 타입                                                                   |
+| `(expr, ...)`            | 튜플 표현식                                                                            |
+| `(type, ...)`            | 튜플 타입                                                                                  |
+| `expr(expr, ...)`        | 함수 호출 표현식; 튜플 `struct` 및 튜플 `enum` 변형 초기화에도 사용 |
 
-Table B-9 shows the contexts in which curly braces are used.
+표 B-9는 중괄호가 사용되는 맥락을 보여준다.
 
-<span class="caption">Table B-9: Curly Brackets</span>
+<span class="caption">표 B-9: 중괄호</span>
 
-| Context      | Explanation      |
+| 맥락      | 설명      |
 | ------------ | ---------------- |
-| `{...}`      | Block expression |
-| `Type {...}` | `struct` literal |
+| `{...}`      | 블록 표현식 |
+| `Type {...}` | `struct` 리터럴 |
 
-Table B-10 shows the contexts in which square brackets are used.
+표 B-10은 대괄호가 사용되는 맥락을 보여준다.
 
-<span class="caption">Table B-10: Square Brackets</span>
+<span class="caption">표 B-10: 대괄호</span>
 
-| Context                                            | Explanation                                                                                                                   |
+| 맥락                                            | 설명                                                                                                                   |
 | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `[...]`                                            | Array literal                                                                                                                 |
-| `[expr; len]`                                      | Array literal containing `len` copies of `expr`                                                                               |
-| `[type; len]`                                      | Array type containing `len` instances of `type`                                                                               |
-| `expr[expr]`                                       | Collection indexing. Overloadable (`Index`, `IndexMut`)                                                                       |
-| `expr[..]`, `expr[a..]`, `expr[..b]`, `expr[a..b]` | Collection indexing pretending to be collection slicing, using `Range`, `RangeFrom`, `RangeTo`, or `RangeFull` as the “index” |
+| `[...]`                                            | 배열 리터럴                                                                                                                 |
+| `[expr; len]`                                      | `expr`을 `len`번 복사한 배열 리터럴                                                                               |
+| `[type; len]`                                      | `type`의 인스턴스를 `len`개 포함한 배열 타입                                                                               |
+| `expr[expr]`                                       | 컬렉션 인덱싱. 오버로드 가능 (`Index`, `IndexMut`)                                                                       |
+| `expr[..]`, `expr[a..]`, `expr[..b]`, `expr[a..b]` | `Range`, `RangeFrom`, `RangeTo`, 또는 `RangeFull`을 “인덱스”로 사용해 컬렉션 슬라이싱처럼 동작하는 컬렉션 인덱싱 |
+
+

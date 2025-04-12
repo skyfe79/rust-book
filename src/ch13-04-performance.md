@@ -1,47 +1,21 @@
-## Comparing Performance: Loops vs. Iterators
+## 성능 비교: 루프 vs 이터레이터
 
-To determine whether to use loops or iterators, you need to know which
-implementation is faster: the version of the `search` function with an explicit
-`for` loop or the version with iterators.
+루프와 이터레이터 중 어떤 것을 사용할지 결정하려면, 두 구현 중 어떤 것이 더 빠른지 알아야 한다. 명시적인 `for` 루프를 사용한 `search` 함수 버전과 이터레이터를 사용한 버전의 성능을 비교해 보자.
 
-We ran a benchmark by loading the entire contents of _The Adventures of
-Sherlock Holmes_ by Sir Arthur Conan Doyle into a `String` and looking for the
-word _the_ in the contents. Here are the results of the benchmark on the
-version of `search` using the `for` loop and the version using iterators:
+우리는 아서 코난 도일 경의 《셜록 홈즈의 모험》 전체 내용을 `String`으로 불러온 후, 그 안에서 단어 _the_를 찾는 벤치마크를 실행했다. `for` 루프를 사용한 `search` 버전과 이터레이터를 사용한 버전의 벤치마크 결과는 다음과 같다:
 
 ```text
 test bench_search_for  ... bench:  19,620,300 ns/iter (+/- 915,700)
 test bench_search_iter ... bench:  19,234,900 ns/iter (+/- 657,200)
 ```
 
-The two implementations have similar performance! We won’t explain the
-benchmark code here, because the point is not to prove that the two versions
-are equivalent but to get a general sense of how these two implementations
-compare performance-wise.
+두 구현의 성능이 거의 비슷하다! 여기서 벤치마크 코드를 자세히 설명하지는 않을 것인데, 그 이유는 두 버전이 동등하다는 것을 증명하려는 것이 아니라, 두 구현의 성능이 어떻게 비교되는지 대략적으로 파악하는 것이 목적이기 때문이다.
 
-For a more comprehensive benchmark, you should check using various texts of
-various sizes as the `contents`, different words and words of different lengths
-as the `query`, and all kinds of other variations. The point is this:
-iterators, although a high-level abstraction, get compiled down to roughly the
-same code as if you’d written the lower-level code yourself. Iterators are one
-of Rust’s _zero-cost abstractions_, by which we mean that using the abstraction
-imposes no additional runtime overhead. This is analogous to how Bjarne
-Stroustrup, the original designer and implementor of C++, defines
-_zero-overhead_ in “Foundations of C++” (2012):
+더 포괄적인 벤치마크를 위해서는 다양한 크기의 텍스트를 `contents`로 사용하고, 다양한 단어와 길이의 단어를 `query`로 사용하며, 다른 여러 변형을 적용해 보는 것이 좋다. 중요한 점은 이터레이터가 높은 수준의 추상화임에도 불구하고, 직접 저수준 코드를 작성한 것과 거의 동일한 코드로 컴파일된다는 것이다. 이터레이터는 Rust의 _제로 코스트 추상화_ 중 하나로, 이 추상화를 사용해도 런타임 오버헤드가 추가되지 않는다. 이는 C++의 원래 설계자이자 구현자인 비야네 스트롭스트룹이 《Foundations of C++》(2012)에서 정의한 _제로 오버헤드_와 유사하다:
 
-> In general, C++ implementations obey the zero-overhead principle: What you
-> don’t use, you don’t pay for. And further: What you do use, you couldn’t hand
-> code any better.
+> 일반적으로 C++ 구현은 제로 오버헤드 원칙을 따른다: 사용하지 않는 것에 대해서는 비용을 지불하지 않는다. 그리고 더 나아가: 사용하는 것에 대해서는 손으로 작성한 코드보다 더 나은 코드를 만들 수 없다.
 
-As another example, the following code is taken from an audio decoder. The
-decoding algorithm uses the linear prediction mathematical operation to
-estimate future values based on a linear function of the previous samples. This
-code uses an iterator chain to do some math on three variables in scope: a
-`buffer` slice of data, an array of 12 `coefficients`, and an amount by which
-to shift data in `qlp_shift`. We’ve declared the variables within this example
-but not given them any values; although this code doesn’t have much meaning
-outside of its context, it’s still a concise, real-world example of how Rust
-translates high-level ideas to low-level code.
+또 다른 예로, 다음 코드는 오디오 디코더에서 가져온 것이다. 디코딩 알고리즘은 선형 예측 수학 연산을 사용해 이전 샘플의 선형 함수를 기반으로 미래 값을 예측한다. 이 코드는 스코프 내의 세 변수인 데이터의 `buffer` 슬라이스, 12개의 `coefficients` 배열, 그리고 `qlp_shift`에서 데이터를 이동시킬 양에 대해 수학 연산을 수행하기 위해 이터레이터 체인을 사용한다. 이 예제에서 변수들을 선언했지만 값을 할당하지는 않았다. 이 코드는 컨텍스트 외부에서는 큰 의미가 없지만, Rust가 높은 수준의 아이디어를 저수준 코드로 어떻게 변환하는지에 대한 간결하고 실제적인 예제이다.
 
 ```rust,ignore
 let buffer: &mut [i32];
@@ -58,37 +32,17 @@ for i in 12..buffer.len() {
 }
 ```
 
-To calculate the value of `prediction`, this code iterates through each of the
-12 values in `coefficients` and uses the `zip` method to pair the coefficient
-values with the previous 12 values in `buffer`. Then, for each pair, we
-multiply the values together, sum all the results, and shift the bits in the
-sum `qlp_shift` bits to the right.
+`prediction` 값을 계산하기 위해, 이 코드는 `coefficients`의 12개 값을 순회하며 `zip` 메서드를 사용해 계수 값과 `buffer`의 이전 12개 값을 짝지은 다음, 각 쌍의 값을 곱하고 모든 결과를 합산한 후, 그 합을 `qlp_shift` 비트만큼 오른쪽으로 이동시킨다.
 
-Calculations in applications like audio decoders often prioritize performance
-most highly. Here, we’re creating an iterator, using two adapters, and then
-consuming the value. What assembly code would this Rust code compile to? Well,
-as of this writing, it compiles down to the same assembly you’d write by hand.
-There’s no loop at all corresponding to the iteration over the values in
-`coefficients`: Rust knows that there are 12 iterations, so it “unrolls” the
-loop. _Unrolling_ is an optimization that removes the overhead of the loop
-controlling code and instead generates repetitive code for each iteration of
-the loop.
+오디오 디코더와 같은 애플리케이션에서의 계산은 종종 성능을 가장 중요시한다. 여기서는 이터레이터를 생성하고, 두 개의 어댑터를 사용한 다음, 값을 소비한다. 이 Rust 코드가 어떤 어셈블리 코드로 컴파일될까? 현재 시점에서는, 이 코드는 직접 작성한 어셈블리 코드와 동일하게 컴파일된다. `coefficients`의 값을 순회하는 데 해당하는 루프는 전혀 없다: Rust는 반복 횟수가 12번임을 알고 있기 때문에 루프를 "풀어버린다". _루프 풀기_는 루프 제어 코드의 오버헤드를 제거하고 대신 각 반복에 대해 반복적인 코드를 생성하는 최적화 기법이다.
 
-All of the coefficients get stored in registers, which means accessing the
-values is very fast. There are no bounds checks on the array access at runtime.
-All these optimizations that Rust is able to apply make the resultant code
-extremely efficient. Now that you know this, you can use iterators and closures
-without fear! They make code seem like it’s higher level but don’t impose a
-runtime performance penalty for doing so.
+모든 계수는 레지스터에 저장되며, 이는 값에 접근하는 속도가 매우 빠르다는 것을 의미한다. 런타임에 배열 접근에 대한 경계 검사도 없다. Rust가 적용할 수 있는 이러한 모든 최적화는 결과 코드를 매우 효율적으로 만든다. 이제 이 사실을 알았으니, 이터레이터와 클로저를 두려움 없이 사용할 수 있다! 이들은 코드를 더 높은 수준으로 보이게 하지만, 그렇게 해도 런타임 성능에 페널티를 주지 않는다.
 
-## Summary
 
-Closures and iterators are Rust features inspired by functional programming
-language ideas. They contribute to Rust’s capability to clearly express
-high-level ideas at low-level performance. The implementations of closures and
-iterators are such that runtime performance is not affected. This is part of
-Rust’s goal to strive to provide zero-cost abstractions.
+## 요약
 
-Now that we’ve improved the expressiveness of our I/O project, let’s look at
-some more features of `cargo` that will help us share the project with the
-world.
+클로저와 이터레이터는 함수형 프로그래밍 언어에서 아이디어를 얻은 Rust의 기능이다. 이들은 Rust가 높은 수준의 개념을 낮은 수준의 성능으로 명확하게 표현할 수 있도록 돕는다. 클로저와 이터레이터의 구현은 런타임 성능에 영향을 미치지 않도록 설계되었다. 이는 Rust가 추구하는 '제로 코스트 추상화' 목표의 일환이다.
+
+이제 I/O 프로젝트의 표현력을 개선했으니, 프로젝트를 세상과 공유하는 데 도움이 될 `cargo`의 몇 가지 기능을 살펴보자.
+
+

@@ -1,4 +1,5 @@
-# Appendix
+# 부록
 
-The following sections contain reference material you may find useful in your
-Rust journey.
+아래 섹션들은 여러분의 Rust 학습 여정에서 유용할 수 있는 참고 자료를 담고 있다.
+
+

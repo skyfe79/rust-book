@@ -1,35 +1,21 @@
-## Advanced Traits
+## 고급 트레이트
 
-We first covered traits in [“Traits: Defining Shared
-Behavior”][traits-defining-shared-behavior]<!-- ignore --> in Chapter 10, but we
-didn’t discuss the more advanced details. Now that you know more about Rust, we
-can get into the nitty-gritty.
+트레이트에 대해 처음 다룬 것은 [10장 "트레이트: 공유 동작 정의하기"][traits-defining-shared-behavior]<!-- ignore -->에서였다. 하지만 더 깊이 있는 세부 사항은 논의하지 않았다. 이제 여러분이 러스트에 대해 더 많이 알게 되었으니, 본격적으로 자세히 살펴볼 차례다.
 
 <!-- Old link, do not remove -->
 
 <a id="specifying-placeholder-types-in-trait-definitions-with-associated-types"></a>
 
-### Associated Types
 
-_Associated types_ connect a type placeholder with a trait such that the trait
-method definitions can use these placeholder types in their signatures. The
-implementor of a trait will specify the concrete type to be used instead of the
-placeholder type for the particular implementation. That way, we can define a
-trait that uses some types without needing to know exactly what those types are
-until the trait is implemented.
+### 연관 타입
 
-We’ve described most of the advanced features in this chapter as being rarely
-needed. Associated types are somewhere in the middle: they’re used more rarely
-than features explained in the rest of the book but more commonly than many of
-the other features discussed in this chapter.
+_연관 타입_은 타입 플레이스홀더를 트레이트와 연결하여 트레이트 메서드 정의에서 이 플레이스홀더 타입을 시그니처에 사용할 수 있게 한다. 트레이트를 구현하는 쪽에서 플레이스홀더 타입 대신 구체적인 타입을 지정한다. 이렇게 하면, 트레이트를 구현할 때까지 정확히 어떤 타입인지 알 필요 없이, 트레이트에서 사용할 타입을 정의할 수 있다.
 
-One example of a trait with an associated type is the `Iterator` trait that the
-standard library provides. The associated type is named `Item` and stands in
-for the type of the values the type implementing the `Iterator` trait is
-iterating over. The definition of the `Iterator` trait is as shown in Listing
-20-13.
+이 장에서 다룬 대부분의 고급 기능은 거의 필요하지 않다고 설명했다. 연관 타입은 중간 정도의 위치를 차지한다: 이 책의 다른 부분에서 설명한 기능보다는 덜 사용되지만, 이 장에서 다룬 다른 기능들보다는 더 자주 사용된다.
 
-<Listing number="20-13" caption="The definition of the `Iterator` trait that has an associated type `Item`">
+연관 타입이 있는 트레이트의 예로는 표준 라이브러리가 제공하는 `Iterator` 트레이트가 있다. 이 트레이트의 연관 타입은 `Item`이라는 이름을 가지며, `Iterator` 트레이트를 구현하는 타입이 순회하는 값의 타입을 나타낸다. `Iterator` 트레이트의 정의는 아래 목록 20-13과 같다.
+
+<Listing number="20-13" caption="연관 타입 `Item`을 가진 `Iterator` 트레이트의 정의">
 
 ```rust,noplayground
 {{#rustdoc_include ../listings/ch20-advanced-features/listing-20-13/src/lib.rs}}
@@ -37,16 +23,9 @@ iterating over. The definition of the `Iterator` trait is as shown in Listing
 
 </Listing>
 
-The type `Item` is a placeholder, and the `next` method’s definition shows that
-it will return values of type `Option<Self::Item>`. Implementors of the
-`Iterator` trait will specify the concrete type for `Item`, and the `next`
-method will return an `Option` containing a value of that concrete type.
+`Item` 타입은 플레이스홀더이며, `next` 메서드의 정의는 `Option<Self::Item>` 타입의 값을 반환할 것임을 보여준다. `Iterator` 트레이트를 구현하는 쪽에서 `Item`에 대한 구체적인 타입을 지정하면, `next` 메서드는 그 타입의 값을 포함한 `Option`을 반환한다.
 
-Associated types might seem like a similar concept to generics, in that the
-latter allow us to define a function without specifying what types it can
-handle. To examine the difference between the two concepts, we’ll look at an
-implementation of the `Iterator` trait on a type named `Counter` that specifies
-the `Item` type is `u32`:
+연관 타입은 제네릭과 비슷한 개념으로 보일 수 있다. 제네릭은 함수를 정의할 때 처리할 타입을 지정하지 않아도 되게 한다. 두 개념의 차이를 이해하기 위해, `Item` 타입을 `u32`로 지정한 `Counter` 타입에 `Iterator` 트레이트를 구현한 예제를 살펴보자.
 
 <Listing file-name="src/lib.rs">
 
@@ -56,10 +35,9 @@ the `Item` type is `u32`:
 
 </Listing>
 
-This syntax seems comparable to that of generics. So why not just define the
-`Iterator` trait with generics, as shown in Listing 20-14?
+이 문법은 제네릭과 유사해 보인다. 그렇다면 왜 `Iterator` 트레이트를 제네릭으로 정의하지 않았을까? 아래 목록 20-14는 제네릭을 사용한 `Iterator` 트레이트의 가상 정의를 보여준다.
 
-<Listing number="20-14" caption="A hypothetical definition of the `Iterator` trait using generics">
+<Listing number="20-14" caption="제네릭을 사용한 `Iterator` 트레이트의 가상 정의">
 
 ```rust,noplayground
 {{#rustdoc_include ../listings/ch20-advanced-features/listing-20-14/src/lib.rs}}
@@ -67,46 +45,22 @@ This syntax seems comparable to that of generics. So why not just define the
 
 </Listing>
 
-The difference is that when using generics, as in Listing 20-14, we must
-annotate the types in each implementation; because we can also implement
-`Iterator<String> for Counter` or any other type, we could have multiple
-implementations of `Iterator` for `Counter`. In other words, when a trait has a
-generic parameter, it can be implemented for a type multiple times, changing
-the concrete types of the generic type parameters each time. When we use the
-`next` method on `Counter`, we would have to provide type annotations to
-indicate which implementation of `Iterator` we want to use.
+차이점은 제네릭을 사용할 때, 목록 20-14와 같이 각 구현에서 타입을 명시해야 한다는 것이다. `Iterator<String> for Counter`를 구현하거나 다른 타입을 구현할 수 있기 때문에, `Counter`에 대해 `Iterator`를 여러 번 구현할 수 있다. 즉, 트레이트에 제네릭 파라미터가 있으면, 한 타입에 대해 여러 번 구현할 수 있고, 매번 제네릭 타입 파라미터의 구체적인 타입을 바꿀 수 있다. `Counter`에서 `next` 메서드를 사용할 때, 어떤 `Iterator` 구현을 사용할지 타입 어노테이션을 제공해야 한다.
 
-With associated types, we don’t need to annotate types because we can’t
-implement a trait on a type multiple times. In Listing 20-13 with the definition
-that uses associated types, we can choose what the type of `Item` will be only
-once, because there can be only one `impl Iterator for Counter`. We don’t have
-to specify that we want an iterator of `u32` values everywhere that we call
-`next` on `Counter`.
+연관 타입을 사용하면, 타입을 명시할 필요가 없다. 왜냐하면 한 타입에 대해 트레이트를 여러 번 구현할 수 없기 때문이다. 목록 20-13에서 연관 타입을 사용한 정의를 보면, `Item` 타입을 한 번만 선택할 수 있다. 왜냐하면 `impl Iterator for Counter`는 하나만 존재할 수 있기 때문이다. `Counter`에서 `next`를 호출할 때마다 `u32` 값의 반복자를 원한다고 명시할 필요가 없다.
 
-Associated types also become part of the trait’s contract: implementors of the
-trait must provide a type to stand in for the associated type placeholder.
-Associated types often have a name that describes how the type will be used,
-and documenting the associated type in the API documentation is a good practice.
+연관 타입은 또한 트레이트의 계약의 일부가 된다: 트레이트를 구현하는 쪽은 연관 타입 플레이스홀더를 대체할 타입을 제공해야 한다. 연관 타입은 종종 그 타입이 어떻게 사용될지 설명하는 이름을 가지며, API 문서에서 연관 타입을 문서화하는 것이 좋은 관행이다.
 
-### Default Generic Type Parameters and Operator Overloading
 
-When we use generic type parameters, we can specify a default concrete type for
-the generic type. This eliminates the need for implementors of the trait to
-specify a concrete type if the default type works. You specify a default type
-when declaring a generic type with the `<PlaceholderType=ConcreteType>` syntax.
+### 기본 제네릭 타입 매개변수와 연산자 오버로딩
 
-A great example of a situation where this technique is useful is with _operator
-overloading_, in which you customize the behavior of an operator (such as `+`)
-in particular situations.
+제네릭 타입 매개변수를 사용할 때, 제네릭 타입에 대한 기본 구체 타입을 지정할 수 있다. 이렇게 하면 기본 타입이 적합한 경우, 트레이트를 구현하는 개발자가 구체 타입을 지정할 필요가 없어진다. 기본 타입은 `<PlaceholderType=ConcreteType>` 구문을 사용해 제네릭 타입을 선언할 때 지정한다.
 
-Rust doesn’t allow you to create your own operators or overload arbitrary
-operators. But you can overload the operations and corresponding traits listed
-in `std::ops` by implementing the traits associated with the operator. For
-example, in Listing 20-15 we overload the `+` operator to add two `Point`
-instances together. We do this by implementing the `Add` trait on a `Point`
-struct.
+이 기법이 유용한 대표적인 예는 **연산자 오버로딩**이다. 연산자 오버로딩은 특정 상황에서 연산자(예: `+`)의 동작을 커스텀하는 것을 의미한다.
 
-<Listing number="20-15" file-name="src/main.rs" caption="Implementing the `Add` trait to overload the `+` operator for `Point` instances">
+Rust에서는 새로운 연산자를 만들거나 임의의 연산자를 오버로드할 수 없다. 하지만 `std::ops`에 나열된 연산과 해당 트레이트를 구현함으로써 연산자를 오버로드할 수 있다. 예를 들어, 리스트 20-15에서는 `Point` 인스턴스 두 개를 더하기 위해 `+` 연산자를 오버로드한다. 이를 위해 `Point` 구조체에 `Add` 트레이트를 구현한다.
+
+<Listing number="20-15" file-name="src/main.rs" caption="`Point` 인스턴스에 `+` 연산자를 오버로드하기 위해 `Add` 트레이트 구현">
 
 ```rust
 {{#rustdoc_include ../listings/ch20-advanced-features/listing-20-15/src/main.rs}}
@@ -114,13 +68,9 @@ struct.
 
 </Listing>
 
-The `add` method adds the `x` values of two `Point` instances and the `y`
-values of two `Point` instances to create a new `Point`. The `Add` trait has an
-associated type named `Output` that determines the type returned from the `add`
-method.
+`add` 메서드는 두 `Point` 인스턴스의 `x` 값과 `y` 값을 더해 새로운 `Point`를 생성한다. `Add` 트레이트에는 `Output`이라는 연관 타입이 있으며, 이 타입은 `add` 메서드가 반환하는 타입을 결정한다.
 
-The default generic type in this code is within the `Add` trait. Here is its
-definition:
+이 코드에서 기본 제네릭 타입은 `Add` 트레이트 내에 있다. 다음은 그 정의이다:
 
 ```rust
 trait Add<Rhs=Self> {
@@ -130,28 +80,13 @@ trait Add<Rhs=Self> {
 }
 ```
 
-This code should look generally familiar: a trait with one method and an
-associated type. The new part is `Rhs=Self`: this syntax is called _default
-type parameters_. The `Rhs` generic type parameter (short for “right-hand
-side”) defines the type of the `rhs` parameter in the `add` method. If we don’t
-specify a concrete type for `Rhs` when we implement the `Add` trait, the type
-of `Rhs` will default to `Self`, which will be the type we’re implementing
-`Add` on.
+이 코드는 일반적으로 익숙할 것이다: 하나의 메서드와 연관 타입을 가진 트레이트이다. 새로운 부분은 `Rhs=Self`이다: 이 구문을 **기본 타입 매개변수**라고 한다. `Rhs` 제네릭 타입 매개변수("right-hand side"의 약어)는 `add` 메서드의 `rhs` 매개변수 타입을 정의한다. `Add` 트레이트를 구현할 때 `Rhs`에 대한 구체 타입을 지정하지 않으면, `Rhs`의 타입은 기본적으로 `Self`가 되며, 이는 `Add`를 구현 중인 타입이 된다.
 
-When we implemented `Add` for `Point`, we used the default for `Rhs` because we
-wanted to add two `Point` instances. Let’s look at an example of implementing
-the `Add` trait where we want to customize the `Rhs` type rather than using the
-default.
+`Point`에 대해 `Add`를 구현할 때, 두 `Point` 인스턴스를 더하고 싶었기 때문에 `Rhs`의 기본값을 사용했다. 이제 기본값을 사용하지 않고 `Rhs` 타입을 커스텀하는 `Add` 트레이트 구현 예제를 살펴보자.
 
-We have two structs, `Millimeters` and `Meters`, holding values in different
-units. This thin wrapping of an existing type in another struct is known as the
-_newtype pattern_, which we describe in more detail in the [“Using the Newtype
-Pattern to Implement External Traits on External Types”][newtype]<!-- ignore
---> section. We want to add values in millimeters to values in meters and have
-the implementation of `Add` do the conversion correctly. We can implement `Add`
-for `Millimeters` with `Meters` as the `Rhs`, as shown in Listing 20-16.
+`Millimeters`와 `Meters`라는 두 구조체가 있으며, 각각 다른 단위로 값을 보관한다. 기존 타입을 다른 구조체로 감싸는 이 방식을 **뉴타입 패턴**이라고 하며, 이에 대해서는 ["뉴타입 패턴을 사용해 외부 타입에 외부 트레이트 구현하기"][newtype]<!-- ignore --> 섹션에서 자세히 설명한다. 밀리미터 단위의 값과 미터 단위의 값을 더하고, `Add` 구현이 올바르게 변환하도록 하고 싶다. 리스트 20-16과 같이 `Millimeters`에 대해 `Meters`를 `Rhs`로 지정해 `Add`를 구현할 수 있다.
 
-<Listing number="20-16" file-name="src/lib.rs" caption="Implementing the `Add` trait on `Millimeters` to add `Millimeters` to `Meters`">
+<Listing number="20-16" file-name="src/lib.rs" caption="`Millimeters`에 `Add` 트레이트를 구현해 `Millimeters`와 `Meters`를 더하기">
 
 ```rust,noplayground
 {{#rustdoc_include ../listings/ch20-advanced-features/listing-20-16/src/lib.rs}}
@@ -159,44 +94,29 @@ for `Millimeters` with `Meters` as the `Rhs`, as shown in Listing 20-16.
 
 </Listing>
 
-To add `Millimeters` and `Meters`, we specify `impl Add<Meters>` to set the
-value of the `Rhs` type parameter instead of using the default of `Self`.
+`Millimeters`와 `Meters`를 더하기 위해, `impl Add<Meters>`를 지정해 `Rhs` 타입 매개변수의 값을 설정한다. 이렇게 하면 `Self`의 기본값을 사용하지 않는다.
 
-You’ll use default type parameters in two main ways:
+기본 타입 매개변수는 주로 두 가지 방식으로 사용된다:
 
-1. To extend a type without breaking existing code
-2. To allow customization in specific cases most users won’t need
+1. 기존 코드를 손상시키지 않고 타입을 확장하기 위해
+2. 대부분의 사용자가 필요로 하지 않는 특정 경우에 커스텀을 허용하기 위해
 
-The standard library’s `Add` trait is an example of the second purpose:
-usually, you’ll add two like types, but the `Add` trait provides the ability to
-customize beyond that. Using a default type parameter in the `Add` trait
-definition means you don’t have to specify the extra parameter most of the
-time. In other words, a bit of implementation boilerplate isn’t needed, making
-it easier to use the trait.
+표준 라이브러리의 `Add` 트레이트는 두 번째 목적의 예이다: 일반적으로 동일한 타입 두 개를 더하지만, `Add` 트레이트는 그 이상의 커스텀을 허용한다. `Add` 트레이트 정의에서 기본 타입 매개변수를 사용하면 대부분의 경우 추가 매개변수를 지정할 필요가 없다. 즉, 구현 상의 보일러플레이트가 필요 없어져 트레이트를 더 쉽게 사용할 수 있다.
 
-The first purpose is similar to the second but in reverse: if you want to add a
-type parameter to an existing trait, you can give it a default to allow
-extension of the functionality of the trait without breaking the existing
-implementation code.
+첫 번째 목적은 두 번째와 비슷하지만 반대 방향이다: 기존 트레이트에 타입 매개변수를 추가하려면, 기본값을 지정해 트레이트의 기능을 확장할 수 있으며, 기존 구현 코드를 손상시키지 않는다.
 
 <!-- Old link, do not remove -->
 
 <a id="fully-qualified-syntax-for-disambiguation-calling-methods-with-the-same-name"></a>
 
-### Disambiguating Between Methods with the Same Name
 
-Nothing in Rust prevents a trait from having a method with the same name as
-another trait’s method, nor does Rust prevent you from implementing both traits
-on one type. It’s also possible to implement a method directly on the type with
-the same name as methods from traits.
+### 동일한 이름의 메서드 구분하기
 
-When calling methods with the same name, you’ll need to tell Rust which one you
-want to use. Consider the code in Listing 20-17 where we’ve defined two traits,
-`Pilot` and `Wizard`, that both have a method called `fly`. We then implement
-both traits on a type `Human` that already has a method named `fly` implemented
-on it. Each `fly` method does something different.
+Rust에서는 서로 다른 트레이트가 동일한 이름의 메서드를 가질 수 있다. 또한 하나의 타입에 여러 트레이트를 구현할 수도 있다. 심지어 타입 자체에 트레이트의 메서드와 동일한 이름의 메서드를 직접 구현할 수도 있다.
 
-<Listing number="20-17" file-name="src/main.rs" caption="Two traits are defined to have a ` method and are implemented on the `Human` type, and a `fly` method is implemented on `Human` directly.">
+동일한 이름의 메서드를 호출할 때는 Rust에게 어떤 메서드를 사용할지 명확히 알려줘야 한다. 예를 들어, `Pilot`와 `Wizard`라는 두 트레이트가 있고, 둘 다 `fly`라는 메서드를 가지고 있다고 가정하자. 이 두 트레이트를 `Human` 타입에 구현하고, `Human` 타입 자체에도 `fly` 메서드를 직접 구현했다. 각 `fly` 메서드는 서로 다른 동작을 수행한다.
+
+<Listing number="20-17" file-name="src/main.rs" caption="두 트레이트가 `fly` 메서드를 가지고 있으며, `Human` 타입에 구현되었고, `Human` 타입에 직접 `fly` 메서드가 구현됨">
 
 ```rust
 {{#rustdoc_include ../listings/ch20-advanced-features/listing-20-17/src/main.rs:here}}
@@ -204,10 +124,9 @@ on it. Each `fly` method does something different.
 
 </Listing>
 
-When we call `fly` on an instance of `Human`, the compiler defaults to calling
-the method that is directly implemented on the type, as shown in Listing 20-18.
+`Human` 인스턴스에서 `fly`를 호출하면, 컴파일러는 타입에 직접 구현된 메서드를 기본적으로 호출한다. 이는 Listing 20-18에서 확인할 수 있다.
 
-<Listing number="20-18" file-name="src/main.rs" caption="Calling `fly` on an instance of `Human`">
+<Listing number="20-18" file-name="src/main.rs" caption="`Human` 인스턴스에서 `fly` 호출">
 
 ```rust
 {{#rustdoc_include ../listings/ch20-advanced-features/listing-20-18/src/main.rs:here}}
@@ -215,14 +134,11 @@ the method that is directly implemented on the type, as shown in Listing 20-18.
 
 </Listing>
 
-Running this code will print `*waving arms furiously*`, showing that Rust
-called the `fly` method implemented on `Human` directly.
+이 코드를 실행하면 `*waving arms furiously*`가 출력된다. 이는 Rust가 `Human`에 직접 구현된 `fly` 메서드를 호출했음을 보여준다.
 
-To call the `fly` methods from either the `Pilot` trait or the `Wizard` trait,
-we need to use more explicit syntax to specify which `fly` method we mean.
-Listing 20-19 demonstrates this syntax.
+`Pilot` 트레이트나 `Wizard` 트레이트의 `fly` 메서드를 호출하려면, 더 명시적인 문법을 사용해 어떤 `fly` 메서드를 호출할지 지정해야 한다. Listing 20-19는 이 문법을 보여준다.
 
-<Listing number="20-19" file-name="src/main.rs" caption="Specifying which trait’s `fly` method we want to call">
+<Listing number="20-19" file-name="src/main.rs" caption="호출할 트레이트의 `fly` 메서드 지정">
 
 ```rust
 {{#rustdoc_include ../listings/ch20-advanced-features/listing-20-19/src/main.rs:here}}
@@ -230,32 +146,19 @@ Listing 20-19 demonstrates this syntax.
 
 </Listing>
 
-Specifying the trait name before the method name clarifies to Rust which
-implementation of `fly` we want to call. We could also write
-`Human::fly(&person)`, which is equivalent to the `person.fly()` that we used
-in Listing 20-19, but this is a bit longer to write if we don’t need to
-disambiguate.
+메서드 이름 앞에 트레이트 이름을 지정하면 Rust가 어떤 `fly` 구현을 호출할지 명확히 알 수 있다. `Human::fly(&person)`과 같이 작성할 수도 있지만, 이는 `person.fly()`와 동일하며, 구분이 필요하지 않다면 더 길게 작성할 필요는 없다.
 
-Running this code prints the following:
+이 코드를 실행하면 다음과 같이 출력된다:
 
 ```console
 {{#include ../listings/ch20-advanced-features/listing-20-19/output.txt}}
 ```
 
-Because the `fly` method takes a `self` parameter, if we had two _types_ that
-both implement one _trait_, Rust could figure out which implementation of a
-trait to use based on the type of `self`.
+`fly` 메서드가 `self` 파라미터를 가지고 있기 때문에, 두 타입이 하나의 트레이트를 구현하고 있다면 Rust는 `self`의 타입을 기반으로 어떤 트레이트 구현을 사용할지 결정할 수 있다.
 
-However, associated functions that are not methods don’t have a `self`
-parameter. When there are multiple types or traits that define non-method
-functions with the same function name, Rust doesn't always know which type you
-mean unless you use _fully qualified syntax_. For example, in Listing 20-20 we
-create a trait for an animal shelter that wants to name all baby dogs _Spot_.
-We make an `Animal` trait with an associated non-method function `baby_name`.
-The `Animal` trait is implemented for the struct `Dog`, on which we also
-provide an associated non-method function `baby_name` directly.
+그러나 메서드가 아닌 연관 함수는 `self` 파라미터를 가지고 있지 않다. 동일한 함수 이름을 가진 여러 타입이나 트레이트가 있을 때, Rust는 _완전한 정규화 문법(fully qualified syntax)_을 사용하지 않으면 어떤 타입을 의미하는지 알 수 없다. 예를 들어, Listing 20-20에서는 모든 강아지의 이름을 _Spot_으로 짓는 동물 보호소를 위한 트레이트를 만든다. `Animal` 트레이트에는 연관 함수 `baby_name`이 있다. `Animal` 트레이트는 `Dog` 구조체에 구현되며, `Dog`에도 직접 `baby_name` 연관 함수가 제공된다.
 
-<Listing number="20-20" file-name="src/main.rs" caption="A trait with an associated function and a type with an associated function of the same name that also implements the trait">
+<Listing number="20-20" file-name="src/main.rs" caption="연관 함수를 가진 트레이트와 동일한 이름의 연관 함수를 가진 타입이 트레이트를 구현함">
 
 ```rust
 {{#rustdoc_include ../listings/ch20-advanced-features/listing-20-20/src/main.rs}}
@@ -263,26 +166,17 @@ provide an associated non-method function `baby_name` directly.
 
 </Listing>
 
-We implement the code for naming all puppies Spot in the `baby_name` associated
-function that is defined on `Dog`. The `Dog` type also implements the trait
-`Animal`, which describes characteristics that all animals have. Baby dogs are
-called puppies, and that is expressed in the implementation of the `Animal`
-trait on `Dog` in the `baby_name` function associated with the `Animal` trait.
+`Dog`에 정의된 `baby_name` 연관 함수에서 모든 강아지의 이름을 Spot으로 짓는 코드를 구현했다. `Dog` 타입은 `Animal` 트레이트도 구현하며, 이 트레이트는 모든 동물이 가진 특성을 설명한다. 강아지는 puppy라고 불리며, 이는 `Animal` 트레이트의 `baby_name` 함수에서 표현된다.
 
-In `main`, we call the `Dog::baby_name` function, which calls the associated
-function defined on `Dog` directly. This code prints the following:
+`main`에서 `Dog::baby_name` 함수를 호출하면, `Dog`에 직접 정의된 연관 함수가 호출된다. 이 코드는 다음과 같이 출력된다:
 
 ```console
 {{#include ../listings/ch20-advanced-features/listing-20-20/output.txt}}
 ```
 
-This output isn’t what we wanted. We want to call the `baby_name` function that
-is part of the `Animal` trait that we implemented on `Dog` so the code prints
-`A baby dog is called a puppy`. The technique of specifying the trait name that
-we used in Listing 20-19 doesn’t help here; if we change `main` to the code in
-Listing 20-21, we’ll get a compilation error.
+이 출력은 우리가 원하는 결과가 아니다. 우리는 `Dog`에 구현된 `Animal` 트레이트의 `baby_name` 함수를 호출해 `A baby dog is called a puppy`가 출력되길 원한다. Listing 20-19에서 사용한 트레이트 이름 지정 기법은 여기서 도움이 되지 않는다. `main`을 Listing 20-21의 코드로 변경하면 컴파일 오류가 발생한다.
 
-<Listing number="20-21" file-name="src/main.rs" caption="Attempting to call the `baby_name` function from the `Animal` trait, but Rust doesn’t know which implementation to use">
+<Listing number="20-21" file-name="src/main.rs" caption="`Animal` 트레이트의 `baby_name` 함수를 호출하려고 시도했지만, Rust가 어떤 구현을 사용할지 알 수 없음">
 
 ```rust,ignore,does_not_compile
 {{#rustdoc_include ../listings/ch20-advanced-features/listing-20-21/src/main.rs:here}}
@@ -290,20 +184,15 @@ Listing 20-21, we’ll get a compilation error.
 
 </Listing>
 
-Because `Animal::baby_name` doesn’t have a `self` parameter, and there could be
-other types that implement the `Animal` trait, Rust can’t figure out which
-implementation of `Animal::baby_name` we want. We’ll get this compiler error:
+`Animal::baby_name`은 `self` 파라미터를 가지고 있지 않으며, `Animal` 트레이트를 구현하는 다른 타입이 있을 수 있기 때문에 Rust는 어떤 `Animal::baby_name` 구현을 사용할지 결정할 수 없다. 이 경우 다음과 같은 컴파일 오류가 발생한다:
 
 ```console
 {{#include ../listings/ch20-advanced-features/listing-20-21/output.txt}}
 ```
 
-To disambiguate and tell Rust that we want to use the implementation of
-`Animal` for `Dog` as opposed to the implementation of `Animal` for some other
-type, we need to use fully qualified syntax. Listing 20-22 demonstrates how to
-use fully qualified syntax.
+Rust에게 다른 타입이 아닌 `Dog`에 구현된 `Animal` 트레이트의 구현을 사용하라고 명확히 알려주기 위해 완전한 정규화 문법을 사용해야 한다. Listing 20-22는 완전한 정규화 문법을 사용하는 방법을 보여준다.
 
-<Listing number="20-22" file-name="src/main.rs" caption="Using fully qualified syntax to specify that we want to call the `baby_name` function from the `Animal` trait as implemented on `Dog`">
+<Listing number="20-22" file-name="src/main.rs" caption="완전한 정규화 문법을 사용해 `Dog`에 구현된 `Animal` 트레이트의 `baby_name` 함수를 호출함">
 
 ```rust
 {{#rustdoc_include ../listings/ch20-advanced-features/listing-20-22/src/main.rs:here}}
@@ -311,47 +200,30 @@ use fully qualified syntax.
 
 </Listing>
 
-We’re providing Rust with a type annotation within the angle brackets, which
-indicates we want to call the `baby_name` method from the `Animal` trait as
-implemented on `Dog` by saying that we want to treat the `Dog` type as an
-`Animal` for this function call. This code will now print what we want:
+각괄호 안에 타입 어노테이션을 제공해 Rust에게 `Dog` 타입을 `Animal`로 취급해 `baby_name` 메서드를 호출하라고 알려준다. 이제 이 코드는 우리가 원하는 대로 출력한다:
 
 ```console
 {{#include ../listings/ch20-advanced-features/listing-20-22/output.txt}}
 ```
 
-In general, fully qualified syntax is defined as follows:
+일반적으로 완전한 정규화 문법은 다음과 같이 정의된다:
 
 ```rust,ignore
 <Type as Trait>::function(receiver_if_method, next_arg, ...);
 ```
 
-For associated functions that aren’t methods, there would not be a `receiver`:
-there would only be the list of other arguments. You could use fully qualified
-syntax everywhere that you call functions or methods. However, you’re allowed
-to omit any part of this syntax that Rust can figure out from other information
-in the program. You only need to use this more verbose syntax in cases where
-there are multiple implementations that use the same name and Rust needs help
-to identify which implementation you want to call.
+메서드가 아닌 연관 함수의 경우 `receiver`가 없으며, 다른 인수 목록만 존재한다. 함수나 메서드를 호출할 때 완전한 정규화 문법을 어디서든 사용할 수 있다. 그러나 Rust가 프로그램의 다른 정보를 통해 추론할 수 있는 부분은 생략할 수 있다. 동일한 이름을 가진 여러 구현이 있고 Rust가 어떤 구현을 호출할지 도움이 필요한 경우에만 이 더 장황한 문법을 사용하면 된다.
 
 <!-- Old link, do not remove -->
 
 <a id="using-supertraits-to-require-one-traits-functionality-within-another-trait"></a>
 
-### Using Supertraits
 
-Sometimes you might write a trait definition that depends on another trait: for
-a type to implement the first trait, you want to require that type to also
-implement the second trait. You would do this so that your trait definition can
-make use of the associated items of the second trait. The trait your trait
-definition is relying on is called a _supertrait_ of your trait.
+### 슈퍼트레이트 사용하기
 
-For example, let’s say we want to make an `OutlinePrint` trait with an
-`outline_print` method that will print a given value formatted so that it's
-framed in asterisks. That is, given a `Point` struct that implements the
-standard library trait `Display` to result in `(x, y)`, when we call
-`outline_print` on a `Point` instance that has `1` for `x` and `3` for `y`, it
-should print the following:
+때로는 한 트레이트 정의가 다른 트레이트에 의존하도록 작성할 수 있다. 첫 번째 트레이트를 구현하려면 해당 타입이 두 번째 트레이트도 구현해야 한다. 이렇게 하면 트레이트 정의에서 두 번째 트레이트의 연관 아이템을 활용할 수 있다. 이때 의존하는 트레이트를 _슈퍼트레이트_라고 부른다.
+
+예를 들어, `OutlinePrint` 트레이트를 만들고, `outline_print` 메서드를 통해 주어진 값을 별표로 둘러싼 형태로 출력하려 한다고 가정해 보자. 즉, `Point` 구조체가 표준 라이브러리의 `Display` 트레이트를 구현하여 `(x, y)` 형태로 출력된다면, `x`가 `1`이고 `y`가 `3`인 `Point` 인스턴스에서 `outline_print`를 호출하면 다음과 같은 결과가 출력되어야 한다:
 
 ```text
 **********
@@ -361,15 +233,9 @@ should print the following:
 **********
 ```
 
-In the implementation of the `outline_print` method, we want to use the
-`Display` trait’s functionality. Therefore, we need to specify that the
-`OutlinePrint` trait will work only for types that also implement `Display` and
-provide the functionality that `OutlinePrint` needs. We can do that in the
-trait definition by specifying `OutlinePrint: Display`. This technique is
-similar to adding a trait bound to the trait. Listing 20-23 shows an
-implementation of the `OutlinePrint` trait.
+`outline_print` 메서드를 구현할 때 `Display` 트레이트의 기능을 사용하고자 한다. 따라서 `OutlinePrint` 트레이트는 `Display`를 구현한 타입에 대해서만 동작하도록 지정해야 한다. 이를 위해 트레이트 정의에서 `OutlinePrint: Display`를 지정할 수 있다. 이 기법은 트레이트에 트레이트 바운드를 추가하는 것과 유사하다. 아래 예제는 `OutlinePrint` 트레이트의 구현을 보여준다.
 
-<Listing number="20-23" file-name="src/main.rs" caption="Implementing the `OutlinePrint` trait that requires the functionality from `Display`">
+<Listing number="20-23" file-name="src/main.rs" caption="`Display`의 기능을 필요로 하는 `OutlinePrint` 트레이트 구현">
 
 ```rust
 {{#rustdoc_include ../listings/ch20-advanced-features/listing-20-23/src/main.rs:here}}
@@ -377,15 +243,9 @@ implementation of the `OutlinePrint` trait.
 
 </Listing>
 
-Because we’ve specified that `OutlinePrint` requires the `Display` trait, we
-can use the `to_string` function that is automatically implemented for any type
-that implements `Display`. If we tried to use `to_string` without adding a
-colon and specifying the `Display` trait after the trait name, we’d get an
-error saying that no method named `to_string` was found for the type `&Self` in
-the current scope.
+`OutlinePrint`가 `Display` 트레이트를 필요로 한다고 명시했기 때문에, `Display`를 구현한 모든 타입에 대해 자동으로 구현되는 `to_string` 함수를 사용할 수 있다. 만약 `Display` 트레이트를 지정하지 않고 `to_string`을 사용하려고 하면, 현재 스코프에서 `&Self` 타입에 대해 `to_string` 메서드를 찾을 수 없다는 오류가 발생한다.
 
-Let’s see what happens when we try to implement `OutlinePrint` on a type that
-doesn’t implement `Display`, such as the `Point` struct:
+이제 `Display`를 구현하지 않은 타입(예: `Point` 구조체)에 `OutlinePrint`를 구현하려고 할 때 어떤 일이 발생하는지 살펴보자:
 
 <Listing file-name="src/main.rs">
 
@@ -395,14 +255,13 @@ doesn’t implement `Display`, such as the `Point` struct:
 
 </Listing>
 
-We get an error saying that `Display` is required but not implemented:
+이 경우 `Display`가 필요하지만 구현되지 않았다는 오류가 발생한다:
 
 ```console
 {{#include ../listings/ch20-advanced-features/no-listing-02-impl-outlineprint-for-point/output.txt}}
 ```
 
-To fix this, we implement `Display` on `Point` and satisfy the constraint that
-`OutlinePrint` requires, like so:
+이 문제를 해결하려면 `Point`에 `Display`를 구현하여 `OutlinePrint`가 요구하는 제약 조건을 충족시켜야 한다. 아래와 같이 작성할 수 있다:
 
 <Listing file-name="src/main.rs">
 
@@ -412,32 +271,16 @@ To fix this, we implement `Display` on `Point` and satisfy the constraint that
 
 </Listing>
 
-Then, implementing the `OutlinePrint` trait on `Point` will compile
-successfully, and we can call `outline_print` on a `Point` instance to display
-it within an outline of asterisks.
+이제 `Point`에 `OutlinePrint` 트레이트를 구현하면 성공적으로 컴파일되며, `Point` 인스턴스에서 `outline_print`를 호출해 별표로 둘러싼 형태로 출력할 수 있다.
 
-### Using the Newtype Pattern to Implement External Traits on External Types
 
-In [“Implementing a Trait on a Type”][implementing-a-trait-on-a-type]<!-- ignore
---> in Chapter 10, we mentioned the orphan rule that states we’re only allowed
-to implement a trait on a type if either the trait or the type, or both, are
-local to our crate. It’s possible to get around this restriction using the
-_newtype pattern_, which involves creating a new type in a tuple struct. (We
-covered tuple structs in [“Using Tuple Structs Without Named Fields to Create
-Different Types”][tuple-structs]<!-- ignore --> in Chapter 5.) The tuple struct
-will have one field and be a thin wrapper around the type for which we want to
-implement a trait. Then the wrapper type is local to our crate, and we can
-implement the trait on the wrapper. _Newtype_ is a term that originates from the
-Haskell programming language. There is no runtime performance penalty for using
-this pattern, and the wrapper type is elided at compile time.
+### 뉴타입 패턴을 사용해 외부 타입에 외부 트레잇 구현하기
 
-As an example, let’s say we want to implement `Display` on `Vec<T>`, which the
-orphan rule prevents us from doing directly because the `Display` trait and the
-`Vec<T>` type are defined outside our crate. We can make a `Wrapper` struct
-that holds an instance of `Vec<T>`; then we can implement `Display` on
-`Wrapper` and use the `Vec<T>` value, as shown in Listing 20-24.
+10장의 ["타입에 트레잇 구현하기"][implementing-a-trait-on-a-type]<!-- ignore -->에서, 오펀 규칙(orphan rule)에 대해 언급했다. 이 규칙에 따르면, 트레잇이나 타입 중 하나 또는 둘 다 크레이트 내부에 정의되어 있을 때만 해당 타입에 트레잇을 구현할 수 있다. 이 제약을 우회하기 위해 **뉴타입 패턴(newtype pattern)**을 사용할 수 있다. 이 패턴은 튜플 구조체(tuple struct) 내에 새로운 타입을 만드는 방식이다. (튜플 구조체에 대해서는 5장의 ["이름 없는 필드를 가진 튜플 구조체로 서로 다른 타입 만들기"][tuple-structs]<!-- ignore -->에서 다뤘다.) 튜플 구조체는 하나의 필드를 가지며, 트레잇을 구현하려는 타입을 감싸는 얇은 래퍼 역할을 한다. 이렇게 하면 래퍼 타입이 크레이트 내부에 속하게 되고, 래퍼에 트레잇을 구현할 수 있다. **뉴타입**이라는 용어는 Haskell 프로그래밍 언어에서 유래했다. 이 패턴을 사용해도 런타임 성능에 영향을 미치지 않으며, 컴파일 시 래퍼 타입은 제거된다.
 
-<Listing number="20-24" file-name="src/main.rs" caption="Creating a `Wrapper` type around `Vec<String>` to implement `Display`">
+예를 들어, `Vec<T>`에 `Display` 트레잇을 구현하고 싶다고 가정해보자. 오펀 규칙 때문에 `Display` 트레잇과 `Vec<T>` 타입이 모두 크레이트 외부에 정의되어 있으므로 직접 구현할 수 없다. 이 경우 `Vec<T>` 인스턴스를 갖는 `Wrapper` 구조체를 만들 수 있다. 그런 다음 `Wrapper`에 `Display`를 구현하고 `Vec<T>` 값을 사용할 수 있다. 이 내용은 리스트 20-24에 나와 있다.
+
+<Listing number="20-24" file-name="src/main.rs" caption="`Vec<String>`을 감싸는 `Wrapper` 타입을 만들어 `Display` 구현하기">
 
 ```rust
 {{#rustdoc_include ../listings/ch20-advanced-features/listing-20-24/src/main.rs}}
@@ -445,27 +288,16 @@ that holds an instance of `Vec<T>`; then we can implement `Display` on
 
 </Listing>
 
-The implementation of `Display` uses `self.0` to access the inner `Vec<T>`,
-because `Wrapper` is a tuple struct and `Vec<T>` is the item at index 0 in the
-tuple. Then we can use the functionality of the `Display` trait on `Wrapper`.
+`Display` 구현에서 `self.0`을 사용해 내부의 `Vec<T>`에 접근한다. `Wrapper`는 튜플 구조체이고, `Vec<T>`는 튜플의 0번 인덱스에 위치하기 때문이다. 이제 `Wrapper`에서 `Display` 트레잇의 기능을 사용할 수 있다.
 
-The downside of using this technique is that `Wrapper` is a new type, so it
-doesn’t have the methods of the value it’s holding. We would have to implement
-all the methods of `Vec<T>` directly on `Wrapper` such that the methods delegate
-to `self.0`, which would allow us to treat `Wrapper` exactly like a `Vec<T>`. If
-we wanted the new type to have every method the inner type has, implementing the
-`Deref` trait on the `Wrapper` to return the inner type would be a solution (we
-discussed implementing the `Deref` trait in [“Treating Smart Pointers Like
-Regular References with the `Deref` Trait”][smart-pointer-deref]<!-- ignore -->
-in Chapter 15). If we didn’t want the `Wrapper` type to have all the methods of
-the inner type—for example, to restrict the `Wrapper` type’s behavior—we would
-have to implement just the methods we do want manually.
+이 기법의 단점은 `Wrapper`가 새로운 타입이기 때문에, 내부에 있는 값의 메서드를 그대로 사용할 수 없다는 점이다. `Vec<T>`의 모든 메서드를 `Wrapper`에 직접 구현해야 한다. 이때 메서드들은 `self.0`에 위임해야 하며, 이렇게 하면 `Wrapper`를 `Vec<T>`처럼 다룰 수 있다. 만약 새로운 타입이 내부 타입의 모든 메서드를 갖게 하려면, `Wrapper`에 `Deref` 트레잇을 구현해 내부 타입을 반환하는 방식으로 해결할 수 있다. (15장의 ["`Deref` 트레잇으로 스마트 포인터를 일반 참조처럼 다루기"][smart-pointer-deref]<!-- ignore -->에서 `Deref` 트레잇 구현에 대해 다뤘다.) 만약 `Wrapper` 타입이 내부 타입의 모든 메서드를 갖지 않게 하려면, 예를 들어 `Wrapper` 타입의 동작을 제한하려면, 원하는 메서드만 수동으로 구현해야 한다.
 
-This newtype pattern is also useful even when traits are not involved. Let’s
-switch focus and look at some advanced ways to interact with Rust’s type system.
+이 뉴타입 패턴은 트레잇과 관련이 없을 때도 유용하다. 이제 관점을 바꿔 러스트의 타입 시스템과 상호작용하는 몇 가지 고급 방법을 살펴보자.
 
 [newtype]: ch20-02-advanced-traits.html#using-the-newtype-pattern-to-implement-external-traits-on-external-types
 [implementing-a-trait-on-a-type]: ch10-02-traits.html#implementing-a-trait-on-a-type
 [traits-defining-shared-behavior]: ch10-02-traits.html#traits-defining-shared-behavior
 [smart-pointer-deref]: ch15-02-deref.html#treating-smart-pointers-like-regular-references-with-the-deref-trait
 [tuple-structs]: ch05-01-defining-structs.html#using-tuple-structs-without-named-fields-to-create-different-types
+
+

@@ -1,43 +1,22 @@
-# An I/O Project: Building a Command Line Program
+# I/O 프로젝트: 커맨드라인 프로그램 만들기
 
-This chapter is a recap of the many skills you’ve learned so far and an
-exploration of a few more standard library features. We’ll build a command line
-tool that interacts with file and command line input/output to practice some of
-the Rust concepts you now have under your belt.
+이번 장은 지금까지 배운 다양한 기술을 복습하고, 몇 가지 표준 라이브러리 기능을 더 탐구해 보는 시간이다. 파일과 커맨드라인 입출력을 다루는 도구를 만들어 보며, Rust 개념을 실제로 적용해 볼 것이다.
 
-Rust’s speed, safety, single binary output, and cross-platform support make it
-an ideal language for creating command line tools, so for our project, we’ll
-make our own version of the classic command line search tool `grep`
-(**g**lobally search a **r**egular **e**xpression and **p**rint). In the
-simplest use case, `grep` searches a specified file for a specified string. To
-do so, `grep` takes as its arguments a file path and a string. Then it reads
-the file, finds lines in that file that contain the string argument, and prints
-those lines.
+Rust는 빠른 속도, 안전성, 단일 바이너리 출력, 그리고 크로스 플랫폼 지원 덕분에 커맨드라인 도구를 만들기에 이상적인 언어다. 이번 프로젝트에서는 고전적인 검색 도구인 `grep`(**g**lobally search a **r**egular **e**xpression and **p**rint)의 간단한 버전을 만들어 볼 것이다. 가장 기본적인 사용법에서 `grep`은 지정된 파일에서 특정 문자열을 찾는다. 이를 위해 `grep`은 파일 경로와 문자열을 인자로 받는다. 그런 다음 파일을 읽어서 해당 문자열이 포함된 줄을 찾고, 그 줄을 출력한다.
 
-Along the way, we’ll show how to make our command line tool use the terminal
-features that many other command line tools use. We’ll read the value of an
-environment variable to allow the user to configure the behavior of our tool.
-We’ll also print error messages to the standard error console stream (`stderr`)
-instead of standard output (`stdout`) so that, for example, the user can
-redirect successful output to a file while still seeing error messages onscreen.
+이 과정에서 다른 커맨드라인 도구들이 사용하는 터미널 기능을 어떻게 활용하는지 알아볼 것이다. 사용자가 도구의 동작을 설정할 수 있도록 환경 변수의 값을 읽어오는 방법도 배울 것이다. 또한 오류 메시지를 표준 출력(`stdout`) 대신 표준 에러 스트림(`stderr`)에 출력하는 방법을 알아볼 것이다. 이렇게 하면 사용자가 성공적인 출력을 파일로 리다이렉트하면서도 화면에 오류 메시지를 계속 볼 수 있다.
 
-One Rust community member, Andrew Gallant, has already created a fully
-featured, very fast version of `grep`, called `ripgrep`. By comparison, our
-version will be fairly simple, but this chapter will give you some of the
-background knowledge you need to understand a real-world project such as
-`ripgrep`.
+Rust 커뮤니티의 한 멤버인 Andrew Gallant는 이미 `ripgrep`이라는 완전한 기능을 갖춘 매우 빠른 `grep` 버전을 만들었다. 우리가 만드는 버전은 상대적으로 단순하지만, 이번 장을 통해 `ripgrep` 같은 실제 프로젝트를 이해하는 데 필요한 배경 지식을 얻을 수 있을 것이다.
 
-Our `grep` project will combine a number of concepts you’ve learned so far:
+우리의 `grep` 프로젝트는 지금까지 배운 여러 개념을 종합적으로 활용할 것이다:
 
-- Organizing code ([Chapter 7][ch7]<!-- ignore -->)
-- Using vectors and strings ([Chapter 8][ch8]<!-- ignore -->)
-- Handling errors ([Chapter 9][ch9]<!-- ignore -->)
-- Using traits and lifetimes where appropriate ([Chapter 10][ch10]<!-- ignore -->)
-- Writing tests ([Chapter 11][ch11]<!-- ignore -->)
+- 코드 조직화 ([7장][ch7]<!-- ignore -->)
+- 벡터와 문자열 사용 ([8장][ch8]<!-- ignore -->)
+- 오류 처리 ([9장][ch9]<!-- ignore -->)
+- 적절한 상황에서 트레이트와 라이프타임 사용 ([10장][ch10]<!-- ignore -->)
+- 테스트 작성 ([11장][ch11]<!-- ignore -->)
 
-We’ll also briefly introduce closures, iterators, and trait objects, which
-[Chapter 13][ch13]<!-- ignore --> and [Chapter 18][ch18]<!-- ignore --> will
-cover in detail.
+또한 클로저, 이터레이터, 트레이트 객체에 대해 간략히 소개할 것이다. 이 주제들은 [13장][ch13]<!-- ignore -->과 [18장][ch18]<!-- ignore -->에서 자세히 다룰 예정이다.
 
 [ch7]: ch07-00-managing-growing-projects-with-packages-crates-and-modules.html
 [ch8]: ch08-00-common-collections.html
@@ -46,3 +25,5 @@ cover in detail.
 [ch11]: ch11-00-testing.html
 [ch13]: ch13-00-functional-features.html
 [ch18]: ch18-00-oop.html
+
+

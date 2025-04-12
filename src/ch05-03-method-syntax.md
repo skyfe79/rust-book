@@ -1,21 +1,13 @@
-## Method Syntax
+## 메서드 문법
 
-_Methods_ are similar to functions: we declare them with the `fn` keyword and a
-name, they can have parameters and a return value, and they contain some code
-that’s run when the method is called from somewhere else. Unlike functions,
-methods are defined within the context of a struct (or an enum or a trait
-object, which we cover in [Chapter 6][enums]<!-- ignore --> and [Chapter
-18][trait-objects]<!-- ignore -->, respectively), and their first parameter is
-always `self`, which represents the instance of the struct the method is being
-called on.
+메서드는 함수와 유사하다. `fn` 키워드와 이름을 사용해 선언하고, 매개변수와 반환 값을 가질 수 있으며, 다른 곳에서 호출될 때 실행될 코드를 포함한다. 함수와 달리 메서드는 구조체의 컨텍스트 내에서 정의된다(또는 열거형이나 트레잇 객체 내에서 정의될 수 있으며, 이에 대해서는 각각 [6장][enums]<!-- ignore -->과 [18장][trait-objects]<!-- ignore -->에서 다룬다). 그리고 메서드의 첫 번째 매개변수는 항상 `self`이며, 이는 메서드가 호출된 구조체의 인스턴스를 나타낸다.
 
-### Defining Methods
 
-Let’s change the `area` function that has a `Rectangle` instance as a parameter
-and instead make an `area` method defined on the `Rectangle` struct, as shown
-in Listing 5-13.
+### 메서드 정의하기
 
-<Listing number="5-13" file-name="src/main.rs" caption="Defining an `area` method on the `Rectangle` struct">
+`Rectangle` 인스턴스를 매개변수로 받는 `area` 함수를 변경해 `Rectangle` 구조체에 정의된 `area` 메서드로 만들어 보자. 이 내용은 리스트 5-13에 나와 있다.
+
+<Listing number="5-13" file-name="src/main.rs" caption="`Rectangle` 구조체에 `area` 메서드 정의하기">
 
 ```rust
 {{#rustdoc_include ../listings/ch05-using-structs-to-structure-related-data/listing-05-13/src/main.rs}}
@@ -23,46 +15,15 @@ in Listing 5-13.
 
 </Listing>
 
-To define the function within the context of `Rectangle`, we start an `impl`
-(implementation) block for `Rectangle`. Everything within this `impl` block
-will be associated with the `Rectangle` type. Then we move the `area` function
-within the `impl` curly brackets and change the first (and in this case, only)
-parameter to be `self` in the signature and everywhere within the body. In
-`main`, where we called the `area` function and passed `rect1` as an argument,
-we can instead use _method syntax_ to call the `area` method on our `Rectangle`
-instance. The method syntax goes after an instance: we add a dot followed by
-the method name, parentheses, and any arguments.
+`Rectangle`의 컨텍스트 내에서 함수를 정의하려면 `Rectangle`에 대한 `impl`(구현) 블록을 시작한다. 이 `impl` 블록 내의 모든 것은 `Rectangle` 타입과 연관된다. 그런 다음 `area` 함수를 `impl`의 중괄호 안으로 이동시키고, 시그니처와 본문 내의 첫 번째(이 경우 유일한) 매개변수를 `self`로 변경한다. `main` 함수에서는 `area` 함수를 호출하고 `rect1`을 인자로 전달했던 부분을, 이제는 _메서드 문법_ 을 사용해 `Rectangle` 인스턴스의 `area` 메서드를 호출하도록 변경할 수 있다. 메서드 문법은 인스턴스 뒤에 온다: 점(.)을 추가한 후 메서드 이름, 괄호, 그리고 필요한 인자를 적는다.
 
-In the signature for `area`, we use `&self` instead of `rectangle: &Rectangle`.
-The `&self` is actually short for `self: &Self`. Within an `impl` block, the
-type `Self` is an alias for the type that the `impl` block is for. Methods must
-have a parameter named `self` of type `Self` for their first parameter, so Rust
-lets you abbreviate this with only the name `self` in the first parameter spot.
-Note that we still need to use the `&` in front of the `self` shorthand to
-indicate that this method borrows the `Self` instance, just as we did in
-`rectangle: &Rectangle`. Methods can take ownership of `self`, borrow `self`
-immutably, as we’ve done here, or borrow `self` mutably, just as they can any
-other parameter.
+`area`의 시그니처에서 `rectangle: &Rectangle` 대신 `&self`를 사용한다. `&self`는 실제로 `self: &Self`의 축약형이다. `impl` 블록 내에서 `Self` 타입은 `impl` 블록이 적용되는 타입의 별칭이다. 메서드는 첫 번째 매개변수로 `Self` 타입의 `self`를 가져야 하므로, Rust는 첫 번째 매개변수 위치에 단순히 `self`만 적어도 되도록 허용한다. 여전히 `self` 앞에 `&`를 사용해 이 메서드가 `Self` 인스턴스를 빌린다는 것을 나타내야 한다. 이는 `rectangle: &Rectangle`에서와 동일하다. 메서드는 `self`의 소유권을 가져갈 수도 있고, 여기서처럼 불변으로 빌릴 수도 있으며, 가변으로 빌릴 수도 있다. 이는 다른 매개변수와 동일하다.
 
-We chose `&self` here for the same reason we used `&Rectangle` in the function
-version: we don’t want to take ownership, and we just want to read the data in
-the struct, not write to it. If we wanted to change the instance that we’ve
-called the method on as part of what the method does, we’d use `&mut self` as
-the first parameter. Having a method that takes ownership of the instance by
-using just `self` as the first parameter is rare; this technique is usually
-used when the method transforms `self` into something else and you want to
-prevent the caller from using the original instance after the transformation.
+여기서 `&self`를 선택한 이유는 함수 버전에서 `&Rectangle`을 사용한 이유와 동일하다: 소유권을 가져가고 싶지 않으며, 구조체의 데이터를 읽기만 하고 쓰지는 않기 때문이다. 만약 메서드가 호출된 인스턴스를 변경하고 싶다면 첫 번째 매개변수로 `&mut self`를 사용한다. 단순히 `self`를 첫 번째 매개변수로 사용해 인스턴스의 소유권을 가져가는 메서드는 드물다; 이 기법은 보통 메서드가 `self`를 다른 것으로 변환하고, 변환 후에 원본 인스턴스를 사용하지 못하게 하려는 경우에 사용된다.
 
-The main reason for using methods instead of functions, in addition to
-providing method syntax and not having to repeat the type of `self` in every
-method’s signature, is for organization. We’ve put all the things we can do
-with an instance of a type in one `impl` block rather than making future users
-of our code search for capabilities of `Rectangle` in various places in the
-library we provide.
+메서드를 함수 대신 사용하는 주요 이유는 메서드 문법을 제공하고, 모든 메서드의 시그니처에서 `self`의 타입을 반복하지 않아도 되기 때문이다. 또한, 코드를 조직화하는 데에도 도움이 된다. 우리는 타입의 인스턴스로 할 수 있는 모든 작업을 하나의 `impl` 블록에 넣어, 나중에 우리가 제공한 라이브러리에서 `Rectangle`의 기능을 찾기 위해 여러 곳을 헤매지 않도록 했다.
 
-Note that we can choose to give a method the same name as one of the struct’s
-fields. For example, we can define a method on `Rectangle` that is also named
-`width`:
+메서드 이름을 구조체 필드와 동일하게 지을 수도 있다. 예를 들어, `Rectangle`에 `width`라는 메서드를 정의할 수 있다:
 
 <Listing file-name="src/main.rs">
 
@@ -72,37 +33,17 @@ fields. For example, we can define a method on `Rectangle` that is also named
 
 </Listing>
 
-Here, we’re choosing to make the `width` method return `true` if the value in
-the instance’s `width` field is greater than `0` and `false` if the value is
-`0`: we can use a field within a method of the same name for any purpose. In
-`main`, when we follow `rect1.width` with parentheses, Rust knows we mean the
-method `width`. When we don’t use parentheses, Rust knows we mean the field
-`width`.
+여기서는 `width` 메서드가 인스턴스의 `width` 필드 값이 `0`보다 크면 `true`를 반환하고, `0`이면 `false`를 반환하도록 했다: 동일한 이름의 필드를 메서드 내에서 어떤 목적으로든 사용할 수 있다. `main` 함수에서 `rect1.width` 뒤에 괄호를 붙이면 Rust는 `width` 메서드를 의미한다고 이해한다. 괄호를 사용하지 않으면 Rust는 `width` 필드를 의미한다고 이해한다.
 
-Often, but not always, when we give a method the same name as a field we want
-it to only return the value in the field and do nothing else. Methods like this
-are called _getters_, and Rust does not implement them automatically for struct
-fields as some other languages do. Getters are useful because you can make the
-field private but the method public, and thus enable read-only access to that
-field as part of the type’s public API. We will discuss what public and private
-are and how to designate a field or method as public or private in [Chapter
-7][public]<!-- ignore -->.
+종종, 항상은 아니지만, 메서드 이름을 필드와 동일하게 지을 때는 필드의 값을 반환만 하고 다른 작업을 하지 않도록 하는 경우가 많다. 이런 메서드를 _getter_ 라고 부르며, Rust는 다른 언어와 달리 구조체 필드에 대해 자동으로 getter를 구현하지 않는다. Getter는 필드를 private로 만들고 메서드를 public으로 만들어, 타입의 public API의 일부로 해당 필드에 대한 읽기 전용 접근을 허용할 때 유용하다. public과 private이 무엇인지, 그리고 필드나 메서드를 public 또는 private으로 지정하는 방법은 [7장][public]<!-- ignore -->에서 다룬다.
 
-> ### Where’s the `->` Operator?
+> ### `->` 연산자는 어디에 있나요?
 >
-> In C and C++, two different operators are used for calling methods: you use
-> `.` if you’re calling a method on the object directly and `->` if you’re
-> calling the method on a pointer to the object and need to dereference the
-> pointer first. In other words, if `object` is a pointer,
-> `object->something()` is similar to `(*object).something()`.
+> C와 C++에서는 메서드를 호출할 때 두 가지 다른 연산자를 사용한다: 객체에 직접 메서드를 호출할 때는 `.`를 사용하고, 객체에 대한 포인터에서 메서드를 호출할 때는 `->`를 사용해 포인터를 먼저 역참조한다. 즉, `object`가 포인터라면 `object->something()`은 `(*object).something()`과 유사하다.
 >
-> Rust doesn’t have an equivalent to the `->` operator; instead, Rust has a
-> feature called _automatic referencing and dereferencing_. Calling methods is
-> one of the few places in Rust with this behavior.
+> Rust는 `->` 연산자에 해당하는 것이 없다; 대신 Rust에는 _자동 참조 및 역참조_ 라는 기능이 있다. 메서드 호출은 Rust에서 이 동작이 적용되는 몇 안 되는 경우 중 하나다.
 >
-> Here’s how it works: when you call a method with `object.something()`, Rust
-> automatically adds in `&`, `&mut`, or `*` so `object` matches the signature of
-> the method. In other words, the following are the same:
+> 이 기능은 다음과 같이 동작한다: `object.something()`으로 메서드를 호출할 때, Rust는 자동으로 `&`, `&mut`, 또는 `*`를 추가해 `object`가 메서드의 시그니처와 일치하도록 한다. 즉, 다음 두 코드는 동일하다:
 >
 > <!-- CAN'T EXTRACT SEE BUG https://github.com/rust-lang/mdBook/issues/1127 -->
 >
@@ -127,23 +68,14 @@ are and how to designate a field or method as public or private in [Chapter
 > (&p1).distance(&p2);
 > ```
 >
-> The first one looks much cleaner. This automatic referencing behavior works
-> because methods have a clear receiver—the type of `self`. Given the receiver
-> and name of a method, Rust can figure out definitively whether the method is
-> reading (`&self`), mutating (`&mut self`), or consuming (`self`). The fact
-> that Rust makes borrowing implicit for method receivers is a big part of
-> making ownership ergonomic in practice.
+> 첫 번째 코드가 훨씬 깔끔해 보인다. 이 자동 참조 동작은 메서드가 명확한 수신자(`self`의 타입)를 가지고 있기 때문에 가능하다. 수신자와 메서드 이름이 주어지면 Rust는 메서드가 읽기(`&self`), 변경(`&mut self`), 또는 소비(`self`) 중 어떤 작업을 하는지 명확히 파악할 수 있다. Rust가 메서드 수신자에 대한 빌림을 암묵적으로 처리하는 것은 소유권을 실용적으로 만드는 데 큰 역할을 한다.
 
-### Methods with More Parameters
 
-Let’s practice using methods by implementing a second method on the `Rectangle`
-struct. This time we want an instance of `Rectangle` to take another instance
-of `Rectangle` and return `true` if the second `Rectangle` can fit completely
-within `self` (the first `Rectangle`); otherwise, it should return `false`.
-That is, once we’ve defined the `can_hold` method, we want to be able to write
-the program shown in Listing 5-14.
+### 추가 매개변수를 가진 메서드
 
-<Listing number="5-14" file-name="src/main.rs" caption="Using the as-yet-unwritten `can_hold` method">
+`Rectangle` 구조체에 두 번째 메서드를 구현하며 메서드 사용법을 연습해 보자. 이번에는 `Rectangle` 인스턴스가 다른 `Rectangle` 인스턴스를 받아서 두 번째 `Rectangle`이 `self`(첫 번째 `Rectangle`) 안에 완전히 들어갈 수 있으면 `true`를 반환하고, 그렇지 않으면 `false`를 반환하도록 한다. 즉, `can_hold` 메서드를 정의한 후에는 아래 예제와 같은 프로그램을 작성할 수 있어야 한다.
+
+<Listing number="5-14" file-name="src/main.rs" caption="아직 작성되지 않은 `can_hold` 메서드 사용 예제">
 
 ```rust,ignore
 {{#rustdoc_include ../listings/ch05-using-structs-to-structure-related-data/listing-05-14/src/main.rs}}
@@ -151,30 +83,16 @@ the program shown in Listing 5-14.
 
 </Listing>
 
-The expected output would look like the following because both dimensions of
-`rect2` are smaller than the dimensions of `rect1`, but `rect3` is wider than
-`rect1`:
+`rect2`의 두 차원 모두 `rect1`보다 작지만, `rect3`은 `rect1`보다 넓기 때문에 예상 출력은 다음과 같다:
 
 ```text
 Can rect1 hold rect2? true
 Can rect1 hold rect3? false
 ```
 
-We know we want to define a method, so it will be within the `impl Rectangle`
-block. The method name will be `can_hold`, and it will take an immutable borrow
-of another `Rectangle` as a parameter. We can tell what the type of the
-parameter will be by looking at the code that calls the method:
-`rect1.can_hold(&rect2)` passes in `&rect2`, which is an immutable borrow to
-`rect2`, an instance of `Rectangle`. This makes sense because we only need to
-read `rect2` (rather than write, which would mean we’d need a mutable borrow),
-and we want `main` to retain ownership of `rect2` so we can use it again after
-calling the `can_hold` method. The return value of `can_hold` will be a
-Boolean, and the implementation will check whether the width and height of
-`self` are greater than the width and height of the other `Rectangle`,
-respectively. Let’s add the new `can_hold` method to the `impl` block from
-Listing 5-13, shown in Listing 5-15.
+메서드를 정의할 것이므로 `impl Rectangle` 블록 안에 작성한다. 메서드 이름은 `can_hold`로 정하고, 다른 `Rectangle` 인스턴스를 불변 참조로 받을 것이다. 메서드를 호출하는 코드를 보면 매개변수의 타입을 알 수 있다: `rect1.can_hold(&rect2)`에서 `&rect2`를 전달하며, 이는 `Rectangle` 인스턴스인 `rect2`의 불변 참조다. 이는 `rect2`를 읽기만 하면 되고(쓰기는 필요하지 않으므로 가변 참조가 필요하지 않음), `can_hold` 메서드 호출 후에도 `main` 함수가 `rect2`의 소유권을 유지할 수 있도록 하기 때문이다. `can_hold`의 반환 값은 불리언 타입이며, 구현에서는 `self`의 너비와 높이가 다른 `Rectangle`의 너비와 높이보다 각각 큰지 확인한다. 이제 `can_hold` 메서드를 `impl` 블록에 추가해 보자.
 
-<Listing number="5-15" file-name="src/main.rs" caption="Implementing the `can_hold` method on `Rectangle` that takes another `Rectangle` instance as a parameter">
+<Listing number="5-15" file-name="src/main.rs" caption="`Rectangle`에 `can_hold` 메서드 구현">
 
 ```rust
 {{#rustdoc_include ../listings/ch05-using-structs-to-structure-related-data/listing-05-15/src/main.rs:here}}
@@ -182,51 +100,31 @@ Listing 5-13, shown in Listing 5-15.
 
 </Listing>
 
-When we run this code with the `main` function in Listing 5-14, we’ll get our
-desired output. Methods can take multiple parameters that we add to the
-signature after the `self` parameter, and those parameters work just like
-parameters in functions.
+Listing 5-14의 `main` 함수와 함께 이 코드를 실행하면 원하는 출력을 얻을 수 있다. 메서드는 `self` 매개변수 뒤에 추가 매개변수를 받을 수 있으며, 이 매개변수들은 함수의 매개변수와 동일하게 동작한다.
 
-### Associated Functions
 
-All functions defined within an `impl` block are called _associated functions_
-because they’re associated with the type named after the `impl`. We can define
-associated functions that don’t have `self` as their first parameter (and thus
-are not methods) because they don’t need an instance of the type to work with.
-We’ve already used one function like this: the `String::from` function that’s
-defined on the `String` type.
+### 연관 함수
 
-Associated functions that aren’t methods are often used for constructors that
-will return a new instance of the struct. These are often called `new`, but
-`new` isn’t a special name and isn’t built into the language. For example, we
-could choose to provide an associated function named `square` that would have
-one dimension parameter and use that as both width and height, thus making it
-easier to create a square `Rectangle` rather than having to specify the same
-value twice:
+`impl` 블록 내에 정의된 모든 함수는 _연관 함수_라고 한다. 이 함수들은 `impl` 뒤에 명시된 타입과 연관되어 있기 때문이다. `self`를 첫 번째 매개변수로 가지지 않는 연관 함수도 정의할 수 있다. 이런 함수는 메서드가 아니며, 타입의 인스턴스가 필요하지 않다. 이미 이런 함수를 사용한 적이 있다. 바로 `String` 타입에 정의된 `String::from` 함수가 그 예시다.
 
-<span class="filename">Filename: src/main.rs</span>
+메서드가 아닌 연관 함수는 주로 새로운 구조체 인스턴스를 반환하는 생성자로 사용된다. 이런 함수는 보통 `new`라고 이름 짓지만, `new`는 특별한 이름이 아니며 언어에 내장된 기능도 아니다. 예를 들어, `square`라는 연관 함수를 정의할 수 있다. 이 함수는 하나의 차원 매개변수를 받아 너비와 높이로 사용하며, 정사각형 `Rectangle`을 쉽게 생성할 수 있게 해준다. 이렇게 하면 같은 값을 두 번 지정할 필요가 없다:
+
+<span class="filename">파일명: src/main.rs</span>
 
 ```rust
 {{#rustdoc_include ../listings/ch05-using-structs-to-structure-related-data/no-listing-03-associated-functions/src/main.rs:here}}
 ```
 
-The `Self` keywords in the return type and in the body of the function are
-aliases for the type that appears after the `impl` keyword, which in this case
-is `Rectangle`.
+함수의 반환 타입과 본문에서 사용된 `Self` 키워드는 `impl` 뒤에 오는 타입의 별칭이다. 이 경우에는 `Rectangle`이다.
 
-To call this associated function, we use the `::` syntax with the struct name;
-`let sq = Rectangle::square(3);` is an example. This function is namespaced by
-the struct: the `::` syntax is used for both associated functions and
-namespaces created by modules. We’ll discuss modules in [Chapter
-7][modules]<!-- ignore -->.
+이 연관 함수를 호출하려면 구조체 이름과 `::` 문법을 사용한다. 예를 들어 `let sq = Rectangle::square(3);`와 같이 호출할 수 있다. 이 함수는 구조체에 의해 네임스페이스가 지정된다. `::` 문법은 연관 함수와 모듈에 의해 생성된 네임스페이스에 모두 사용된다. 모듈에 대해서는 [7장][modules]<!-- ignore -->에서 자세히 다룬다.
 
-### Multiple `impl` Blocks
 
-Each struct is allowed to have multiple `impl` blocks. For example, Listing
-5-15 is equivalent to the code shown in Listing 5-16, which has each method in
-its own `impl` block.
+### 여러 개의 `impl` 블록
 
-<Listing number="5-16" caption="Rewriting Listing 5-15 using multiple `impl` blocks">
+각 구조체는 여러 개의 `impl` 블록을 가질 수 있다. 예를 들어, 리스트 5-15는 각 메서드를 별도의 `impl` 블록에 나눈 리스트 5-16과 동일한 코드다.
+
+<Listing number="5-16" caption="여러 개의 `impl` 블록을 사용해 리스트 5-15를 다시 작성">
 
 ```rust
 {{#rustdoc_include ../listings/ch05-using-structs-to-structure-related-data/listing-05-16/src/main.rs:here}}
@@ -234,23 +132,18 @@ its own `impl` block.
 
 </Listing>
 
-There’s no reason to separate these methods into multiple `impl` blocks here,
-but this is valid syntax. We’ll see a case in which multiple `impl` blocks are
-useful in Chapter 10, where we discuss generic types and traits.
+여기서는 이 메서드들을 여러 `impl` 블록으로 나눌 필요가 없지만, 문법적으로 유효한 방식이다. 제네릭 타입과 트레이트를 다루는 10장에서 여러 `impl` 블록이 유용한 경우를 살펴볼 것이다.
 
-## Summary
 
-Structs let you create custom types that are meaningful for your domain. By
-using structs, you can keep associated pieces of data connected to each other
-and name each piece to make your code clear. In `impl` blocks, you can define
-functions that are associated with your type, and methods are a kind of
-associated function that let you specify the behavior that instances of your
-structs have.
+## 요약
 
-But structs aren’t the only way you can create custom types: let’s turn to
-Rust’s enum feature to add another tool to your toolbox.
+구조체를 사용하면 특정 도메인에 의미 있는 커스텀 타입을 만들 수 있다. 구조체를 통해 서로 연관된 데이터를 하나로 묶고, 각 데이터에 이름을 붙여 코드의 가독성을 높일 수 있다. `impl` 블록에서는 해당 타입과 연관된 함수를 정의할 수 있으며, 메서드는 구조체의 인스턴스가 가질 동작을 지정하는 연관 함수의 한 종류이다.
+
+하지만 구조체만이 커스텀 타입을 만드는 유일한 방법은 아니다. 이제 Rust의 열거형(enum) 기능을 살펴보며 도구 상자에 또 하나의 유용한 도구를 추가해 보자.
 
 [enums]: ch06-00-enums.html
 [trait-objects]: ch18-02-trait-objects.md
 [public]: ch07-03-paths-for-referring-to-an-item-in-the-module-tree.html#exposing-paths-with-the-pub-keyword
 [modules]: ch07-02-defining-modules-to-control-scope-and-privacy.html
+
+

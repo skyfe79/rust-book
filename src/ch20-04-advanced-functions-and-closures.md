@@ -1,28 +1,15 @@
-## Advanced Functions and Closures
+## 고급 함수와 클로저
 
-This section explores some advanced features related to functions and closures,
-including function pointers and returning closures.
+이 섹션에서는 함수 포인터와 클로저 반환을 포함해 함수와 클로저와 관련된 몇 가지 고급 기능을 살펴본다.
 
-### Function Pointers
 
-We’ve talked about how to pass closures to functions; you can also pass regular
-functions to functions! This technique is useful when you want to pass a
-function you’ve already defined rather than defining a new closure. Functions
-coerce to the type `fn` (with a lowercase _f_), not to be confused with the `Fn`
-closure trait. The `fn` type is called a _function pointer_. Passing functions
-with function pointers will allow you to use functions as arguments to other
-functions.
+### 함수 포인터
 
-The syntax for specifying that a parameter is a function pointer is similar to
-that of closures, as shown in Listing 20-28, where we’ve defined a function
-`add_one` that adds 1 to its parameter. The function `do_twice` takes two
-parameters: a function pointer to any function that takes an `i32` parameter
-and returns an `i32`, and one `i32` value. The `do_twice` function calls the
-function `f` twice, passing it the `arg` value, then adds the two function call
-results together. The `main` function calls `do_twice` with the arguments
-`add_one` and `5`.
+클로저를 함수에 전달하는 방법에 대해 알아봤다면, 일반 함수도 함수에 전달할 수 있다! 이 기법은 새로운 클로저를 정의하지 않고 이미 정의된 함수를 전달하고 싶을 때 유용하다. 함수는 `Fn` 클로저 트레잇과 혼동하지 않도록 `fn` (소문자 _f_) 타입으로 강제 변환된다. 이 `fn` 타입을 _함수 포인터_ 라고 부른다. 함수 포인터를 사용해 함수를 전달하면, 함수를 다른 함수의 인자로 사용할 수 있다.
 
-<Listing number="20-28" file-name="src/main.rs" caption="Using the `fn` type to accept a function pointer as an argument">
+함수 포인터를 매개변수로 지정하는 문법은 클로저와 유사하다. 아래 예제 20-28에서 `add_one` 함수는 매개변수에 1을 더한다. `do_twice` 함수는 두 개의 매개변수를 받는다: 하나는 `i32` 타입의 매개변수를 받고 `i32`를 반환하는 함수 포인터, 다른 하나는 `i32` 값이다. `do_twice` 함수는 함수 `f`를 두 번 호출하며 `arg` 값을 전달한 후, 두 함수 호출 결과를 더한다. `main` 함수는 `add_one`과 `5`를 인자로 `do_twice`를 호출한다.
+
+<Listing number="20-28" file-name="src/main.rs" caption="함수 포인터를 인자로 받기 위해 `fn` 타입 사용">
 
 ```rust
 {{#rustdoc_include ../listings/ch20-advanced-features/listing-20-28/src/main.rs}}
@@ -30,31 +17,17 @@ results together. The `main` function calls `do_twice` with the arguments
 
 </Listing>
 
-This code prints `The answer is: 12`. We specify that the parameter `f` in
-`do_twice` is an `fn` that takes one parameter of type `i32` and returns an
-`i32`. We can then call `f` in the body of `do_twice`. In `main`, we can pass
-the function name `add_one` as the first argument to `do_twice`.
+이 코드는 `The answer is: 12`를 출력한다. `do_twice`의 매개변수 `f`는 `i32` 타입의 매개변수를 하나 받고 `i32`를 반환하는 `fn` 타입으로 지정한다. 그런 다음 `do_twice` 본문에서 `f`를 호출할 수 있다. `main`에서는 `add_one` 함수 이름을 `do_twice`의 첫 번째 인자로 전달한다.
 
-Unlike closures, `fn` is a type rather than a trait, so we specify `fn` as the
-parameter type directly rather than declaring a generic type parameter with one
-of the `Fn` traits as a trait bound.
+클로저와 달리 `fn`은 트레잇이 아닌 타입이므로, `Fn` 트레잇 중 하나를 트레잇 바운드로 사용해 제네릭 타입 매개변수를 선언하는 대신 `fn`을 직접 매개변수 타입으로 지정한다.
 
-Function pointers implement all three of the closure traits (`Fn`, `FnMut`, and
-`FnOnce`), meaning you can always pass a function pointer as an argument for a
-function that expects a closure. It’s best to write functions using a generic
-type and one of the closure traits so your functions can accept either
-functions or closures.
+함수 포인터는 세 가지 클로저 트레잇(`Fn`, `FnMut`, `FnOnce`)을 모두 구현한다. 즉, 클로저를 기대하는 함수에 항상 함수 포인터를 인자로 전달할 수 있다. 함수나 클로저를 모두 받을 수 있도록 제네릭 타입과 클로저 트레잇 중 하나를 사용해 함수를 작성하는 것이 가장 좋다.
 
-That said, one example of where you would want to only accept `fn` and not
-closures is when interfacing with external code that doesn’t have closures: C
-functions can accept functions as arguments, but C doesn’t have closures.
+그러나 클로저가 없는 외부 코드와 인터페이스할 때는 `fn`만 받고 싶을 수 있다. C 함수는 함수를 인자로 받을 수 있지만, C에는 클로저가 없다.
 
-As an example of where you could use either a closure defined inline or a named
-function, let’s look at a use of the `map` method provided by the `Iterator`
-trait in the standard library. To use the `map` method to turn a vector of
-numbers into a vector of strings, we could use a closure, as in Listing 20-29.
+인라인으로 정의된 클로저나 이름이 있는 함수를 사용할 수 있는 예시로, 표준 라이브러리의 `Iterator` 트레잇이 제공하는 `map` 메서드를 살펴보자. `map` 메서드를 사용해 숫자 벡터를 문자열 벡터로 변환하려면, 아래 예제 20-29처럼 클로저를 사용할 수 있다.
 
-<Listing number="20-29" caption="Using a closure with the `map` method to convert numbers to strings">
+<Listing number="20-29" caption="`map` 메서드와 클로저를 사용해 숫자를 문자열로 변환">
 
 ```rust
 {{#rustdoc_include ../listings/ch20-advanced-features/listing-20-29/src/main.rs:here}}
@@ -62,10 +35,9 @@ numbers into a vector of strings, we could use a closure, as in Listing 20-29.
 
 </Listing>
 
-Or we could name a function as the argument to map instead of the closure.
-Listing 20-30 shows what this would look like.
+또는 클로저 대신 함수 이름을 `map`의 인자로 사용할 수 있다. 예제 20-30은 이를 보여준다.
 
-<Listing number="20-30" caption="Using the `String::to_string` method to convert numbers to strings">
+<Listing number="20-30" caption="`String::to_string` 메서드를 사용해 숫자를 문자열로 변환">
 
 ```rust
 {{#rustdoc_include ../listings/ch20-advanced-features/listing-20-30/src/main.rs:here}}
@@ -73,21 +45,13 @@ Listing 20-30 shows what this would look like.
 
 </Listing>
 
-Note that we must use the fully qualified syntax that we talked about in
-[“Advanced Traits”][advanced-traits]<!-- ignore --> because there are multiple
-functions available named `to_string`.
+여기서는 ["고급 트레잇"][advanced-traits]<!-- ignore -->에서 설명한 완전한 문법을 사용해야 한다. 왜냐하면 `to_string`이라는 이름의 함수가 여러 개 있기 때문이다.
 
-Here, we’re using the `to_string` function defined in the `ToString` trait,
-which the standard library has implemented for any type that implements
-`Display`.
+여기서는 표준 라이브러리가 `Display`를 구현한 모든 타입에 대해 구현한 `ToString` 트레잇에 정의된 `to_string` 함수를 사용한다.
 
-Recall from [“Enum values”][enum-values]<!-- ignore --> in Chapter 6 that the
-name of each enum variant that we define also becomes an initializer function.
-We can use these initializer functions as function pointers that implement the
-closure traits, which means we can specify the initializer functions as
-arguments for methods that take closures, as seen in Listing 20-31.
+6장의 ["열거형 값"][enum-values]<!-- ignore -->에서 정의한 각 열거형 변형의 이름이 초기화 함수가 된다는 것을 기억할 것이다. 이 초기화 함수를 클로저 트레잇을 구현한 함수 포인터로 사용할 수 있다. 즉, 클로저를 받는 메서드에 초기화 함수를 인자로 지정할 수 있다. 예제 20-31에서 이를 확인할 수 있다.
 
-<Listing number="20-31" caption="Using an enum initializers with the `map` method to create a `Status` instance from numbers">
+<Listing number="20-31" caption="`map` 메서드와 열거형 초기화 함수를 사용해 숫자로부터 `Status` 인스턴스 생성">
 
 ```rust
 {{#rustdoc_include ../listings/ch20-advanced-features/listing-20-31/src/main.rs:here}}
@@ -95,26 +59,16 @@ arguments for methods that take closures, as seen in Listing 20-31.
 
 </Listing>
 
-Here we create `Status::Value` instances using each `u32` value in the range
-that `map` is called on by using the initializer function of `Status::Value`.
-Some people prefer this style and some people prefer to use closures. They
-compile to the same code, so use whichever style is clearer to you.
+여기서 `map`이 호출된 범위의 각 `u32` 값을 사용해 `Status::Value` 인스턴스를 생성한다. 이때 `Status::Value`의 초기화 함수를 사용한다. 어떤 사람은 이 스타일을 선호하고, 어떤 사람은 클로저를 선호한다. 둘 다 같은 코드로 컴파일되므로, 더 명확한 스타일을 사용하면 된다.
 
-### Returning Closures
 
-Closures are represented by traits, which means you can’t return closures
-directly. In most cases where you might want to return a trait, you can instead
-use the concrete type that implements the trait as the return value of the
-function. However, you can’t usually do that with closures because they don’t
-have a concrete type that is returnable. You’re not allowed to use the function
-pointer `fn` as a return type if the closure captures any values from its scope,
-for example.
+### 클로저 반환하기
 
-Instead, you will normally use the `impl Trait` syntax we learned about in
-Chapter 10. You can return any function type, using `Fn`, `FnOnce` and `FnMut`.
-For example, the code in Listing 20-32 will work just fine.
+클로저는 트레잇으로 표현되기 때문에 직접 반환할 수 없다. 대부분의 경우 트레잇을 반환하려면 해당 트레잇을 구현한 구체적인 타입을 함수의 반환 값으로 사용할 수 있다. 하지만 클로저는 반환 가능한 구체적인 타입이 없기 때문에 일반적으로 이 방법을 사용할 수 없다. 예를 들어, 클로저가 스코프에서 값을 캡처하면 함수 포인터 `fn`을 반환 타입으로 사용할 수 없다.
 
-<Listing number="20-32" caption="Returning a closure from a function using the `impl Trait` syntax">
+대신, 일반적으로 10장에서 배운 `impl Trait` 문법을 사용한다. `Fn`, `FnOnce`, `FnMut`를 사용해 어떤 함수 타입이든 반환할 수 있다. 예를 들어, 아래 예제 코드는 정상적으로 동작한다.
+
+<Listing number="20-32" caption="`impl Trait` 문법을 사용해 함수에서 클로저 반환하기">
 
 ```rust
 {{#rustdoc_include ../listings/ch20-advanced-features/listing-20-32/src/lib.rs}}
@@ -122,14 +76,9 @@ For example, the code in Listing 20-32 will work just fine.
 
 </Listing>
 
-However, as we noted in [“Closure Type Inference and
-Annotation”][closure-types]<!-- ignore --> in Chapter 13, each closure is also
-its own distinct type. If you need to work with multiple functions that have the
-same signature but different implementations, you will need to use a trait
-object for them. Consider what happens if you write code like that shown in
-Listing 20-33.
+하지만 13장의 ["클로저 타입 추론과 명시적 타입 지정"][closure-types]에서 언급했듯이, 각 클로저는 고유한 타입을 가진다. 동일한 시그니처를 가지지만 구현이 다른 여러 함수를 다뤄야 한다면 트레잇 객체를 사용해야 한다. 아래 예제 코드에서 어떤 일이 발생하는지 살펴보자.
 
-<Listing file-name="src/main.rs" number="20-33" caption="Creating a `Vec<T>` of closures defined by functions that return `impl Fn`">
+<Listing file-name="src/main.rs" number="20-33" caption="`impl Fn`을 반환하는 함수로 정의된 클로저의 `Vec<T>` 생성하기">
 
 ```rust,ignore,does_not_compile
 {{#rustdoc_include ../listings/ch20-advanced-features/listing-20-33/src/main.rs}}
@@ -137,26 +86,15 @@ Listing 20-33.
 
 </Listing>
 
-Here we have two functions, `returns_closure` and `returns_initialized_closure`,
-which both return `impl Fn(i32) -> i32`. Notice that he closures that they
-return are different, even though they implement the same type. If we try to
-compile this, Rust lets us know that it won’t work:
+여기서 `returns_closure`와 `returns_initialized_closure` 두 함수는 모두 `impl Fn(i32) -> i32`를 반환한다. 두 함수가 반환하는 클로저는 동일한 타입을 구현하지만 서로 다르다. 이 코드를 컴파일하려고 하면 Rust는 다음과 같은 오류를 발생시킨다:
 
 ```text
 {{#include ../listings/ch20-advanced-features/listing-20-33/output.txt}}
 ```
 
-The error message tells us that whenever we return an `impl Trait` Rust creates
-a unique _opaque type_, a type where we cannot see into the details of what Rust
-constructs for us. So even though these functions both return closures that
-implements the same trait, `Fn(i32) -> i32`, the opaque types Rust generates for
-each are distinct. (This is similar to how Rust produces different concrete
-types for distinct async blocks even when they have the same output type, as we
-saw in [“Working with Any Number of Futures”][any-number-of-futures] in Chapter
-17. We have seen a solution to this problem a few times now: we can use a trait
-object, as in Listing 20-34.
+오류 메시지는 `impl Trait`를 반환할 때마다 Rust가 고유한 _불투명 타입(opaque type)_ 을 생성한다는 것을 알려준다. 이 타입은 Rust가 우리를 위해 생성한 세부 사항을 볼 수 없는 타입이다. 따라서 이 두 함수가 동일한 트레잇 `Fn(i32) -> i32`를 구현하는 클로저를 반환하더라도, Rust가 생성한 불투명 타입은 서로 다르다. (이는 17장의 ["여러 Future 다루기"][any-number-of-futures]에서 본 것처럼, 동일한 출력 타입을 가지는 다른 async 블록에 대해 Rust가 서로 다른 구체적인 타입을 생성하는 것과 유사하다.) 이 문제에 대한 해결책은 이미 여러 번 살펴봤듯이, 트레잇 객체를 사용하는 것이다. 아래 예제 코드를 참고하자.
 
-<Listing number="20-34" caption="Creating a `Vec<T>` of closures defined by functions that return `Box<dyn Fn>` so they have the same type">
+<Listing number="20-34" caption="`Box<dyn Fn>`을 반환하는 함수로 정의된 클로저의 `Vec<T>` 생성하기">
 
 ```rust
 {{#rustdoc_include ../listings/ch20-advanced-features/listing-20-34/src/main.rs:here}}
@@ -164,15 +102,14 @@ object, as in Listing 20-34.
 
 </Listing>
 
-This code will compile just fine. For more about trait objects, refer to the
-section [“Using Trait Objects That Allow for Values of Different
-Types”][using-trait-objects-that-allow-for-values-of-different-types]<!-- ignore
---> in Chapter 18.
+이 코드는 정상적으로 컴파일된다. 트레잇 객체에 대한 더 자세한 내용은 18장의 ["다양한 타입의 값을 허용하는 트레잇 객체 사용하기"][using-trait-objects-that-allow-for-values-of-different-types] 섹션을 참고하자.
 
-Next, let’s look at macros!
+다음으로, 매크로에 대해 알아보자!
 
 [advanced-traits]: ch20-02-advanced-traits.html#advanced-traits
 [enum-values]: ch06-01-defining-an-enum.html#enum-values
 [closure-types]: ch13-01-closures.html#closure-type-inference-and-annotation
 [any-number-of-futures]: ch17-03-more-futures.html
 [using-trait-objects-that-allow-for-values-of-different-types]: ch18-02-trait-objects.html#using-trait-objects-that-allow-for-values-of-different-types
+
+

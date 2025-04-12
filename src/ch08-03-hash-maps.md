@@ -1,30 +1,17 @@
-## Storing Keys with Associated Values in Hash Maps
+## 키와 값을 연결하여 저장하는 해시 맵
 
-The last of our common collections is the _hash map_. The type `HashMap<K, V>`
-stores a mapping of keys of type `K` to values of type `V` using a _hashing
-function_, which determines how it places these keys and values into memory.
-Many programming languages support this kind of data structure, but they often
-use a different name, such as _hash_, _map_, _object_, _hash table_,
-_dictionary_, or _associative array_, just to name a few.
+마지막으로 살펴볼 일반적인 컬렉션은 _해시 맵_이다. `HashMap<K, V>` 타입은 키 타입 `K`와 값 타입 `V`를 연결하여 저장한다. 이때 _해시 함수_를 사용하여 키와 값을 메모리에 배치하는 방식을 결정한다. 많은 프로그래밍 언어가 이러한 데이터 구조를 지원하지만, 종종 _해시_, _맵_, _객체_, _해시 테이블_, _딕셔너리_, _연관 배열_ 등 다양한 이름으로 불린다.
 
-Hash maps are useful when you want to look up data not by using an index, as
-you can with vectors, but by using a key that can be of any type. For example,
-in a game, you could keep track of each team’s score in a hash map in which
-each key is a team’s name and the values are each team’s score. Given a team
-name, you can retrieve its score.
+해시 맵은 벡터처럼 인덱스가 아닌 임의의 타입을 가진 키를 사용해 데이터를 조회하고자 할 때 유용하다. 예를 들어, 게임에서 각 팀의 점수를 해시 맵으로 관리할 수 있다. 이때 키는 팀 이름이고, 값은 각 팀의 점수다. 팀 이름을 알면 해당 팀의 점수를 조회할 수 있다.
 
-We’ll go over the basic API of hash maps in this section, but many more goodies
-are hiding in the functions defined on `HashMap<K, V>` by the standard library.
-As always, check the standard library documentation for more information.
+이 섹션에서는 해시 맵의 기본 API를 살펴보겠지만, 표준 라이브러리의 `HashMap<K, V>`에 정의된 함수에는 더 많은 기능이 숨겨져 있다. 항상 그렇듯, 더 많은 정보를 얻으려면 표준 라이브러리 문서를 참고하자.
 
-### Creating a New Hash Map
 
-One way to create an empty hash map is to use `new` and to add elements with
-`insert`. In Listing 8-20, we’re keeping track of the scores of two teams whose
-names are _Blue_ and _Yellow_. The Blue team starts with 10 points, and the
-Yellow team starts with 50.
+### 새로운 해시 맵 생성하기
 
-<Listing number="8-20" caption="Creating a new hash map and inserting some keys and values">
+비어 있는 해시 맵을 만드는 한 가지 방법은 `new`를 사용하고 `insert`로 요소를 추가하는 것이다. 예제 8-20에서는 _Blue_와 _Yellow_라는 두 팀의 점수를 추적한다. Blue 팀은 10점으로 시작하고, Yellow 팀은 50점으로 시작한다.
+
+<Listing number="8-20" caption="새로운 해시 맵을 생성하고 키와 값을 추가하기">
 
 ```rust
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-20/src/main.rs:here}}
@@ -32,23 +19,16 @@ Yellow team starts with 50.
 
 </Listing>
 
-Note that we need to first `use` the `HashMap` from the collections portion of
-the standard library. Of our three common collections, this one is the least
-often used, so it’s not included in the features brought into scope
-automatically in the prelude. Hash maps also have less support from the
-standard library; there’s no built-in macro to construct them, for example.
+먼저 표준 라이브러리의 컬렉션 부분에서 `HashMap`을 `use`로 가져와야 한다. 세 가지 일반적인 컬렉션 중에서 이 해시 맵이 가장 덜 사용되기 때문에, 프리루드에서 자동으로 범위에 포함되지 않는다. 또한 해시 맵은 표준 라이브러리에서 지원이 적다. 예를 들어, 해시 맵을 생성하는 내장 매크로가 없다.
 
-Just like vectors, hash maps store their data on the heap. This `HashMap` has
-keys of type `String` and values of type `i32`. Like vectors, hash maps are
-homogeneous: all of the keys must have the same type, and all of the values
-must have the same type.
+벡터와 마찬가지로, 해시 맵도 데이터를 힙에 저장한다. 이 `HashMap`은 `String` 타입의 키와 `i32` 타입의 값을 가진다. 벡터처럼 해시 맵도 동일한 타입을 가진다. 모든 키는 같은 타입이어야 하고, 모든 값도 같은 타입이어야 한다.
 
-### Accessing Values in a Hash Map
 
-We can get a value out of the hash map by providing its key to the `get`
-method, as shown in Listing 8-21.
+### 해시 맵에서 값 접근하기
 
-<Listing number="8-21" caption="Accessing the score for the Blue team stored in the hash map">
+해시 맵에서 값을 가져오려면 키를 `get` 메서드에 전달하면 된다. 아래 예제는 Blue 팀의 점수를 가져오는 방법을 보여준다.
+
+<Listing number="8-21" caption="해시 맵에 저장된 Blue 팀의 점수에 접근하기">
 
 ```rust
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-21/src/main.rs:here}}
@@ -56,34 +36,27 @@ method, as shown in Listing 8-21.
 
 </Listing>
 
-Here, `score` will have the value that’s associated with the Blue team, and the
-result will be `10`. The `get` method returns an `Option<&V>`; if there’s no
-value for that key in the hash map, `get` will return `None`. This program
-handles the `Option` by calling `copied` to get an `Option<i32>` rather than an
-`Option<&i32>`, then `unwrap_or` to set `score` to zero if `scores` doesn’t
-have an entry for the key.
+이 예제에서 `score`는 Blue 팀과 연결된 값을 가지며, 결과는 `10`이 된다. `get` 메서드는 `Option<&V>`를 반환한다. 만약 해당 키에 대한 값이 해시 맵에 없다면, `get`은 `None`을 반환한다. 이 프로그램은 `Option`을 처리하기 위해 `copied`를 호출해 `Option<&i32>` 대신 `Option<i32>`를 얻고, `unwrap_or`를 사용해 `scores`에 키에 대한 항목이 없을 경우 `score`를 0으로 설정한다.
 
-We can iterate over each key-value pair in a hash map in a similar manner as we
-do with vectors, using a `for` loop:
+벡터와 유사한 방식으로 `for` 루프를 사용해 해시 맵의 각 키-값 쌍을 순회할 수도 있다:
 
 ```rust
 {{#rustdoc_include ../listings/ch08-common-collections/no-listing-03-iterate-over-hashmap/src/main.rs:here}}
 ```
 
-This code will print each pair in an arbitrary order:
+이 코드는 각 쌍을 임의의 순서로 출력한다:
 
 ```text
 Yellow: 50
 Blue: 10
 ```
 
-### Hash Maps and Ownership
 
-For types that implement the `Copy` trait, like `i32`, the values are copied
-into the hash map. For owned values like `String`, the values will be moved and
-the hash map will be the owner of those values, as demonstrated in Listing 8-22.
+### 해시 맵과 소유권
 
-<Listing number="8-22" caption="Showing that keys and values are owned by the hash map once they’re inserted">
+`i32`와 같이 `Copy` 트레잇을 구현한 타입의 경우, 값이 해시 맵으로 복사된다. `String`과 같은 소유된 값의 경우, 값이 이동하고 해시 맵이 그 값의 소유자가 된다. 이는 리스트 8-22에서 확인할 수 있다.
+
+<Listing number="8-22" caption="키와 값이 해시 맵에 삽입된 후 해시 맵의 소유가 됨을 보여줌">
 
 ```rust
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-22/src/main.rs:here}}
@@ -91,38 +64,23 @@ the hash map will be the owner of those values, as demonstrated in Listing 8-22.
 
 </Listing>
 
-We aren’t able to use the variables `field_name` and `field_value` after
-they’ve been moved into the hash map with the call to `insert`.
+`insert` 호출을 통해 `field_name`과 `field_value` 변수가 해시 맵으로 이동한 후에는 이 변수들을 더 이상 사용할 수 없다.
 
-If we insert references to values into the hash map, the values won’t be moved
-into the hash map. The values that the references point to must be valid for at
-least as long as the hash map is valid. We’ll talk more about these issues in
-[“Validating References with
-Lifetimes”][validating-references-with-lifetimes]<!-- ignore --> in Chapter 10.
+만약 해시 맵에 값의 참조를 삽입한다면, 값은 해시 맵으로 이동하지 않는다. 참조가 가리키는 값은 해시 맵이 유효한 동안 최소한 그만큼 유효해야 한다. 이 문제에 대해서는 10장의 [“라이프타임을 사용한 참조 유효성 검사”][validating-references-with-lifetimes]<!-- ignore -->에서 더 자세히 다룰 것이다.
 
-### Updating a Hash Map
 
-Although the number of key and value pairs is growable, each unique key can
-only have one value associated with it at a time (but not vice versa: for
-example, both the Blue team and the Yellow team could have the value `10`
-stored in the `scores` hash map).
+### 해시 맵 업데이트
 
-When you want to change the data in a hash map, you have to decide how to
-handle the case when a key already has a value assigned. You could replace the
-old value with the new value, completely disregarding the old value. You could
-keep the old value and ignore the new value, only adding the new value if the
-key _doesn’t_ already have a value. Or you could combine the old value and the
-new value. Let’s look at how to do each of these!
+키와 값 쌍의 개수는 늘어날 수 있지만, 각 고유 키는 한 번에 하나의 값만 가질 수 있다(반대의 경우는 아니다. 예를 들어 Blue 팀과 Yellow 팀 모두 `scores` 해시 맵에 `10`이라는 값을 저장할 수 있다).
 
-#### Overwriting a Value
+해시 맵의 데이터를 변경하려면, 이미 값이 할당된 키를 어떻게 처리할지 결정해야 한다. 기존 값을 완전히 무시하고 새로운 값으로 교체할 수 있다. 아니면 기존 값을 유지하고 새로운 값을 무시하거나, 키에 값이 _없을 때만_ 새로운 값을 추가할 수도 있다. 또는 기존 값과 새로운 값을 결합할 수도 있다. 각각의 방법을 어떻게 구현하는지 살펴보자!
 
-If we insert a key and a value into a hash map and then insert that same key
-with a different value, the value associated with that key will be replaced.
-Even though the code in Listing 8-23 calls `insert` twice, the hash map will
-only contain one key-value pair because we’re inserting the value for the Blue
-team’s key both times.
 
-<Listing number="8-23" caption="Replacing a value stored with a particular key">
+#### 값 덮어쓰기
+
+해시 맵에 키와 값을 추가한 후, 같은 키에 다른 값을 추가하면 해당 키에 연결된 값이 교체된다. Listing 8-23의 코드는 `insert`를 두 번 호출하지만, 두 번 모두 Blue 팀의 키에 값을 추가하기 때문에 해시 맵에는 하나의 키-값 쌍만 존재하게 된다.
+
+<Listing number="8-23" caption="특정 키에 저장된 값을 교체하는 예제">
 
 ```rust
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-23/src/main.rs:here}}
@@ -130,28 +88,20 @@ team’s key both times.
 
 </Listing>
 
-This code will print `{"Blue": 25}`. The original value of `10` has been
-overwritten.
+이 코드는 `{"Blue": 25}`를 출력한다. 원래 값인 `10`은 덮어쓰여졌다.
 
 <!-- Old headings. Do not remove or links may break. -->
 
 <a id="only-inserting-a-value-if-the-key-has-no-value"></a>
 
-#### Adding a Key and Value Only If a Key Isn’t Present
 
-It’s common to check whether a particular key already exists in the hash map
-with a value and then to take the following actions: if the key does exist in
-the hash map, the existing value should remain the way it is; if the key
-doesn’t exist, insert it and a value for it.
+#### 키와 값을 키가 없는 경우에만 추가하기
 
-Hash maps have a special API for this called `entry` that takes the key you
-want to check as a parameter. The return value of the `entry` method is an enum
-called `Entry` that represents a value that might or might not exist. Let’s say
-we want to check whether the key for the Yellow team has a value associated
-with it. If it doesn’t, we want to insert the value `50`, and the same for the
-Blue team. Using the `entry` API, the code looks like Listing 8-24.
+특정 키가 이미 해시 맵에 값과 함께 존재하는지 확인한 후, 다음과 같은 동작을 수행하는 경우가 많다: 키가 해시 맵에 존재하면 기존 값을 그대로 유지하고, 키가 존재하지 않으면 해당 키와 값을 삽입한다.
 
-<Listing number="8-24" caption="Using the `entry` method to only insert if the key does not already have a value">
+해시 맵은 이를 위해 `entry`라는 특별한 API를 제공한다. `entry`는 확인하려는 키를 인자로 받는다. `entry` 메서드의 반환 값은 `Entry`라는 열거형으로, 값이 존재할 수도 있고 없을 수도 있는 상태를 나타낸다. 예를 들어, Yellow 팀의 키에 값이 있는지 확인하고 싶다고 가정해 보자. 값이 없다면 `50`을 삽입하고, Blue 팀에 대해서도 동일한 작업을 수행한다. `entry` API를 사용하면 다음과 같이 코드를 작성할 수 있다.
+
+<Listing number="8-24" caption="키가 이미 값을 가지고 있지 않은 경우에만 삽입하기 위해 `entry` 메서드 사용">
 
 ```rust
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-24/src/main.rs:here}}
@@ -159,28 +109,16 @@ Blue team. Using the `entry` API, the code looks like Listing 8-24.
 
 </Listing>
 
-The `or_insert` method on `Entry` is defined to return a mutable reference to
-the value for the corresponding `Entry` key if that key exists, and if not, it
-inserts the parameter as the new value for this key and returns a mutable
-reference to the new value. This technique is much cleaner than writing the
-logic ourselves and, in addition, plays more nicely with the borrow checker.
+`Entry`의 `or_insert` 메서드는 해당 `Entry` 키에 대한 값의 가변 참조를 반환하도록 정의되어 있다. 키가 존재하면 그 값의 가변 참조를 반환하고, 키가 존재하지 않으면 인자로 전달된 값을 새 값으로 삽입한 후, 새 값의 가변 참조를 반환한다. 이 기법은 직접 로직을 작성하는 것보다 훨씬 깔끔하며, 빌림 검사기와도 더 잘 동작한다.
 
-Running the code in Listing 8-24 will print `{"Yellow": 50, "Blue": 10}`. The
-first call to `entry` will insert the key for the Yellow team with the value
-`50` because the Yellow team doesn’t have a value already. The second call to
-`entry` will not change the hash map because the Blue team already has the
-value `10`.
+Listing 8-24의 코드를 실행하면 `{"Yellow": 50, "Blue": 10}`가 출력된다. 첫 번째 `entry` 호출은 Yellow 팀의 키에 `50`을 삽입한다. Yellow 팀은 이미 값이 없기 때문이다. 두 번째 `entry` 호출은 해시 맵을 변경하지 않는다. Blue 팀은 이미 `10`이라는 값을 가지고 있기 때문이다.
 
-#### Updating a Value Based on the Old Value
 
-Another common use case for hash maps is to look up a key’s value and then
-update it based on the old value. For instance, Listing 8-25 shows code that
-counts how many times each word appears in some text. We use a hash map with
-the words as keys and increment the value to keep track of how many times we’ve
-seen that word. If it’s the first time we’ve seen a word, we’ll first insert
-the value `0`.
+#### 기존 값을 기반으로 값 업데이트하기
 
-<Listing number="8-25" caption="Counting occurrences of words using a hash map that stores words and counts">
+해시맵의 또 다른 일반적인 사용 사례는 키의 값을 조회한 후 기존 값을 기반으로 업데이트하는 것이다. 예를 들어, 리스트 8-25는 특정 텍스트에서 각 단어가 몇 번 등장하는지 세는 코드를 보여준다. 단어를 키로 사용하고 값을 증가시켜 해당 단어를 몇 번이나 봤는지 추적한다. 만약 단어를 처음 보는 경우, 먼저 값 `0`을 삽입한다.
+
+<Listing number="8-25" caption="단어와 횟수를 저장하는 해시맵을 사용해 단어의 등장 횟수를 세는 예제">
 
 ```rust
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-25/src/main.rs:here}}
@@ -188,61 +126,30 @@ the value `0`.
 
 </Listing>
 
-This code will print `{"world": 2, "hello": 1, "wonderful": 1}`. You might see
-the same key-value pairs printed in a different order: recall from [“Accessing
-Values in a Hash Map”][access]<!-- ignore --> that iterating over a hash map
-happens in an arbitrary order.
+이 코드는 `{"world": 2, "hello": 1, "wonderful": 1}`를 출력한다. 동일한 키-값 쌍이 다른 순서로 출력될 수도 있다: [“해시맵의 값에 접근하기”][access]<!-- ignore -->에서 해시맵을 순회할 때 순서가 임의적이라는 것을 떠올려 보자.
 
-The `split_whitespace` method returns an iterator over subslices, separated by
-whitespace, of the value in `text`. The `or_insert` method returns a mutable
-reference (`&mut V`) to the value for the specified key. Here, we store that
-mutable reference in the `count` variable, so in order to assign to that value,
-we must first dereference `count` using the asterisk (`*`). The mutable
-reference goes out of scope at the end of the `for` loop, so all of these
-changes are safe and allowed by the borrowing rules.
+`split_whitespace` 메서드는 `text`의 값을 공백으로 구분한 부분 슬라이스의 반복자를 반환한다. `or_insert` 메서드는 지정된 키에 대한 값의 가변 참조(`&mut V`)를 반환한다. 여기서는 이 가변 참조를 `count` 변수에 저장하므로, 값을 할당하려면 먼저 별표(`*`)를 사용해 `count`를 역참조해야 한다. 가변 참조는 `for` 루프가 끝날 때 스코프를 벗어나므로, 이러한 모든 변경은 안전하며 빌림 규칙에 의해 허용된다.
 
-### Hashing Functions
 
-By default, `HashMap` uses a hashing function called _SipHash_ that can provide
-resistance to denial-of-service (DoS) attacks involving hash
-tables[^siphash]<!-- ignore -->. This is not the fastest hashing algorithm
-available, but the trade-off for better security that comes with the drop in
-performance is worth it. If you profile your code and find that the default
-hash function is too slow for your purposes, you can switch to another function
-by specifying a different hasher. A _hasher_ is a type that implements the
-`BuildHasher` trait. We’ll talk about traits and how to implement them in
-[Chapter 10][traits]<!-- ignore -->. You don’t necessarily have to implement
-your own hasher from scratch; [crates.io](https://crates.io/)<!-- ignore -->
-has libraries shared by other Rust users that provide hashers implementing many
-common hashing algorithms.
+### 해싱 함수
 
-[^siphash]: [https://en.wikipedia.org/wiki/SipHash](https://en.wikipedia.org/wiki/SipHash)
+기본적으로 `HashMap`은 해시 테이블을 이용한 서비스 거부 공격(DoS)에 대한 내성을 제공하는 _SipHash_라는 해싱 함수를 사용한다. 이 해싱 알고리즘은 가장 빠른 것은 아니지만, 성능 저하를 감수하고 더 나은 보안을 얻는 것은 가치 있는 선택이다. 만약 코드를 프로파일링한 결과 기본 해시 함수가 목적에 비해 너무 느리다고 판단되면, 다른 해시 함수를 사용하도록 설정할 수 있다. _해셔(hasher)_는 `BuildHasher` 트레이트를 구현한 타입이다. 트레이트와 이를 구현하는 방법에 대해서는 [10장][traits]에서 자세히 다룬다. 반드시 처음부터 자신만의 해셔를 구현할 필요는 없다. [crates.io](https://crates.io/)에는 다른 Rust 사용자들이 공유한 라이브러리가 있으며, 여기서 다양한 일반적인 해싱 알고리즘을 구현한 해셔를 찾을 수 있다.
 
-## Summary
 
-Vectors, strings, and hash maps will provide a large amount of functionality
-necessary in programs when you need to store, access, and modify data. Here are
-some exercises you should now be equipped to solve:
+## 요약
 
-1. Given a list of integers, use a vector and return the median (when sorted,
-   the value in the middle position) and mode (the value that occurs most
-   often; a hash map will be helpful here) of the list.
-1. Convert strings to pig latin. The first consonant of each word is moved to
-   the end of the word and _ay_ is added, so _first_ becomes _irst-fay_. Words
-   that start with a vowel have _hay_ added to the end instead (_apple_ becomes
-   _apple-hay_). Keep in mind the details about UTF-8 encoding!
-1. Using a hash map and vectors, create a text interface to allow a user to add
-   employee names to a department in a company; for example, “Add Sally to
-   Engineering” or “Add Amir to Sales.” Then let the user retrieve a list of all
-   people in a department or all people in the company by department, sorted
-   alphabetically.
+벡터, 문자열, 해시 맵은 데이터를 저장, 접근, 수정할 때 필요한 다양한 기능을 제공한다. 이제 여러분은 다음과 같은 문제를 해결할 준비가 되었다:
 
-The standard library API documentation describes methods that vectors, strings,
-and hash maps have that will be helpful for these exercises!
+1. 정수 리스트가 주어졌을 때, 벡터를 사용해 중앙값(정렬했을 때 중간 위치의 값)과 최빈값(가장 자주 나타나는 값; 해시 맵이 유용함)을 반환한다.
+1. 문자열을 피그 라틴으로 변환한다. 각 단어의 첫 번째 자음을 단어 끝으로 옮기고 _ay_를 추가한다. 예를 들어 _first_는 _irst-fay_가 된다. 모음으로 시작하는 단어는 단어 끝에 _hay_를 추가한다(_apple_은 _apple-hay_가 됨). UTF-8 인코딩에 대한 세부 사항을 기억하자!
+1. 해시 맵과 벡터를 사용해 텍스트 인터페이스를 만들어 사용자가 회사의 부서에 직원 이름을 추가할 수 있게 한다. 예를 들어 "Add Sally to Engineering" 또는 "Add Amir to Sales"와 같은 명령을 처리한다. 그런 다음 사용자가 특정 부서의 모든 직원 목록이나 부서별로 정렬된 전체 직원 목록을 조회할 수 있게 한다.
 
-We’re getting into more complex programs in which operations can fail, so it’s
-a perfect time to discuss error handling. We’ll do that next!
+표준 라이브러리 API 문서에는 이러한 문제를 해결하는 데 유용한 벡터, 문자열, 해시 맵의 메서드가 설명되어 있다!
+
+이제 더 복잡한 프로그램을 다루게 되면서 작업이 실패할 가능성이 생긴다. 따라서 오류 처리를 논의하기에 완벽한 시기다. 다음 장에서 이를 자세히 다룰 것이다!
 
 [validating-references-with-lifetimes]: ch10-03-lifetime-syntax.html#validating-references-with-lifetimes
 [access]: #accessing-values-in-a-hash-map
 [traits]: ch10-02-traits.html
+
+

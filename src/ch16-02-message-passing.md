@@ -1,38 +1,18 @@
-## Using Message Passing to Transfer Data Between Threads
+## 스레드 간 데이터 전송을 위한 메시지 패싱 활용
 
-One increasingly popular approach to ensuring safe concurrency is _message
-passing_, where threads or actors communicate by sending each other messages
-containing data. Here’s the idea in a slogan from [the Go language documentation](https://golang.org/doc/effective_go.html#concurrency):
-“Do not communicate by sharing memory; instead, share memory by communicating.”
+스레드 간 안전한 동시성을 보장하는 점점 더 인기 있는 접근 방식은 _메시지 패싱_이다. 이 방식에서는 스레드나 액터가 데이터를 포함한 메시지를 서로 주고받으며 통신한다. [Go 언어 문서](https://golang.org/doc/effective_go.html#concurrency)에 나온 슬로건으로 이 개념을 설명할 수 있다: "메모리를 공유하여 통신하지 말고, 통신을 통해 메모리를 공유하라."
 
-To accomplish message-sending concurrency, Rust's standard library provides an
-implementation of channels. A _channel_ is a general programming concept by
-which data is sent from one thread to another.
+메시지 전송을 통해 동시성을 구현하기 위해 Rust의 표준 라이브러리는 채널(channel)을 제공한다. _채널_은 데이터를 한 스레드에서 다른 스레드로 전송하는 일반적인 프로그래밍 개념이다.
 
-You can imagine a channel in programming as being like a directional channel of
-water, such as a stream or a river. If you put something like a rubber duck
-into a river, it will travel downstream to the end of the waterway.
+프로그래밍에서 채널은 강이나 하천과 같은 방향성이 있는 물줄기로 비유할 수 있다. 강에 고무 오리를 떨어뜨리면 물줄기를 따라 하류로 이동하는 것처럼, 채널도 데이터를 한쪽에서 다른쪽으로 전달한다.
 
-A channel has two halves: a transmitter and a receiver. The transmitter half is
-the upstream location where you put the rubber duck into the river, and the
-receiver half is where the rubber duck ends up downstream. One part of your
-code calls methods on the transmitter with the data you want to send, and
-another part checks the receiving end for arriving messages. A channel is said
-to be _closed_ if either the transmitter or receiver half is dropped.
+채널은 두 부분으로 구성된다: 송신자(transmitter)와 수신자(receiver). 송신자는 강의 상류에 고무 오리를 떨어뜨리는 위치에 해당하고, 수신자는 고무 오리가 도착하는 하류에 해당한다. 코드의 한 부분은 전송할 데이터와 함께 송신자의 메서드를 호출하고, 다른 부분은 수신자에서 도착한 메시지를 확인한다. 송신자나 수신자 중 하나가 제거되면 채널은 _닫힌_ 상태가 된다.
 
-Here, we’ll work up to a program that has one thread to generate values and
-send them down a channel, and another thread that will receive the values and
-print them out. We’ll be sending simple values between threads using a channel
-to illustrate the feature. Once you’re familiar with the technique, you could
-use channels for any threads that need to communicate with each other, such as
-a chat system or a system where many threads perform parts of a calculation and
-send the parts to one thread that aggregates the results.
+여기서는 한 스레드가 값을 생성해 채널로 보내고, 다른 스레드가 그 값을 받아 출력하는 프로그램을 만들어 볼 것이다. 채널을 사용해 스레드 간에 간단한 값을 전송하는 예제를 통해 이 기능을 설명한다. 이 기술에 익숙해지면, 채팅 시스템이나 여러 스레드가 계산의 일부를 수행한 후 결과를 하나의 스레드로 집계하는 시스템과 같이 서로 통신해야 하는 스레드에 채널을 활용할 수 있다.
 
-First, in Listing 16-6, we’ll create a channel but not do anything with it.
-Note that this won’t compile yet because Rust can’t tell what type of values we
-want to send over the channel.
+먼저, 리스트 16-6에서 채널을 생성하지만 아무 작업도 하지 않는다. Rust가 채널을 통해 어떤 타입의 값을 전송할지 알 수 없기 때문에 이 코드는 아직 컴파일되지 않는다.
 
-<Listing number="16-6" file-name="src/main.rs" caption="Creating a channel and assigning the two halves to `tx` and `rx`">
+<Listing number="16-6" file-name="src/main.rs" caption="채널 생성 및 `tx`와 `rx`에 두 부분 할당">
 
 ```rust,ignore,does_not_compile
 {{#rustdoc_include ../listings/ch16-fearless-concurrency/listing-16-06/src/main.rs}}
@@ -40,31 +20,13 @@ want to send over the channel.
 
 </Listing>
 
-We create a new channel using the `mpsc::channel` function; `mpsc` stands for
-_multiple producer, single consumer_. In short, the way Rust’s standard library
-implements channels means a channel can have multiple _sending_ ends that
-produce values but only one _receiving_ end that consumes those values. Imagine
-multiple streams flowing together into one big river: everything sent down any
-of the streams will end up in one river at the end. We’ll start with a single
-producer for now, but we’ll add multiple producers when we get this example
-working.
+`mpsc::channel` 함수를 사용해 새로운 채널을 생성한다. `mpsc`는 _multiple producer, single consumer_의 약자이다. Rust의 표준 라이브러리가 채널을 구현하는 방식은 여러 개의 _송신_ 끝이 값을 생성할 수 있지만, _수신_ 끝은 하나만 있어 값을 소비한다는 것을 의미한다. 여러 개의 물줄기가 하나의 큰 강으로 합쳐지는 것을 상상해보라. 어떤 물줄기에든 떨어뜨린 것은 결국 하나의 강에 도달한다. 지금은 단일 송신자로 시작하지만, 이 예제가 동작하면 여러 송신자를 추가할 것이다.
 
-The `mpsc::channel` function returns a tuple, the first element of which is the
-sending end—the transmitter—and the second element of which is the receiving
-end—the receiver. The abbreviations `tx` and `rx` are traditionally used in many
-fields for _transmitter_ and _receiver_, respectively, so we name our variables
-as such to indicate each end. We’re using a `let` statement with a pattern that
-destructures the tuples; we’ll discuss the use of patterns in `let` statements
-and destructuring in Chapter 19. For now, know that using a `let` statement this
-way is a convenient approach to extract the pieces of the tuple returned by
-`mpsc::channel`.
+`mpsc::channel` 함수는 튜플을 반환한다. 첫 번째 요소는 송신 끝인 송신자(transmitter)이고, 두 번째 요소는 수신 끝인 수신자(receiver)이다. `tx`와 `rx`는 각각 _transmitter_와 _receiver_를 나타내는 전통적인 약어이므로, 각 끝을 나타내기 위해 변수명을 이렇게 짓는다. 튜플을 분해하는 패턴과 함께 `let` 문을 사용한다. `let` 문에서 패턴을 사용하는 방법과 튜플 분해에 대해서는 19장에서 다룰 것이다. 지금은 `mpsc::channel`이 반환한 튜플의 조각을 추출하는 편리한 방법으로 `let` 문을 사용한다는 것만 알아두자.
 
-Let’s move the transmitting end into a spawned thread and have it send one
-string so the spawned thread is communicating with the main thread, as shown in
-Listing 16-7. This is like putting a rubber duck in the river upstream or
-sending a chat message from one thread to another.
+이제 송신자를 새로운 스레드로 옮겨 문자열 하나를 보내도록 하여, 생성된 스레드가 메인 스레드와 통신하도록 해보자. 리스트 16-7과 같다. 이는 강의 상류에 고무 오리를 떨어뜨리거나 한 스레드에서 다른 스레드로 채팅 메시지를 보내는 것과 같다.
 
-<Listing number="16-7" file-name="src/main.rs" caption='Moving `tx` to a spawned thread and sending `"hi"`'>
+<Listing number="16-7" file-name="src/main.rs" caption='`tx`를 생성된 스레드로 옮기고 `"hi"` 보내기'>
 
 ```rust
 {{#rustdoc_include ../listings/ch16-fearless-concurrency/listing-16-07/src/main.rs}}
@@ -72,23 +34,13 @@ sending a chat message from one thread to another.
 
 </Listing>
 
-Again, we’re using `thread::spawn` to create a new thread and then using `move`
-to move `tx` into the closure so the spawned thread owns `tx`. The spawned
-thread needs to own the transmitter to be able to send messages through the
-channel.
+다시 `thread::spawn`을 사용해 새로운 스레드를 생성하고, `move`를 사용해 `tx`를 클로저로 이동시켜 생성된 스레드가 `tx`를 소유하도록 한다. 생성된 스레드는 채널을 통해 메시지를 보내기 위해 송신자를 소유해야 한다.
 
-The transmitter has a `send` method that takes the value we want to send. The
-`send` method returns a `Result<T, E>` type, so if the receiver has already
-been dropped and there’s nowhere to send a value, the send operation will
-return an error. In this example, we’re calling `unwrap` to panic in case of an
-error. But in a real application, we would handle it properly: return to
-Chapter 9 to review strategies for proper error handling.
+송신자는 전송할 값을 인수로 받는 `send` 메서드를 갖는다. `send` 메서드는 `Result<T, E>` 타입을 반환하므로, 수신자가 이미 제거되어 값을 보낼 곳이 없다면 전송 작업은 에러를 반환한다. 이 예제에서는 에러가 발생하면 패닉을 일으키기 위해 `unwrap`을 호출한다. 하지만 실제 애플리케이션에서는 적절히 처리할 것이다: 적절한 에러 처리 전략을 복습하려면 9장으로 돌아가보자.
 
-In Listing 16-8, we’ll get the value from the receiver in the main thread. This
-is like retrieving the rubber duck from the water at the end of the river or
-receiving a chat message.
+리스트 16-8에서는 메인 스레드에서 수신자로부터 값을 가져온다. 이는 강의 끝에서 고무 오리를 꺼내거나 채팅 메시지를 받는 것과 같다.
 
-<Listing number="16-8" file-name="src/main.rs" caption='Receiving the value `"hi"` in the main thread and printing it'>
+<Listing number="16-8" file-name="src/main.rs" caption='메인 스레드에서 `"hi"` 값을 받아 출력하기'>
 
 ```rust
 {{#rustdoc_include ../listings/ch16-fearless-concurrency/listing-16-08/src/main.rs}}
@@ -96,48 +48,26 @@ receiving a chat message.
 
 </Listing>
 
-The receiver has two useful methods: `recv` and `try_recv`. We’re using `recv`,
-short for _receive_, which will block the main thread’s execution and wait
-until a value is sent down the channel. Once a value is sent, `recv` will
-return it in a `Result<T, E>`. When the transmitter closes, `recv` will return
-an error to signal that no more values will be coming.
+수신자는 `recv`와 `try_recv`라는 두 가지 유용한 메서드를 제공한다. 여기서는 _receive_의 약자인 `recv`를 사용한다. 이 메서드는 메인 스레드의 실행을 블로킹하고 채널로 값이 전송될 때까지 기다린다. 값이 전송되면 `recv`는 `Result<T, E>`로 값을 반환한다. 송신자가 닫히면 `recv`는 더 이상 값이 오지 않음을 알리는 에러를 반환한다.
 
-The `try_recv` method doesn’t block, but will instead return a `Result<T, E>`
-immediately: an `Ok` value holding a message if one is available and an `Err`
-value if there aren’t any messages this time. Using `try_recv` is useful if
-this thread has other work to do while waiting for messages: we could write a
-loop that calls `try_recv` every so often, handles a message if one is
-available, and otherwise does other work for a little while until checking
-again.
+`try_recv` 메서드는 블로킹하지 않고 즉시 `Result<T, E>`를 반환한다: 메시지가 있으면 `Ok` 값을, 이번에 메시지가 없으면 `Err` 값을 반환한다. 이 스레드가 메시지를 기다리는 동안 다른 작업을 해야 한다면 `try_recv`를 사용하는 것이 유용하다: 주기적으로 `try_recv`를 호출하는 루프를 작성하고, 메시지가 있으면 처리하고, 그렇지 않으면 잠시 다른 작업을 수행한 후 다시 확인할 수 있다.
 
-We’ve used `recv` in this example for simplicity; we don’t have any other work
-for the main thread to do other than wait for messages, so blocking the main
-thread is appropriate.
+이 예제에서는 간단히 `recv`를 사용했다. 메인 스레드가 메시지를 기다리는 것 외에 다른 작업을 할 필요가 없으므로 메인 스레드를 블로킹하는 것이 적절하다.
 
-When we run the code in Listing 16-8, we’ll see the value printed from the main
-thread:
-
-<!-- Not extracting output because changes to this output aren't significant;
-the changes are likely to be due to the threads running differently rather than
-changes in the compiler -->
+리스트 16-8의 코드를 실행하면 메인 스레드에서 값이 출력되는 것을 볼 수 있다:
 
 ```text
 Got: hi
 ```
 
-Perfect!
+완벽하다!
 
-### Channels and Ownership Transference
 
-The ownership rules play a vital role in message sending because they help you
-write safe, concurrent code. Preventing errors in concurrent programming is the
-advantage of thinking about ownership throughout your Rust programs. Let’s do
-an experiment to show how channels and ownership work together to prevent
-problems: we’ll try to use a `val` value in the spawned thread _after_ we’ve
-sent it down the channel. Try compiling the code in Listing 16-9 to see why
-this code isn’t allowed.
+### 채널과 소유권 이전
 
-<Listing number="16-9" file-name="src/main.rs" caption="Attempting to use `val` after we’ve sent it down the channel">
+소유권 규칙은 메시지 전송에서 중요한 역할을 한다. 이 규칙은 안전하고 동시성 있는 코드를 작성하는 데 도움을 준다. 동시성 프로그래밍에서 오류를 방지하는 것은 Rust 프로그램 전반에서 소유권을 고려하는 것의 장점이다. 채널과 소유권이 어떻게 함께 작동해 문제를 방지하는지 실험을 통해 확인해 보자. 채널로 값을 보낸 후, 스폰된 스레드에서 `val` 값을 사용하려고 시도할 것이다. 이 코드가 왜 허용되지 않는지 확인하기 위해 Listing 16-9의 코드를 컴파일해 보자.
+
+<Listing number="16-9" file-name="src/main.rs" caption="채널로 값을 보낸 후 `val`을 사용하려는 시도">
 
 ```rust,ignore,does_not_compile
 {{#rustdoc_include ../listings/ch16-fearless-concurrency/listing-16-09/src/main.rs}}
@@ -145,31 +75,20 @@ this code isn’t allowed.
 
 </Listing>
 
-Here, we try to print `val` after we’ve sent it down the channel via `tx.send`.
-Allowing this would be a bad idea: once the value has been sent to another
-thread, that thread could modify or drop it before we try to use the value
-again. Potentially, the other thread’s modifications could cause errors or
-unexpected results due to inconsistent or nonexistent data. However, Rust gives
-us an error if we try to compile the code in Listing 16-9:
+여기서는 `tx.send`를 통해 채널로 값을 보낸 후 `val`을 출력하려고 한다. 이를 허용하는 것은 좋지 않은 아이디어다. 값이 다른 스레드로 전송된 후, 그 스레드가 값을 수정하거나 삭제할 수 있기 때문이다. 이로 인해 데이터가 일관되지 않거나 존재하지 않아 오류나 예상치 못한 결과가 발생할 수 있다. 그러나 Listing 16-9의 코드를 컴파일하려고 하면 Rust가 오류를 발생시킨다:
 
 ```console
 {{#include ../listings/ch16-fearless-concurrency/listing-16-09/output.txt}}
 ```
 
-Our concurrency mistake has caused a compile time error. The `send` function
-takes ownership of its parameter, and when the value is moved, the receiver
-takes ownership of it. This stops us from accidentally using the value again
-after sending it; the ownership system checks that everything is okay.
+동시성 실수로 인해 컴파일 타임 오류가 발생했다. `send` 함수는 파라미터의 소유권을 가져가고, 값이 이동되면 수신자가 그 소유권을 가진다. 이는 값을 보낸 후 실수로 다시 사용하는 것을 막아준다. 소유권 시스템이 모든 것이 올바른지 확인한다.
 
-### Sending Multiple Values and Seeing the Receiver Waiting
 
-The code in Listing 16-8 compiled and ran, but it didn’t clearly show us that
-two separate threads were talking to each other over the channel. In Listing
-16-10 we’ve made some modifications that will prove the code in Listing 16-8 is
-running concurrently: the spawned thread will now send multiple messages and
-pause for a second between each message.
+### 여러 값을 보내고 수신자가 기다리는 모습 관찰하기
 
-<Listing number="16-10" file-name="src/main.rs" caption="Sending multiple messages and pausing between each one">
+리스트 16-8의 코드는 컴파일되고 실행되었지만, 두 개의 스레드가 채널을 통해 서로 통신하는 모습을 명확히 보여주지 못했다. 리스트 16-10에서는 리스트 16-8의 코드가 동시에 실행되고 있음을 증명하기 위해 몇 가지 수정을 가했다. 이제 생성된 스레드는 여러 메시지를 보내고 각 메시지 사이에 1초간 일시 정지한다.
+
+<Listing number="16-10" file-name="src/main.rs" caption="여러 메시지를 보내고 각 메시지 사이에 일시 정지하기">
 
 ```rust,noplayground
 {{#rustdoc_include ../listings/ch16-fearless-concurrency/listing-16-10/src/main.rs}}
@@ -177,21 +96,13 @@ pause for a second between each message.
 
 </Listing>
 
-This time, the spawned thread has a vector of strings that we want to send to
-the main thread. We iterate over them, sending each individually, and pause
-between each by calling the `thread::sleep` function with a `Duration` value of
-one second.
+이번에는 생성된 스레드가 메인 스레드로 보낼 문자열 벡터를 가지고 있다. 이를 순회하며 각 문자열을 개별적으로 보내고, `thread::sleep` 함수를 호출해 1초간 일시 정지한다.
 
-In the main thread, we’re not calling the `recv` function explicitly anymore:
-instead, we’re treating `rx` as an iterator. For each value received, we’re
-printing it. When the channel is closed, iteration will end.
+메인 스레드에서는 더 이상 `recv` 함수를 명시적으로 호출하지 않는다. 대신 `rx`를 이터레이터로 취급한다. 받은 각 값을 출력하고, 채널이 닫히면 이터레이션이 종료된다.
 
-When running the code in Listing 16-10, you should see the following output
-with a one-second pause in between each line:
+리스트 16-10의 코드를 실행하면 각 줄 사이에 1초의 간격을 두고 다음과 같은 출력을 확인할 수 있다:
 
-<!-- Not extracting output because changes to this output aren't significant;
-the changes are likely to be due to the threads running differently rather than
-changes in the compiler -->
+<!-- 출력을 추출하지 않는 이유는 이 출력의 변화가 컴파일러의 변화보다는 스레드 실행 방식의 차이에 기인할 가능성이 높기 때문 -->
 
 ```text
 Got: hi
@@ -200,18 +111,14 @@ Got: the
 Got: thread
 ```
 
-Because we don’t have any code that pauses or delays in the `for` loop in the
-main thread, we can tell that the main thread is waiting to receive values from
-the spawned thread.
+메인 스레드의 `for` 루프에는 일시 정지나 지연을 발생시키는 코드가 없기 때문에, 메인 스레드가 생성된 스레드로부터 값을 받기 위해 기다리고 있음을 알 수 있다.
 
-### Creating Multiple Producers by Cloning the Transmitter
 
-Earlier we mentioned that `mpsc` was an acronym for _multiple producer,
-single consumer_. Let’s put `mpsc` to use and expand the code in Listing 16-10
-to create multiple threads that all send values to the same receiver. We can do
-so by cloning the transmitter, as shown in Listing 16-11.
+### 여러 생산자 생성하기: 송신자 복제하기
 
-<Listing number="16-11" file-name="src/main.rs" caption="Sending multiple messages from multiple producers">
+이전에 `mpsc`가 _multiple producer, single consumer_(다중 생산자, 단일 소비자)의 약자라고 언급했다. 이제 `mpsc`를 활용해 Listing 16-10의 코드를 확장하여 여러 스레드가 동일한 수신자에게 값을 보내는 예제를 만들어보자. Listing 16-11에서 보여주는 것처럼 송신자를 복제하여 이를 구현할 수 있다.
+
+<Listing number="16-11" file-name="src/main.rs" caption="여러 생산자로부터 여러 메시지 보내기">
 
 ```rust,noplayground
 {{#rustdoc_include ../listings/ch16-fearless-concurrency/listing-16-11/src/main.rs:here}}
@@ -219,16 +126,12 @@ so by cloning the transmitter, as shown in Listing 16-11.
 
 </Listing>
 
-This time, before we create the first spawned thread, we call `clone` on the
-transmitter. This will give us a new transmitter we can pass to the first
-spawned thread. We pass the original transmitter to a second spawned thread.
-This gives us two threads, each sending different messages to the one receiver.
+이번에는 첫 번째 스레드를 생성하기 전에 송신자에 `clone` 메서드를 호출한다. 이렇게 하면 첫 번째 스레드에 전달할 새로운 송신자를 얻을 수 있다. 원본 송신자는 두 번째 스레드에 전달한다. 이렇게 하면 두 개의 스레드가 각기 다른 메시지를 동일한 수신자에게 보내게 된다.
 
-When you run the code, your output should look something like this:
+이 코드를 실행하면 다음과 같은 출력이 나타날 것이다:
 
-<!-- Not extracting output because changes to this output aren't significant;
-the changes are likely to be due to the threads running differently rather than
-changes in the compiler -->
+<!-- 출력을 추출하지 않는 이유는 이 출력의 변경이 중요하지 않기 때문임;
+변경은 컴파일러의 변화보다는 스레드가 다르게 실행되었기 때문일 가능성이 높음 -->
 
 ```text
 Got: hi
@@ -241,10 +144,8 @@ Got: thread
 Got: you
 ```
 
-You might see the values in another order, depending on your system. This is
-what makes concurrency interesting as well as difficult. If you experiment with
-`thread::sleep`, giving it various values in the different threads, each run
-will be more nondeterministic and create different output each time.
+시스템에 따라 값의 순서가 달라질 수 있다. 이는 동시성의 흥미로운 점이자 어려운 점이다. `thread::sleep`을 사용해 각 스레드에 다양한 값을 주면서 실험해보면, 실행마다 더 비결정적이 되어 매번 다른 출력을 생성할 것이다.
 
-Now that we’ve looked at how channels work, let’s look at a different method of
-concurrency.
+이제 채널이 어떻게 동작하는지 살펴봤으니, 다른 동시성 방법을 알아보자.
+
+

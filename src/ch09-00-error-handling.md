@@ -1,24 +1,9 @@
-# Error Handling
+# 에러 처리
 
-Errors are a fact of life in software, so Rust has a number of features for
-handling situations in which something goes wrong. In many cases, Rust requires
-you to acknowledge the possibility of an error and take some action before your
-code will compile. This requirement makes your program more robust by ensuring
-that you’ll discover errors and handle them appropriately before deploying your
-code to production!
+소프트웨어에서 에러는 피할 수 없는 현실이다. Rust는 무언가 잘못되었을 때 대처할 수 있는 다양한 기능을 제공한다. 많은 경우, Rust는 코드가 컴파일되기 전에 에러 가능성을 인지하고 적절한 조치를 취하도록 요구한다. 이 요구사항은 코드를 프로덕션에 배포하기 전에 에러를 발견하고 적절히 처리할 수 있도록 보장함으로써 프로그램을 더 견고하게 만든다.
 
-Rust groups errors into two major categories: _recoverable_ and _unrecoverable_
-errors. For a recoverable error, such as a _file not found_ error, we most
-likely just want to report the problem to the user and retry the operation.
-Unrecoverable errors are always symptoms of bugs, such as trying to access a
-location beyond the end of an array, and so we want to immediately stop the
-program.
+Rust는 에러를 크게 두 가지 범주로 나눈다: **복구 가능한 에러**와 **복구 불가능한 에러**. 파일을 찾을 수 없는 경우와 같은 복구 가능한 에러는 사용자에게 문제를 보고하고 작업을 다시 시도하는 것이 일반적이다. 반면, 배열의 끝을 넘어서는 위치에 접근하려는 경우와 같은 복구 불가능한 에러는 버그의 징후이므로 프로그램을 즉시 중단해야 한다.
 
-Most languages don’t distinguish between these two kinds of errors and handle
-both in the same way, using mechanisms such as exceptions. Rust doesn’t have
-exceptions. Instead, it has the type `Result<T, E>` for recoverable errors and
-the `panic!` macro that stops execution when the program encounters an
-unrecoverable error. This chapter covers calling `panic!` first and then talks
-about returning `Result<T, E>` values. Additionally, we’ll explore
-considerations when deciding whether to try to recover from an error or to stop
-execution.
+대부분의 언어는 이 두 가지 에러를 구분하지 않고 예외와 같은 메커니즘을 사용해 동일한 방식으로 처리한다. Rust는 예외를 제공하지 않는다. 대신, 복구 가능한 에러를 처리하기 위해 `Result<T, E>` 타입을 사용하고, 복구 불가능한 에러가 발생했을 때 프로그램 실행을 중단하기 위해 `panic!` 매크로를 제공한다. 이 장에서는 먼저 `panic!`을 호출하는 방법을 다루고, 그다음 `Result<T, E>` 값을 반환하는 방법에 대해 설명한다. 또한, 에러에서 복구를 시도할지 아니면 실행을 중단할지 결정할 때 고려해야 할 사항을 탐구한다.
+
+

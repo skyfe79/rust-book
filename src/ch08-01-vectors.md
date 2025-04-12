@@ -1,17 +1,13 @@
-## Storing Lists of Values with Vectors
+## 값 목록 저장하기: 벡터 사용
 
-The first collection type we’ll look at is `Vec<T>`, also known as a _vector_.
-Vectors allow you to store more than one value in a single data structure that
-puts all the values next to each other in memory. Vectors can only store values
-of the same type. They are useful when you have a list of items, such as the
-lines of text in a file or the prices of items in a shopping cart.
+첫 번째로 살펴볼 컬렉션 타입은 `Vec<T>`로, 일반적으로 _벡터_라고 부른다. 벡터는 여러 값을 단일 데이터 구조에 저장할 수 있게 해주며, 모든 값이 메모리 상에서 서로 인접하게 배치된다. 벡터는 동일한 타입의 값만 저장할 수 있다. 파일의 텍스트 줄이나 쇼핑 카트에 담긴 상품의 가격과 같은 목록을 다룰 때 유용하게 사용할 수 있다.
 
-### Creating a New Vector
 
-To create a new empty vector, we call the `Vec::new` function, as shown in
-Listing 8-1.
+### 새로운 벡터 생성하기
 
-<Listing number="8-1" caption="Creating a new, empty vector to hold values of type `i32`">
+비어 있는 새로운 벡터를 생성하려면 `Vec::new` 함수를 호출한다. 아래 예제 8-1에서 이를 확인할 수 있다.
+
+<Listing number="8-1" caption="`i32` 타입의 값을 담을 새로운 빈 벡터 생성">
 
 ```rust
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-01/src/main.rs:here}}
@@ -19,24 +15,11 @@ Listing 8-1.
 
 </Listing>
 
-Note that we added a type annotation here. Because we aren’t inserting any
-values into this vector, Rust doesn’t know what kind of elements we intend to
-store. This is an important point. Vectors are implemented using generics;
-we’ll cover how to use generics with your own types in Chapter 10. For now,
-know that the `Vec<T>` type provided by the standard library can hold any type.
-When we create a vector to hold a specific type, we can specify the type within
-angle brackets. In Listing 8-1, we’ve told Rust that the `Vec<T>` in `v` will
-hold elements of the `i32` type.
+여기서 타입 어노테이션을 추가한 점에 주목하자. 벡터에 어떤 값도 삽입하지 않았기 때문에 Rust는 어떤 타입의 요소를 저장할지 알 수 없다. 이는 중요한 포인트다. 벡터는 제네릭을 사용해 구현된다. 제네릭을 사용자 정의 타입과 함께 사용하는 방법은 10장에서 다룬다. 지금은 표준 라이브러리에서 제공하는 `Vec<T>` 타입이 어떤 타입이든 담을 수 있다는 점만 기억하자. 특정 타입의 값을 담는 벡터를 생성할 때는 꺾쇠 괄호 안에 타입을 명시할 수 있다. 예제 8-1에서는 `v`의 `Vec<T>`가 `i32` 타입의 요소를 담을 것이라고 Rust에게 알렸다.
 
-More often, you’ll create a `Vec<T>` with initial values and Rust will infer
-the type of value you want to store, so you rarely need to do this type
-annotation. Rust conveniently provides the `vec!` macro, which will create a
-new vector that holds the values you give it. Listing 8-2 creates a new
-`Vec<i32>` that holds the values `1`, `2`, and `3`. The integer type is `i32`
-because that’s the default integer type, as we discussed in the [“Data
-Types”][data-types]<!-- ignore --> section of Chapter 3.
+대부분의 경우 초기값을 가진 `Vec<T>`를 생성하면 Rust가 저장하려는 값의 타입을 추론하므로, 타입 어노테이션을 추가할 필요가 거의 없다. Rust는 편리하게 `vec!` 매크로를 제공한다. 이 매크로는 주어진 값들을 담는 새로운 벡터를 생성한다. 예제 8-2는 `1`, `2`, `3` 값을 담는 새로운 `Vec<i32>`를 생성한다. 정수 타입은 `i32`로 추론된다. 이는 기본 정수 타입이기 때문이며, 3장의 ["데이터 타입"][data-types]<!-- ignore --> 섹션에서 다룬 바 있다.
 
-<Listing number="8-2" caption="Creating a new vector containing values">
+<Listing number="8-2" caption="값을 포함한 새로운 벡터 생성">
 
 ```rust
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-02/src/main.rs:here}}
@@ -44,16 +27,14 @@ Types”][data-types]<!-- ignore --> section of Chapter 3.
 
 </Listing>
 
-Because we’ve given initial `i32` values, Rust can infer that the type of `v`
-is `Vec<i32>`, and the type annotation isn’t necessary. Next, we’ll look at how
-to modify a vector.
+초기 `i32` 값을 제공했기 때문에 Rust는 `v`의 타입이 `Vec<i32>`임을 추론할 수 있다. 따라서 타입 어노테이션은 필요하지 않다. 다음으로 벡터를 수정하는 방법을 살펴본다.
 
-### Updating a Vector
 
-To create a vector and then add elements to it, we can use the `push` method,
-as shown in Listing 8-3.
+### 벡터 업데이트
 
-<Listing number="8-3" caption="Using the `push` method to add values to a vector">
+벡터를 생성한 후 요소를 추가하려면 `push` 메서드를 사용할 수 있다. 이를 보여주는 예제는 Listing 8-3과 같다.
+
+<Listing number="8-3" caption="벡터에 값을 추가하기 위해 `push` 메서드 사용">
 
 ```rust
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-03/src/main.rs:here}}
@@ -61,21 +42,16 @@ as shown in Listing 8-3.
 
 </Listing>
 
-As with any variable, if we want to be able to change its value, we need to
-make it mutable using the `mut` keyword, as discussed in Chapter 3. The numbers
-we place inside are all of type `i32`, and Rust infers this from the data, so
-we don’t need the `Vec<i32>` annotation.
+다른 변수와 마찬가지로, 값을 변경할 수 있게 하려면 `mut` 키워드를 사용해 변수를 가변으로 만들어야 한다. 이는 3장에서 다룬 내용이다. 벡터에 추가하는 숫자들은 모두 `i32` 타입이며, Rust는 데이터로부터 이를 추론하므로 `Vec<i32>` 타입을 명시적으로 지정할 필요가 없다.
 
-### Reading Elements of Vectors
 
-There are two ways to reference a value stored in a vector: via indexing or by
-using the `get` method. In the following examples, we’ve annotated the types of
-the values that are returned from these functions for extra clarity.
+### 벡터의 요소 읽기
 
-Listing 8-4 shows both methods of accessing a value in a vector, with indexing
-syntax and the `get` method.
+벡터에 저장된 값에 접근하는 방법은 두 가지가 있다: 인덱싱을 사용하거나 `get` 메서드를 사용하는 것이다. 다음 예제에서는 각 함수가 반환하는 값의 타입을 명확히 보여주기 위해 주석을 추가했다.
 
-<Listing number="8-4" caption="Using indexing syntax and using the `get` method to access an item in a vector">
+리스트 8-4에서는 인덱싱 문법과 `get` 메서드를 사용해 벡터의 값에 접근하는 두 가지 방법을 보여준다.
+
+<Listing number="8-4" caption="인덱싱 문법과 `get` 메서드를 사용해 벡터의 항목에 접근하기">
 
 ```rust
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-04/src/main.rs:here}}
@@ -83,19 +59,11 @@ syntax and the `get` method.
 
 </Listing>
 
-Note a few details here. We use the index value of `2` to get the third element
-because vectors are indexed by number, starting at zero. Using `&` and `[]`
-gives us a reference to the element at the index value. When we use the `get`
-method with the index passed as an argument, we get an `Option<&T>` that we can
-use with `match`.
+여기서 몇 가지 세부 사항을 주목하자. 벡터는 0부터 시작하는 숫자로 인덱싱되기 때문에 세 번째 요소를 가져오기 위해 인덱스 값 `2`를 사용한다. `&`와 `[]`를 사용하면 해당 인덱스 값에 있는 요소에 대한 참조를 얻는다. `get` 메서드를 사용하고 인덱스를 인자로 전달하면 `Option<&T>`를 얻을 수 있으며, 이를 `match`와 함께 사용할 수 있다.
 
-Rust provides these two ways to reference an element so you can choose how the
-program behaves when you try to use an index value outside the range of
-existing elements. As an example, let’s see what happens when we have a vector
-of five elements and then we try to access an element at index 100 with each
-technique, as shown in Listing 8-5.
+Rust는 요소를 참조하는 이 두 가지 방법을 제공하므로, 기존 요소의 범위를 벗어난 인덱스 값을 사용하려고 할 때 프로그램이 어떻게 동작할지 선택할 수 있다. 예를 들어, 다섯 개의 요소가 있는 벡터에서 인덱스 100에 있는 요소에 접근하려고 할 때 각 방법으로 어떤 일이 발생하는지 살펴보자. 이는 리스트 8-5에 나와 있다.
 
-<Listing number="8-5" caption="Attempting to access the element at index 100 in a vector containing five elements">
+<Listing number="8-5" caption="다섯 개의 요소가 있는 벡터에서 인덱스 100에 있는 요소에 접근 시도하기">
 
 ```rust,should_panic,panics
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-05/src/main.rs:here}}
@@ -103,32 +71,13 @@ technique, as shown in Listing 8-5.
 
 </Listing>
 
-When we run this code, the first `[]` method will cause the program to panic
-because it references a nonexistent element. This method is best used when you
-want your program to crash if there’s an attempt to access an element past the
-end of the vector.
+이 코드를 실행하면 첫 번째 `[]` 메서드는 존재하지 않는 요소를 참조하기 때문에 프로그램이 패닉 상태에 빠진다. 이 메서드는 벡터의 끝을 넘어서는 요소에 접근하려고 할 때 프로그램이 강제로 종료되기를 원할 때 가장 적합하다.
 
-When the `get` method is passed an index that is outside the vector, it returns
-`None` without panicking. You would use this method if accessing an element
-beyond the range of the vector may happen occasionally under normal
-circumstances. Your code will then have logic to handle having either
-`Some(&element)` or `None`, as discussed in Chapter 6. For example, the index
-could be coming from a person entering a number. If they accidentally enter a
-number that’s too large and the program gets a `None` value, you could tell the
-user how many items are in the current vector and give them another chance to
-enter a valid value. That would be more user-friendly than crashing the program
-due to a typo!
+`get` 메서드에 벡터의 범위를 벗어난 인덱스를 전달하면 패닉 없이 `None`을 반환한다. 이 메서드는 벡터의 범위를 벗어난 요소에 접근하는 일이 정상적인 상황에서 가끔 발생할 수 있을 때 사용한다. 그러면 코드는 `Some(&element)` 또는 `None`을 처리하는 로직을 갖게 된다. 이는 6장에서 다룬 내용이다. 예를 들어, 인덱스가 사용자가 입력한 숫자일 수 있다. 사용자가 실수로 너무 큰 숫자를 입력하고 프로그램이 `None` 값을 얻으면, 현재 벡터에 몇 개의 항목이 있는지 사용자에게 알려주고 유효한 값을 다시 입력할 기회를 줄 수 있다. 이는 오타로 인해 프로그램이 강제 종료되는 것보다 더 사용자 친화적이다.
 
-When the program has a valid reference, the borrow checker enforces the
-ownership and borrowing rules (covered in Chapter 4) to ensure this reference
-and any other references to the contents of the vector remain valid. Recall the
-rule that states you can’t have mutable and immutable references in the same
-scope. That rule applies in Listing 8-6, where we hold an immutable reference
-to the first element in a vector and try to add an element to the end. This
-program won’t work if we also try to refer to that element later in the
-function.
+프로그램이 유효한 참조를 가지고 있으면, 빌림 검사기는 소유권과 빌림 규칙(4장에서 다룸)을 적용해 이 참조와 벡터의 내용에 대한 다른 참조가 계속 유효한지 확인한다. 동일한 스코프에서 가변 참조와 불변 참조를 동시에 가질 수 없다는 규칙을 기억하자. 이 규칙은 리스트 8-6에 적용된다. 여기서는 벡터의 첫 번째 요소에 대한 불변 참조를 가지고 있는 상태에서 벡터의 끝에 요소를 추가하려고 한다. 이 프로그램은 나중에 함수에서 해당 요소를 참조하려고 하면 작동하지 않는다.
 
-<Listing number="8-6" caption="Attempting to add an element to a vector while holding a reference to an item">
+<Listing number="8-6" caption="벡터의 항목에 대한 참조를 가지고 있는 상태에서 벡터에 요소 추가 시도하기">
 
 ```rust,ignore,does_not_compile
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-06/src/main.rs:here}}
@@ -136,33 +85,22 @@ function.
 
 </Listing>
 
-Compiling this code will result in this error:
+이 코드를 컴파일하면 다음과 같은 오류가 발생한다:
 
 ```console
 {{#include ../listings/ch08-common-collections/listing-08-06/output.txt}}
 ```
 
-The code in Listing 8-6 might look like it should work: why should a reference
-to the first element care about changes at the end of the vector? This error is
-due to the way vectors work: because vectors put the values next to each other
-in memory, adding a new element onto the end of the vector might require
-allocating new memory and copying the old elements to the new space, if there
-isn’t enough room to put all the elements next to each other where the vector
-is currently stored. In that case, the reference to the first element would be
-pointing to deallocated memory. The borrowing rules prevent programs from
-ending up in that situation.
+리스트 8-6의 코드는 작동할 것처럼 보일 수 있다: 첫 번째 요소에 대한 참조가 벡터의 끝에서 발생하는 변경 사항을 왜 신경 써야 할까? 이 오류는 벡터가 작동하는 방식 때문에 발생한다. 벡터는 메모리에 값을 연속적으로 배치하기 때문에, 벡터가 현재 저장된 공간에 모든 요소를 연속적으로 배치할 수 있는 충분한 공간이 없으면, 벡터의 끝에 새로운 요소를 추가하기 위해 새로운 메모리를 할당하고 기존 요소를 새로운 공간으로 복사해야 할 수 있다. 그런 경우, 첫 번째 요소에 대한 참조는 할당 해제된 메모리를 가리키게 된다. 빌림 규칙은 프로그램이 이런 상황에 빠지는 것을 방지한다.
 
-> Note: For more on the implementation details of the `Vec<T>` type, see [“The
-> Rustonomicon”][nomicon].
+> 참고: `Vec<T>` 타입의 구현 세부 사항에 대해 더 알고 싶다면 [“The Rustonomicon”][nomicon]을 참고하자.
 
-### Iterating Over the Values in a Vector
 
-To access each element in a vector in turn, we would iterate through all of the
-elements rather than use indices to access one at a time. Listing 8-7 shows how
-to use a `for` loop to get immutable references to each element in a vector of
-`i32` values and print them.
+### 벡터의 값에 순차적으로 접근하기
 
-<Listing number="8-7" caption="Printing each element in a vector by iterating over the elements using a `for` loop">
+벡터의 각 요소에 하나씩 접근하기 위해 인덱스를 사용하는 대신, 모든 요소를 순회하는 방법을 사용할 수 있다. 예제 8-7은 `i32` 타입의 벡터에서 각 요소에 대한 불변 참조를 얻고 출력하는 방법을 보여준다.
+
+<Listing number="8-7" caption="`for` 루프를 사용해 벡터의 각 요소를 순회하며 출력하기">
 
 ```rust
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-07/src/main.rs:here}}
@@ -170,11 +108,9 @@ to use a `for` loop to get immutable references to each element in a vector of
 
 </Listing>
 
-We can also iterate over mutable references to each element in a mutable vector
-in order to make changes to all the elements. The `for` loop in Listing 8-8
-will add `50` to each element.
+또한, 가변 벡터의 각 요소에 대한 가변 참조를 순회하며 모든 요소를 변경할 수도 있다. 예제 8-8의 `for` 루프는 각 요소에 `50`을 더한다.
 
-<Listing number="8-8" caption="Iterating over mutable references to elements in a vector">
+<Listing number="8-8" caption="벡터의 요소에 대한 가변 참조를 순회하기">
 
 ```rust
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-08/src/main.rs:here}}
@@ -182,34 +118,18 @@ will add `50` to each element.
 
 </Listing>
 
-To change the value that the mutable reference refers to, we have to use the
-`*` dereference operator to get to the value in `i` before we can use the `+=`
-operator. We’ll talk more about the dereference operator in the [“Following the
-Pointer to the Value”][deref]<!-- ignore --> section of Chapter 15.
+가변 참조가 가리키는 값을 변경하려면, `+=` 연산자를 사용하기 전에 `*` 역참조 연산자를 사용해 `i`의 값을 얻어야 한다. 역참조 연산자에 대해서는 15장의 [“포인터를 따라가 값에 접근하기”][deref]<!-- ignore --> 섹션에서 더 자세히 다룬다.
 
-Iterating over a vector, whether immutably or mutably, is safe because of the
-borrow checker’s rules. If we attempted to insert or remove items in the `for`
-loop bodies in Listing 8-7 and Listing 8-8, we would get a compiler error
-similar to the one we got with the code in Listing 8-6. The reference to the
-vector that the `for` loop holds prevents simultaneous modification of the
-whole vector.
+불변이든 가변이든 벡터를 순회하는 것은 빌림 검사기의 규칙 덕분에 안전하다. 예제 8-7과 예제 8-8의 `for` 루프 본문에서 요소를 삽입하거나 제거하려고 하면, 예제 8-6에서와 유사한 컴파일러 오류가 발생한다. `for` 루프가 벡터에 대한 참조를 유지하고 있기 때문에, 벡터 전체를 동시에 수정할 수 없다.
 
-### Using an Enum to Store Multiple Types
 
-Vectors can only store values that are of the same type. This can be
-inconvenient; there are definitely use cases for needing to store a list of
-items of different types. Fortunately, the variants of an enum are defined
-under the same enum type, so when we need one type to represent elements of
-different types, we can define and use an enum!
+### 여러 타입을 저장하기 위해 열거형 사용하기
 
-For example, say we want to get values from a row in a spreadsheet in which
-some of the columns in the row contain integers, some floating-point numbers,
-and some strings. We can define an enum whose variants will hold the different
-value types, and all the enum variants will be considered the same type: that
-of the enum. Then we can create a vector to hold that enum and so, ultimately,
-hold different types. We’ve demonstrated this in Listing 8-9.
+벡터는 동일한 타입의 값만 저장할 수 있다. 이는 불편할 수 있으며, 다양한 타입의 항목을 저장해야 하는 경우가 분명히 존재한다. 다행히도, 열거형의 각 변형(variant)은 동일한 열거형 타입 아래에 정의되므로, 서로 다른 타입의 요소를 표현해야 할 때 열거형을 정의하고 사용할 수 있다.
 
-<Listing number="8-9" caption="Defining an `enum` to store values of different types in one vector">
+예를 들어, 스프레드시트의 한 행에서 값을 가져오려고 하는데, 해당 행의 일부 컬럼에는 정수, 일부는 부동소수점 숫자, 일부는 문자열이 포함되어 있다고 가정해 보자. 각 변형이 서로 다른 값 타입을 보유할 수 있는 열거형을 정의할 수 있으며, 모든 열거형 변형은 동일한 타입(열거형 타입)으로 간주된다. 그런 다음 해당 열거형을 보유할 벡터를 생성하여 궁극적으로 다양한 타입을 저장할 수 있다. 이를 Listing 8-9에서 보여준다.
+
+<Listing number="8-9" caption="하나의 벡터에 다양한 타입의 값을 저장하기 위해 `enum` 정의하기">
 
 ```rust
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-09/src/main.rs:here}}
@@ -217,29 +137,18 @@ hold different types. We’ve demonstrated this in Listing 8-9.
 
 </Listing>
 
-Rust needs to know what types will be in the vector at compile time so it knows
-exactly how much memory on the heap will be needed to store each element. We
-must also be explicit about what types are allowed in this vector. If Rust
-allowed a vector to hold any type, there would be a chance that one or more of
-the types would cause errors with the operations performed on the elements of
-the vector. Using an enum plus a `match` expression means that Rust will ensure
-at compile time that every possible case is handled, as discussed in Chapter 6.
+Rust는 컴파일 타임에 벡터에 어떤 타입이 들어갈지 알아야 각 요소를 저장하기 위해 힙에 얼마나 많은 메모리가 필요한지 정확히 알 수 있다. 또한 이 벡터에 어떤 타입이 허용되는지 명시적으로 지정해야 한다. 만약 Rust가 벡터가 모든 타입을 보유할 수 있도록 허용한다면, 벡터의 요소에 대해 수행되는 연산에서 하나 이상의 타입이 오류를 일으킬 가능성이 있다. 열거형과 `match` 표현식을 사용하면 Rust가 컴파일 타임에 모든 가능한 경우가 처리되도록 보장한다. 이는 6장에서 논의한 바와 같다.
 
-If you don’t know the exhaustive set of types a program will get at runtime to
-store in a vector, the enum technique won’t work. Instead, you can use a trait
-object, which we’ll cover in Chapter 18.
+만약 프로그램이 런타임에 벡터에 저장할 타입의 전체 집합을 알지 못한다면, 열거형 기법은 작동하지 않는다. 대신 트레이트 객체(trait object)를 사용할 수 있으며, 이는 18장에서 다룰 예정이다.
 
-Now that we’ve discussed some of the most common ways to use vectors, be sure
-to review [the API documentation][vec-api]<!-- ignore --> for all of the many
-useful methods defined on `Vec<T>` by the standard library. For example, in
-addition to `push`, a `pop` method removes and returns the last element.
+이제 벡터를 사용하는 가장 일반적인 방법 몇 가지를 논의했으니, 표준 라이브러리에서 `Vec<T>`에 정의된 다양한 유용한 메서드에 대한 [API 문서][vec-api]<!-- ignore -->를 꼭 확인해 보자. 예를 들어, `push` 외에도 `pop` 메서드는 마지막 요소를 제거하고 반환한다.
 
-### Dropping a Vector Drops Its Elements
 
-Like any other `struct`, a vector is freed when it goes out of scope, as
-annotated in Listing 8-10.
+### 벡터가 사라지면 요소들도 함께 사라진다
 
-<Listing number="8-10" caption="Showing where the vector and its elements are dropped">
+다른 `struct`와 마찬가지로, 벡터도 범위를 벗어나면 메모리에서 해제된다. 이 내용은 Listing 8-10에 표시되어 있다.
+
+<Listing number="8-10" caption="벡터와 그 요소들이 사라지는 시점을 보여줌">
 
 ```rust
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-10/src/main.rs:here}}
@@ -247,14 +156,13 @@ annotated in Listing 8-10.
 
 </Listing>
 
-When the vector gets dropped, all of its contents are also dropped, meaning the
-integers it holds will be cleaned up. The borrow checker ensures that any
-references to contents of a vector are only used while the vector itself is
-valid.
+벡터가 메모리에서 해제되면, 그 안에 담긴 모든 요소들도 함께 해제된다. 즉, 벡터가 갖고 있던 정수들도 정리된다. 빌림 검사기는 벡터가 유효한 동안에만 벡터의 요소들에 대한 참조가 사용되도록 보장한다.
 
-Let’s move on to the next collection type: `String`!
+이제 다음 컬렉션 타입인 `String`으로 넘어가보자!
 
 [data-types]: ch03-02-data-types.html#data-types
 [nomicon]: ../nomicon/vec/vec.html
 [vec-api]: ../std/vec/struct.Vec.html
 [deref]: ch15-02-deref.html#following-the-pointer-to-the-value-with-the-dereference-operator
+
+

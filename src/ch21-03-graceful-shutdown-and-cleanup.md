@@ -1,32 +1,17 @@
-## Graceful Shutdown and Cleanup
+## 그레이스풀 셧다운과 정리
 
-The code in Listing 21-20 is responding to requests asynchronously through the
-use of a thread pool, as we intended. We get some warnings about the `workers`,
-`id`, and `thread` fields that we’re not using in a direct way that reminds us
-we’re not cleaning up anything. When we use the less elegant
-<kbd>ctrl</kbd>-<kbd>c</kbd> method to halt the main thread, all other threads
-are stopped immediately as well, even if they’re in the middle of serving a
-request.
+리스트 21-20의 코드는 의도한 대로 스레드 풀을 사용해 요청에 비동기적으로 응답한다. 하지만 `workers`, `id`, `thread` 필드를 직접 사용하지 않아 경고가 발생한다. 이는 정리 작업을 하지 않았다는 것을 알려주는 신호다. <kbd>ctrl</kbd>-<kbd>c</kbd>와 같은 간단한 방법으로 메인 스레드를 중단하면, 다른 모든 스레드도 즉시 중단된다. 심지어 요청을 처리 중인 스레드도 예외는 아니다.
 
-Next, then, we’ll implement the `Drop` trait to call `join` on each of the
-threads in the pool so they can finish the requests they’re working on before
-closing. Then we’ll implement a way to tell the threads they should stop
-accepting new requests and shut down. To see this code in action, we’ll modify
-our server to accept only two requests before gracefully shutting down its
-thread pool.
+다음으로, 스레드 풀의 각 스레드에서 `join`을 호출해 진행 중인 요청을 마무리한 후 종료할 수 있도록 `Drop` 트레이트를 구현한다. 그리고 스레드가 새로운 요청을 받지 않고 종료하도록 지시하는 방법도 추가한다. 이 코드를 실제로 확인하기 위해, 서버를 수정해 두 개의 요청만 처리한 후 스레드 풀을 그레이스풀하게 종료하도록 한다.
 
-One thing to notice as we go: none of this affects the parts of the code that
-handle executing the closures, so everything here would be just the same if we
-were using a thread pool for an async runtime.
+한 가지 주목할 점은, 이 모든 작업이 클로저를 실행하는 코드 부분에는 영향을 미치지 않는다는 것이다. 따라서 비동기 런타임을 위해 스레드 풀을 사용하더라도 여기서 다루는 내용은 동일하게 적용된다.
 
-### Implementing the `Drop` Trait on `ThreadPool`
 
-Let’s start with implementing `Drop` on our thread pool. When the pool is
-dropped, our threads should all join to make sure they finish their work.
-Listing 21-22 shows a first attempt at a `Drop` implementation; this code won’t
-quite work yet.
+### `ThreadPool`에 `Drop` 트레이트 구현하기
 
-<Listing number="21-22" file-name="src/lib.rs" caption="Joining each thread when the thread pool goes out of scope">
+먼저 스레드 풀에 `Drop`을 구현해 보자. 풀이 드롭될 때, 모든 스레드가 작업을 마칠 수 있도록 `join`을 호출해야 한다. 아래 예제는 `Drop` 구현을 위한 첫 번째 시도다. 이 코드는 아직 완벽하게 동작하지 않는다.
+
+<Listing number="21-22" file-name="src/lib.rs" caption="스레드 풀이 스코프를 벗어날 때 각 스레드에 join 호출하기">
 
 ```rust,ignore,does_not_compile
 {{#rustdoc_include ../listings/ch21-web-server/listing-21-22/src/lib.rs:here}}
@@ -34,43 +19,21 @@ quite work yet.
 
 </Listing>
 
-First, we loop through each of the thread pool `workers`. We use `&mut` for this
-because `self` is a mutable reference, and we also need to be able to mutate
-`worker`. For each worker, we print a message saying that this particular
-`Worker` instance is shutting down, and then we call `join` on that `Worker`
-instance’s thread. If the call to `join` fails, we use `unwrap` to make Rust
-panic and go into an ungraceful shutdown.
+먼저 스레드 풀의 각 `worker`를 순회한다. `self`가 가변 참조이기 때문에 `&mut`를 사용하며, `worker`도 변경할 수 있어야 한다. 각 `worker`에 대해 해당 `Worker` 인스턴스가 종료된다는 메시지를 출력한 후, `Worker` 인스턴스의 스레드에 `join`을 호출한다. `join` 호출이 실패하면 `unwrap`을 사용해 Rust가 패닉에 빠지도록 하고, 비정상 종료를 유도한다.
 
-Here is the error we get when we compile this code:
+이 코드를 컴파일하면 다음과 같은 에러가 발생한다:
 
 ```console
 {{#include ../listings/ch21-web-server/listing-21-22/output.txt}}
 ```
 
-The error tells us we can’t call `join` because we only have a mutable borrow of
-each `worker` and `join` takes ownership of its argument. To solve this issue,
-we need to move the thread out of the `Worker` instance that owns `thread` so
-`join` can consume the thread. One way to do this is by taking the same approach
-we did in Listing 18-15. If `Worker` held an `Option<thread::JoinHandle<()>>`,
-we could call the `take` method on the `Option` to move the value out of the
-`Some` variant and leave a `None` variant in its place. In other words, a
-`Worker` that is running would have a `Some` variant in `thread`, and when we
-wanted to clean up a `Worker`, we’d replace `Some` with `None` so the `Worker`
-wouldn’t have a thread to run.
+에러 메시지는 각 `worker`에 대해 가변 참조만 가지고 있기 때문에 `join`을 호출할 수 없다고 알려준다. `join`은 인수의 소유권을 가져가기 때문이다. 이 문제를 해결하려면 `thread`를 소유한 `Worker` 인스턴스에서 스레드를 이동시켜 `join`이 스레드를 소비할 수 있도록 해야 한다. 한 가지 방법은 예제 18-15에서 사용한 접근 방식을 따르는 것이다. 만약 `Worker`가 `Option<thread::JoinHandle<()>>`를 가지고 있다면, `Option`의 `take` 메서드를 호출해 `Some` 변형에서 값을 꺼내고 그 자리에 `None`을 남길 수 있다. 즉, 실행 중인 `Worker`는 `thread`에 `Some` 변형을 가지고 있고, `Worker`를 정리할 때 `Some`을 `None`으로 대체해 `Worker`가 더 이상 실행할 스레드를 가지지 않도록 할 수 있다.
 
-However, the _only_ time this would come up would be when dropping the `Worker`.
-In exchange, we’d have to deal with an `Option<thread::JoinHandle<()>>` anywhere
-we accessed `worker.thread`. Idiomatic Rust uses `Option` quite a bit, but when
-you find yourself wrapping something you know will always be present in `Option`
-as a workaround like this, it’s a good idea to look for alternative approaches.
-They can make your code cleaner and less error-prone.
+그러나 이 방법은 `Worker`를 드롭할 때만 필요하다. 대신 `worker.thread`에 접근할 때마다 `Option<thread::JoinHandle<()>>`를 처리해야 한다. Rust에서는 `Option`을 자주 사용하지만, 항상 존재할 것이 확실한 값을 `Option`으로 감싸는 것은 코드를 더 깔끔하고 오류가 적게 만드는 대안을 찾는 것이 좋다.
 
-In this case, a better alternative exists: the `Vec::drain` method. It accepts
-a range parameter to specify which items to remove from the `Vec`, and returns
-an iterator of those items. Passing the `..` range syntax will remove _every_
-value from the `Vec`.
+이 경우 더 나은 대안이 있다: `Vec::drain` 메서드다. 이 메서드는 `Vec`에서 제거할 항목을 지정하는 범위 매개변수를 받고, 해당 항목의 이터레이터를 반환한다. `..` 범위 구문을 전달하면 `Vec`의 모든 값을 제거한다.
 
-So we need to update the `ThreadPool` `drop` implementation like this:
+따라서 `ThreadPool`의 `drop` 구현을 다음과 같이 업데이트해야 한다:
 
 <Listing file-name="src/lib.rs">
 
@@ -80,29 +43,18 @@ So we need to update the `ThreadPool` `drop` implementation like this:
 
 </Listing>
 
-This resolves the compiler error and does not require any other changes to our
-code.
+이렇게 하면 컴파일러 에러가 해결되며, 코드의 다른 부분을 변경할 필요가 없다.
 
-### Signaling to the Threads to Stop Listening for Jobs
 
-With all the changes we’ve made, our code compiles without any warnings.
-However, the bad news is that this code doesn’t function the way we want it to
-yet. The key is the logic in the closures run by the threads of the `Worker`
-instances: at the moment, we call `join`, but that won’t shut down the threads
-because they `loop` forever looking for jobs. If we try to drop our `ThreadPool`
-with our current implementation of `drop`, the main thread will block forever,
-waiting for the first thread to finish.
+### 스레드에게 작업 수신을 중단하도록 신호 보내기
 
-To fix this problem, we’ll need a change in the `ThreadPool` `drop`
-implementation and then a change in the `Worker` loop.
+지금까지 수정한 내용을 통해 코드는 경고 없이 컴파일된다. 그러나 아쉽게도 이 코드는 아직 원하는 대로 동작하지 않는다. 문제의 핵심은 `Worker` 인스턴스의 스레드가 실행하는 클로저의 로직에 있다. 현재는 `join`을 호출하지만, 이는 스레드가 작업을 계속해서 찾는 무한 루프 때문에 스레드를 종료하지 못한다. 만약 현재 구현된 `drop`을 통해 `ThreadPool`을 삭제하려고 하면, 메인 스레드는 첫 번째 스레드가 종료되기를 기다리며 영원히 블록될 것이다.
 
-First we’ll change the `ThreadPool` `drop` implementation to explicitly drop
-the `sender` before waiting for the threads to finish. Listing 21-23 shows the
-changes to `ThreadPool` to explicitly drop `sender`. Unlike with the thread,
-here we _do_ need to use an `Option` to be able to move `sender` out of
-`ThreadPool` with `Option::take`.
+이 문제를 해결하기 위해 `ThreadPool`의 `drop` 구현을 변경하고, `Worker`의 루프도 수정해야 한다.
 
-<Listing number="21-23" file-name="src/lib.rs" caption="Explicitly drop `sender` before joining the `Worker` threads">
+먼저 `ThreadPool`의 `drop` 구현을 변경하여 스레드가 종료되기를 기다리기 전에 `sender`를 명시적으로 삭제한다. 리스트 21-23은 `sender`를 명시적으로 삭제하기 위해 `ThreadPool`에 적용한 변경 사항을 보여준다. 스레드와 달리 여기서는 `Option::take`를 사용해 `sender`를 `ThreadPool`에서 이동시키기 위해 `Option`을 사용해야 한다.
+
+<Listing number="21-23" file-name="src/lib.rs" caption="`Worker` 스레드를 `join`하기 전에 `sender`를 명시적으로 삭제">
 
 ```rust,noplayground,not_desired_behavior
 {{#rustdoc_include ../listings/ch21-web-server/listing-21-23/src/lib.rs:here}}
@@ -110,13 +62,9 @@ here we _do_ need to use an `Option` to be able to move `sender` out of
 
 </Listing>
 
-Dropping `sender` closes the channel, which indicates no more messages will be
-sent. When that happens, all the calls to `recv` that the `Worker` instances do
-in the infinite loop will return an error. In Listing 21-24, we change the
-`Worker` loop to gracefully exit the loop in that case, which means the threads
-will finish when the `ThreadPool` `drop` implementation calls `join` on them.
+`sender`를 삭제하면 채널이 닫히고, 더 이상 메시지가 전송되지 않음을 나타낸다. 이 경우 `Worker` 인스턴스가 무한 루프에서 수행하는 `recv` 호출은 모두 에러를 반환한다. 리스트 21-24에서는 이 경우에 루프를 정상적으로 종료하도록 `Worker` 루프를 변경한다. 이는 `ThreadPool`의 `drop` 구현이 `join`을 호출할 때 스레드가 종료됨을 의미한다.
 
-<Listing number="21-24" file-name="src/lib.rs" caption="Explicitly breaking out of the loop when `recv` returns an error">
+<Listing number="21-24" file-name="src/lib.rs" caption="`recv`가 에러를 반환할 때 루프를 명시적으로 종료">
 
 ```rust,noplayground
 {{#rustdoc_include ../listings/ch21-web-server/listing-21-24/src/lib.rs:here}}
@@ -124,10 +72,9 @@ will finish when the `ThreadPool` `drop` implementation calls `join` on them.
 
 </Listing>
 
-To see this code in action, let’s modify `main` to accept only two requests
-before gracefully shutting down the server, as shown in Listing 21-25.
+이 코드가 동작하는 모습을 보기 위해, 리스트 21-25와 같이 `main`을 수정하여 서버가 두 개의 요청만 처리한 후 정상적으로 종료하도록 한다.
 
-<Listing number="21-25" file-name="src/main.rs" caption="Shutting down the server after serving two requests by exiting the loop">
+<Listing number="21-25" file-name="src/main.rs" caption="루프를 종료하여 두 개의 요청을 처리한 후 서버 종료">
 
 ```rust,ignore
 {{#rustdoc_include ../listings/ch21-web-server/listing-21-25/src/main.rs:here}}
@@ -135,27 +82,11 @@ before gracefully shutting down the server, as shown in Listing 21-25.
 
 </Listing>
 
-You wouldn’t want a real-world web server to shut down after serving only two
-requests. This code just demonstrates that the graceful shutdown and cleanup is
-in working order.
+실제 웹 서버는 단 두 개의 요청만 처리하고 종료하도록 만들지는 않을 것이다. 이 코드는 단순히 정상적인 종료와 정리 작업이 제대로 동작하는지 보여주기 위한 예제이다.
 
-The `take` method is defined in the `Iterator` trait and limits the iteration
-to the first two items at most. The `ThreadPool` will go out of scope at the
-end of `main`, and the `drop` implementation will run.
+`take` 메서드는 `Iterator` 트레이트에 정의되어 있으며, 반복을 최대 두 개의 항목으로 제한한다. `ThreadPool`은 `main`의 끝에서 스코프를 벗어나며, `drop` 구현이 실행된다.
 
-Start the server with `cargo run`, and make three requests. The third request
-should error, and in your terminal you should see output similar to this:
-
-<!-- manual-regeneration
-cd listings/ch21-web-server/listing-21-25
-cargo run
-curl http://127.0.0.1:7878
-curl http://127.0.0.1:7878
-curl http://127.0.0.1:7878
-third request will error because server will have shut down
-copy output below
-Can't automate because the output depends on making requests
--->
+`cargo run`으로 서버를 시작하고, 세 번의 요청을 보낸다. 세 번째 요청은 에러를 반환해야 하며, 터미널에서 다음과 유사한 출력을 확인할 수 있다:
 
 ```console
 $ cargo run
@@ -175,28 +106,13 @@ Shutting down worker 2
 Shutting down worker 3
 ```
 
-You might see a different ordering of `Worker` IDs and messages printed. We can
-see how this code works from the messages: `Worker` instances 0 and 3 got the
-first two requests. The server stopped accepting connections after the second
-connection, and the `Drop` implementation on `ThreadPool` starts executing
-before `Worker` 3 even starts its job. Dropping the `sender` disconnects all the
-`Worker` instances and tells them to shut down. The `Worker` instances each
-print a message when they disconnect, and then the thread pool calls `join` to
-wait for each `Worker` thread to finish.
+`Worker` ID와 메시지의 순서는 다를 수 있다. 메시지를 통해 이 코드가 어떻게 동작하는지 확인할 수 있다: `Worker` 인스턴스 0과 3이 처음 두 요청을 받았다. 서버는 두 번째 연결 이후에 연결을 수락하지 않았고, `ThreadPool`의 `Drop` 구현은 `Worker` 3이 작업을 시작하기 전에 실행되기 시작했다. `sender`를 삭제하면 모든 `Worker` 인스턴스의 연결이 끊어지고 종료하도록 지시한다. 각 `Worker` 인스턴스는 연결이 끊어질 때 메시지를 출력하고, 스레드 풀은 각 `Worker` 스레드가 종료되기를 기다리기 위해 `join`을 호출한다.
 
-Notice one interesting aspect of this particular execution: the `ThreadPool`
-dropped the `sender`, and before any `Worker` received an error, we tried to
-join `Worker` 0. `Worker` 0 had not yet gotten an error from `recv`, so the main
-thread blocked waiting for `Worker` 0 to finish. In the meantime, `Worker` 3
-received a job and then all threads received an error. When `Worker` 0 finished,
-the main thread waited for the rest of the `Worker` instances to finish. At that
-point, they had all exited their loops and stopped.
+이 실행에서 흥미로운 점은 `ThreadPool`이 `sender`를 삭제한 후, 어떤 `Worker`도 에러를 받기 전에 `Worker` 0을 `join`하려고 시도했다는 것이다. `Worker` 0은 아직 `recv`에서 에러를 받지 않았기 때문에, 메인 스레드는 `Worker` 0이 종료되기를 기다리며 블록되었다. 그 동안 `Worker` 3은 작업을 받고, 이후 모든 스레드가 에러를 받았다. `Worker` 0이 종료되면, 메인 스레드는 나머지 `Worker` 인스턴스가 종료되기를 기다렸다. 이 시점에서 모든 스레드는 루프를 종료하고 정지했다.
 
-Congrats! We’ve now completed our project; we have a basic web server that uses
-a thread pool to respond asynchronously. We’re able to perform a graceful
-shutdown of the server, which cleans up all the threads in the pool.
+축하한다! 이제 프로젝트를 완성했다. 스레드 풀을 사용해 비동기적으로 응답하는 기본적인 웹 서버를 만들었다. 또한 서버를 정상적으로 종료하고 풀의 모든 스레드를 정리할 수 있게 되었다.
 
-Here’s the full code for reference:
+참고를 위해 전체 코드는 다음과 같다:
 
 <Listing file-name="src/main.rs">
 
@@ -214,21 +130,17 @@ Here’s the full code for reference:
 
 </Listing>
 
-We could do more here! If you want to continue enhancing this project, here are
-some ideas:
+여기서 더 많은 작업을 할 수 있다! 이 프로젝트를 계속 개선하고 싶다면 다음 아이디어를 고려해보자:
 
-- Add more documentation to `ThreadPool` and its public methods.
-- Add tests of the library’s functionality.
-- Change calls to `unwrap` to more robust error handling.
-- Use `ThreadPool` to perform some task other than serving web requests.
-- Find a thread pool crate on [crates.io](https://crates.io/) and implement a
-  similar web server using the crate instead. Then compare its API and
-  robustness to the thread pool we implemented.
+- `ThreadPool`과 그 공개 메서드에 대한 문서를 추가한다.
+- 라이브러리의 기능을 테스트한다.
+- `unwrap` 호출을 더 강력한 에러 처리로 변경한다.
+- 웹 요청 처리 외에 다른 작업을 수행하기 위해 `ThreadPool`을 사용한다.
+- [crates.io](https://crates.io/)에서 스레드 풀 크레이트를 찾아 이를 사용해 비슷한 웹 서버를 구현한다. 그리고 그 크레이트의 API와 견고성을 우리가 구현한 스레드 풀과 비교한다.
 
-## Summary
 
-Well done! You’ve made it to the end of the book! We want to thank you for
-joining us on this tour of Rust. You’re now ready to implement your own Rust
-projects and help with other people’s projects. Keep in mind that there is a
-welcoming community of other Rustaceans who would love to help you with any
-challenges you encounter on your Rust journey.
+## 요약
+
+축하한다! 지금까지 Rust 여정을 함께 해줘서 고맙다. 이제 여러분은 자신만의 Rust 프로젝트를 구현하고 다른 사람들의 프로젝트에도 기여할 준비가 되었다. Rust 여정에서 마주칠 수 있는 도전 과제를 해결하는 데 도움을 줄 Rust 커뮤니티가 항상 열려 있다는 것을 기억하길 바란다.
+
+

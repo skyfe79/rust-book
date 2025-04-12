@@ -1,19 +1,11 @@
-## Defining and Instantiating Structs
+## 구조체 정의와 인스턴스 생성
 
-Structs are similar to tuples, discussed in [“The Tuple Type”][tuples]<!--
-ignore --> section, in that both hold multiple related values. Like tuples, the
-pieces of a struct can be different types. Unlike with tuples, in a struct
-you’ll name each piece of data so it’s clear what the values mean. Adding these
-names means that structs are more flexible than tuples: you don’t have to rely
-on the order of the data to specify or access the values of an instance.
+구조체는 [“튜플 타입”][tuples]<!--
+ignore --> 섹션에서 다룬 튜플과 유사하게, 여러 관련 값을 함께 담는다. 튜플과 마찬가지로 구조체의 각 부분은 서로 다른 타입을 가질 수 있다. 하지만 튜플과 달리, 구조체에서는 각 데이터 조각에 이름을 붙여 값의 의미를 명확히 할 수 있다. 이러한 이름 덕분에 구조체는 튜플보다 더 유연하다. 인스턴스의 값을 지정하거나 접근할 때 데이터의 순서에 의존할 필요가 없다.
 
-To define a struct, we enter the keyword `struct` and name the entire struct. A
-struct’s name should describe the significance of the pieces of data being
-grouped together. Then, inside curly brackets, we define the names and types of
-the pieces of data, which we call _fields_. For example, Listing 5-1 shows a
-struct that stores information about a user account.
+구조체를 정의하려면 `struct` 키워드를 사용하고 구조체 전체에 이름을 붙인다. 구조체의 이름은 함께 그룹화된 데이터 조각의 의미를 잘 설명해야 한다. 그런 다음 중괄호 안에 데이터 조각의 이름과 타입을 정의하는데, 이를 _필드_라고 부른다. 예를 들어, Listing 5-1은 사용자 계정 정보를 저장하는 구조체를 보여준다.
 
-<Listing number="5-1" file-name="src/main.rs" caption="A `User` struct definition">
+<Listing number="5-1" file-name="src/main.rs" caption="`User` 구조체 정의">
 
 ```rust
 {{#rustdoc_include ../listings/ch05-using-structs-to-structure-related-data/listing-05-01/src/main.rs:here}}
@@ -21,17 +13,9 @@ struct that stores information about a user account.
 
 </Listing>
 
-To use a struct after we’ve defined it, we create an _instance_ of that struct
-by specifying concrete values for each of the fields. We create an instance by
-stating the name of the struct and then add curly brackets containing _`key:
-value`_ pairs, where the keys are the names of the fields and the values are the
-data we want to store in those fields. We don’t have to specify the fields in
-the same order in which we declared them in the struct. In other words, the
-struct definition is like a general template for the type, and instances fill
-in that template with particular data to create values of the type. For
-example, we can declare a particular user as shown in Listing 5-2.
+구조체를 정의한 후에는 각 필드에 구체적인 값을 지정해 구조체의 _인스턴스_를 생성한다. 구조체의 이름을 명시한 다음 중괄호 안에 _`키: 값`_ 쌍을 추가해 인스턴스를 만든다. 여기서 키는 필드의 이름이고, 값은 해당 필드에 저장할 데이터이다. 필드는 구조체에서 선언한 순서와 동일하게 지정할 필요는 없다. 즉, 구조체 정의는 타입에 대한 일반적인 템플릿 역할을 하고, 인스턴스는 이 템플릿에 특정 데이터를 채워 타입의 값을 생성한다. 예를 들어, Listing 5-2와 같이 특정 사용자를 선언할 수 있다.
 
-<Listing number="5-2" file-name="src/main.rs" caption="Creating an instance of the `User` struct">
+<Listing number="5-2" file-name="src/main.rs" caption="`User` 구조체의 인스턴스 생성">
 
 ```rust
 {{#rustdoc_include ../listings/ch05-using-structs-to-structure-related-data/listing-05-02/src/main.rs:here}}
@@ -39,13 +23,9 @@ example, we can declare a particular user as shown in Listing 5-2.
 
 </Listing>
 
-To get a specific value from a struct, we use dot notation. For example, to
-access this user’s email address, we use `user1.email`. If the instance is
-mutable, we can change a value by using the dot notation and assigning into a
-particular field. Listing 5-3 shows how to change the value in the `email`
-field of a mutable `User` instance.
+구조체에서 특정 값을 가져오려면 점 표기법을 사용한다. 예를 들어, 이 사용자의 이메일 주소에 접근하려면 `user1.email`을 사용한다. 인스턴스가 가변적이라면, 점 표기법을 사용해 특정 필드에 값을 할당하여 값을 변경할 수 있다. Listing 5-3은 가변 `User` 인스턴스의 `email` 필드 값을 변경하는 방법을 보여준다.
 
-<Listing number="5-3" file-name="src/main.rs" caption="Changing the value in the `email` field of a `User` instance">
+<Listing number="5-3" file-name="src/main.rs" caption="`User` 인스턴스의 `email` 필드 값 변경">
 
 ```rust
 {{#rustdoc_include ../listings/ch05-using-structs-to-structure-related-data/listing-05-03/src/main.rs:here}}
@@ -53,16 +33,11 @@ field of a mutable `User` instance.
 
 </Listing>
 
-Note that the entire instance must be mutable; Rust doesn’t allow us to mark
-only certain fields as mutable. As with any expression, we can construct a new
-instance of the struct as the last expression in the function body to
-implicitly return that new instance.
+전체 인스턴스가 가변적이어야 한다는 점에 유의한다. Rust는 특정 필드만 가변적으로 표시하는 것을 허용하지 않는다. 다른 표현식과 마찬가지로, 함수 본문의 마지막 표현식으로 구조체의 새 인스턴스를 생성해 암묵적으로 새 인스턴스를 반환할 수 있다.
 
-Listing 5-4 shows a `build_user` function that returns a `User` instance with
-the given email and username. The `active` field gets the value of `true`, and
-the `sign_in_count` gets a value of `1`.
+Listing 5-4는 주어진 이메일과 사용자 이름으로 `User` 인스턴스를 반환하는 `build_user` 함수를 보여준다. `active` 필드는 `true` 값을, `sign_in_count` 필드는 `1` 값을 가진다.
 
-<Listing number="5-4" file-name="src/main.rs" caption="A `build_user` function that takes an email and username and returns a `User` instance">
+<Listing number="5-4" file-name="src/main.rs" caption="이메일과 사용자 이름을 받아 `User` 인스턴스를 반환하는 `build_user` 함수">
 
 ```rust
 {{#rustdoc_include ../listings/ch05-using-structs-to-structure-related-data/listing-05-04/src/main.rs:here}}
@@ -70,23 +45,18 @@ the `sign_in_count` gets a value of `1`.
 
 </Listing>
 
-It makes sense to name the function parameters with the same name as the struct
-fields, but having to repeat the `email` and `username` field names and
-variables is a bit tedious. If the struct had more fields, repeating each name
-would get even more annoying. Luckily, there’s a convenient shorthand!
+함수 매개변수의 이름을 구조체 필드와 동일하게 짓는 것이 합리적이지만, `email`과 `username` 필드 이름과 변수를 반복해야 하는 것은 다소 지루할 수 있다. 구조체에 더 많은 필드가 있다면, 각 이름을 반복하는 것이 더 번거로울 것이다. 다행히 편리한 단축 문법이 있다!
 
 <!-- Old heading. Do not remove or links may break. -->
 
 <a id="using-the-field-init-shorthand-when-variables-and-fields-have-the-same-name"></a>
 
-### Using the Field Init Shorthand
 
-Because the parameter names and the struct field names are exactly the same in
-Listing 5-4, we can use the _field init shorthand_ syntax to rewrite
-`build_user` so it behaves exactly the same but doesn’t have the repetition of
-`username` and `email`, as shown in Listing 5-5.
+### 필드 초기화 축약 문법 사용하기
 
-<Listing number="5-5" file-name="src/main.rs" caption="A `build_user` function that uses field init shorthand because the `username` and `email` parameters have the same name as struct fields">
+리스트 5-4에서 매개변수 이름과 구조체 필드 이름이 정확히 동일하기 때문에, _필드 초기화 축약 문법_을 사용해 `build_user` 함수를 다시 작성할 수 있다. 이렇게 하면 동일한 동작을 유지하면서 `username`과 `email`의 반복을 줄일 수 있다. 리스트 5-5에서 이를 확인할 수 있다.
+
+<Listing number="5-5" file-name="src/main.rs" caption="`username`과 `email` 매개변수가 구조체 필드와 동일한 이름을 가지고 있어 필드 초기화 축약 문법을 사용한 `build_user` 함수">
 
 ```rust
 {{#rustdoc_include ../listings/ch05-using-structs-to-structure-related-data/listing-05-05/src/main.rs:here}}
@@ -94,23 +64,16 @@ Listing 5-4, we can use the _field init shorthand_ syntax to rewrite
 
 </Listing>
 
-Here, we’re creating a new instance of the `User` struct, which has a field
-named `email`. We want to set the `email` field’s value to the value in the
-`email` parameter of the `build_user` function. Because the `email` field and
-the `email` parameter have the same name, we only need to write `email` rather
-than `email: email`.
+여기서는 `User` 구조체의 새 인스턴스를 생성한다. 이 구조체에는 `email`이라는 필드가 있다. `build_user` 함수의 `email` 매개변수 값을 `email` 필드에 설정하려고 한다. `email` 필드와 `email` 매개변수의 이름이 동일하기 때문에 `email: email` 대신 단순히 `email`만 작성하면 된다.
 
-### Creating Instances from Other Instances with Struct Update Syntax
 
-It’s often useful to create a new instance of a struct that includes most of
-the values from another instance, but changes some. You can do this using
-_struct update syntax_.
+### 구조체 업데이트 문법을 사용해 다른 인스턴스로부터 인스턴스 생성하기
 
-First, in Listing 5-6 we show how to create a new `User` instance in `user2`
-regularly, without the update syntax. We set a new value for `email` but
-otherwise use the same values from `user1` that we created in Listing 5-2.
+기존 구조체 인스턴스의 대부분의 값을 그대로 사용하면서 일부만 변경해 새로운 인스턴스를 생성하는 경우가 많다. 이때 **구조체 업데이트 문법**을 사용할 수 있다.
 
-<Listing number="5-6" file-name="src/main.rs" caption="Creating a new `User` instance using all but one of the values from `user1`">
+먼저, 리스팅 5-6에서는 업데이트 문법 없이 `user2`라는 새로운 `User` 인스턴스를 생성하는 일반적인 방법을 보여준다. `email`에 새로운 값을 설정하고, 나머지 필드는 리스팅 5-2에서 생성한 `user1`의 값을 그대로 사용한다.
+
+<Listing number="5-6" file-name="src/main.rs" caption="`user1`의 값 중 하나를 제외하고 새로운 `User` 인스턴스 생성">
 
 ```rust
 {{#rustdoc_include ../listings/ch05-using-structs-to-structure-related-data/listing-05-06/src/main.rs:here}}
@@ -118,11 +81,9 @@ otherwise use the same values from `user1` that we created in Listing 5-2.
 
 </Listing>
 
-Using struct update syntax, we can achieve the same effect with less code, as
-shown in Listing 5-7. The syntax `..` specifies that the remaining fields not
-explicitly set should have the same value as the fields in the given instance.
+구조체 업데이트 문법을 사용하면 더 적은 코드로 동일한 결과를 얻을 수 있다. 리스팅 5-7에서와 같이 `..` 문법은 명시적으로 설정하지 않은 나머지 필드가 주어진 인스턴스의 필드와 동일한 값을 가지도록 지정한다.
 
-<Listing number="5-7" file-name="src/main.rs" caption="Using struct update syntax to set a new `email` value for a `User` instance but to use the rest of the values from `user1`">
+<Listing number="5-7" file-name="src/main.rs" caption="구조체 업데이트 문법을 사용해 `User` 인스턴스의 새로운 `email` 값을 설정하고 나머지 값은 `user1`에서 가져오기">
 
 ```rust
 {{#rustdoc_include ../listings/ch05-using-structs-to-structure-related-data/listing-05-07/src/main.rs:here}}
@@ -130,38 +91,16 @@ explicitly set should have the same value as the fields in the given instance.
 
 </Listing>
 
-The code in Listing 5-7 also creates an instance in `user2` that has a
-different value for `email` but has the same values for the `username`,
-`active`, and `sign_in_count` fields from `user1`. The `..user1` must come last
-to specify that any remaining fields should get their values from the
-corresponding fields in `user1`, but we can choose to specify values for as
-many fields as we want in any order, regardless of the order of the fields in
-the struct’s definition.
+리스팅 5-7의 코드도 `user2` 인스턴스를 생성하며, `email` 값은 다르지만 `username`, `active`, `sign_in_count` 필드는 `user1`과 동일한 값을 가진다. `..user1`은 반드시 마지막에 위치해야 하며, 이는 나머지 필드가 `user1`의 해당 필드에서 값을 가져오도록 지정한다. 하지만 원하는 순서대로 원하는 만큼의 필드에 값을 지정할 수 있으며, 이는 구조체 정의에서 필드가 정의된 순서와 무관하다.
 
-Note that the struct update syntax uses `=` like an assignment; this is because
-it moves the data, just as we saw in the [“Variables and Data Interacting with
-Move”][move]<!-- ignore --> section. In this example, we can no longer use
-`user1` after creating `user2` because the `String` in the `username` field of
-`user1` was moved into `user2`. If we had given `user2` new `String` values for
-both `email` and `username`, and thus only used the `active` and `sign_in_count`
-values from `user1`, then `user1` would still be valid after creating `user2`.
-Both `active` and `sign_in_count` are types that implement the `Copy` trait, so
-the behavior we discussed in the [“Stack-Only Data: Copy”][copy]<!-- ignore -->
-section would apply. We can still use `user1.email` in this example, because its
-value was _not_ moved out.
+구조체 업데이트 문법은 할당처럼 `=`를 사용한다. 이는 데이터를 이동시키기 때문이며, 이전에 [“변수와 데이터 상호작용: 이동”][move]<!-- ignore --> 섹션에서 본 것과 동일하다. 이 예제에서는 `user2`를 생성한 후 `user1`을 더 이상 사용할 수 없다. 왜냐하면 `user1`의 `username` 필드에 있는 `String`이 `user2`로 이동했기 때문이다. 만약 `user2`에 `email`과 `username` 모두 새로운 `String` 값을 주고, `active`와 `sign_in_count` 값만 `user1`에서 가져왔다면, `user2`를 생성한 후에도 `user1`은 여전히 유효할 것이다. `active`와 `sign_in_count`는 `Copy` 트레이트를 구현하는 타입이므로, [“스택 전용 데이터: 복사”][copy]<!-- ignore --> 섹션에서 논의한 동작이 적용된다. 이 예제에서는 `user1.email`을 여전히 사용할 수 있는데, 그 값이 이동되지 않았기 때문이다.
 
-### Using Tuple Structs Without Named Fields to Create Different Types
 
-Rust also supports structs that look similar to tuples, called _tuple structs_.
-Tuple structs have the added meaning the struct name provides but don’t have
-names associated with their fields; rather, they just have the types of the
-fields. Tuple structs are useful when you want to give the whole tuple a name
-and make the tuple a different type from other tuples, and when naming each
-field as in a regular struct would be verbose or redundant.
+### 이름 없는 필드로 구성된 튜플 구조체 사용하기
 
-To define a tuple struct, start with the `struct` keyword and the struct name
-followed by the types in the tuple. For example, here we define and use two
-tuple structs named `Color` and `Point`:
+Rust는 튜플과 유사한 구조체인 _튜플 구조체_를 지원한다. 튜플 구조체는 구조체 이름이 제공하는 의미를 가지지만, 필드에 이름을 붙이지는 않는다. 대신 필드의 타입만 지정한다. 튜플 구조체는 전체 튜플에 이름을 부여하고, 다른 튜플과 구별되는 타입을 만들고 싶을 때 유용하다. 또한 일반 구조체처럼 각 필드에 이름을 붙이는 것이 번거롭거나 불필요한 경우에도 사용할 수 있다.
+
+튜플 구조체를 정의하려면 `struct` 키워드와 구조체 이름을 쓰고, 그 뒤에 튜플의 타입을 나열한다. 예를 들어, `Color`와 `Point`라는 두 개의 튜플 구조체를 정의하고 사용해 보자:
 
 <Listing file-name="src/main.rs">
 
@@ -171,26 +110,12 @@ tuple structs named `Color` and `Point`:
 
 </Listing>
 
-Note that the `black` and `origin` values are different types because they’re
-instances of different tuple structs. Each struct you define is its own type,
-even though the fields within the struct might have the same types. For
-example, a function that takes a parameter of type `Color` cannot take a
-`Point` as an argument, even though both types are made up of three `i32`
-values. Otherwise, tuple struct instances are similar to tuples in that you can
-destructure them into their individual pieces, and you can use a `.` followed
-by the index to access an individual value. Unlike tuples, tuple structs
-require you to name the type of the struct when you destructure them. For
-example, we would write `let Point(x, y, z) = point`.
+`black`과 `origin` 값은 서로 다른 튜플 구조체의 인스턴스이기 때문에 다른 타입이다. 각 구조체는 고유한 타입이며, 구조체 내부의 필드가 동일한 타입을 가질지라도 서로 다른 타입으로 간주된다. 예를 들어, `Color` 타입의 매개변수를 받는 함수는 `Point` 타입의 인자를 받을 수 없다. 두 타입 모두 세 개의 `i32` 값으로 구성되어 있더라도 말이다. 그 외에는 튜플 구조체 인스턴스는 튜플과 유사하게 동작한다. 개별 요소로 분해할 수 있고, `.` 뒤에 인덱스를 붙여 개별 값에 접근할 수 있다. 튜플과 달리, 튜플 구조체를 분해할 때는 구조체의 타입을 명시해야 한다. 예를 들어, `let Point(x, y, z) = point`와 같이 작성한다.
 
-### Unit-Like Structs Without Any Fields
 
-You can also define structs that don’t have any fields! These are called
-_unit-like structs_ because they behave similarly to `()`, the unit type that
-we mentioned in [“The Tuple Type”][tuples]<!-- ignore --> section. Unit-like
-structs can be useful when you need to implement a trait on some type but don’t
-have any data that you want to store in the type itself. We’ll discuss traits
-in Chapter 10. Here’s an example of declaring and instantiating a unit struct
-named `AlwaysEqual`:
+### 필드가 없는 유닛 구조체
+
+필드가 없는 구조체도 정의할 수 있다! 이를 **유닛 구조체**라고 부르며, 이는 [“튜플 타입”][tuples]<!-- ignore --> 섹션에서 언급한 `()` 유닛 타입과 유사하게 동작한다. 유닛 구조체는 어떤 타입에 대해 트레이트를 구현해야 하지만, 그 타입 자체에 저장할 데이터가 없을 때 유용하다. 트레이트에 대해서는 10장에서 자세히 다룰 것이다. 다음은 `AlwaysEqual`이라는 유닛 구조체를 선언하고 인스턴스를 생성하는 예제이다:
 
 <Listing file-name="src/main.rs">
 
@@ -200,28 +125,13 @@ named `AlwaysEqual`:
 
 </Listing>
 
-To define `AlwaysEqual`, we use the `struct` keyword, the name we want, and
-then a semicolon. No need for curly brackets or parentheses! Then we can get an
-instance of `AlwaysEqual` in the `subject` variable in a similar way: using the
-name we defined, without any curly brackets or parentheses. Imagine that later
-we’ll implement behavior for this type such that every instance of
-`AlwaysEqual` is always equal to every instance of any other type, perhaps to
-have a known result for testing purposes. We wouldn’t need any data to
-implement that behavior! You’ll see in Chapter 10 how to define traits and
-implement them on any type, including unit-like structs.
+`AlwaysEqual`을 정의하려면 `struct` 키워드와 원하는 이름을 사용한 뒤 세미콜론을 붙인다. 중괄호나 괄호는 필요 없다! 그런 다음 `subject` 변수에 `AlwaysEqual`의 인스턴스를 생성할 수 있다. 이때도 중괄호나 괄호 없이 정의한 이름만 사용한다. 나중에 이 타입에 대해 모든 `AlwaysEqual` 인스턴스가 다른 타입의 모든 인스턴스와 항상 동일하도록 동작을 구현할 수 있다. 예를 들어 테스트 목적으로 알려진 결과를 얻기 위해 사용할 수 있다. 이러한 동작을 구현하기 위해 데이터는 필요하지 않다! 10장에서는 트레이트를 정의하고 유닛 구조체를 포함한 모든 타입에 이를 구현하는 방법을 배울 것이다.
 
-> ### Ownership of Struct Data
+> ### 구조체 데이터의 소유권
 >
-> In the `User` struct definition in Listing 5-1, we used the owned `String`
-> type rather than the `&str` string slice type. This is a deliberate choice
-> because we want each instance of this struct to own all of its data and for
-> that data to be valid for as long as the entire struct is valid.
+> 5-1 예제의 `User` 구조체 정의에서 `&str` 문자열 슬라이스 타입 대신 소유권을 가진 `String` 타입을 사용했다. 이는 의도적인 선택으로, 이 구조체의 각 인스턴스가 자신의 데이터를 소유하고, 구조체 전체가 유효한 동안 그 데이터도 유효하도록 하기 위함이다.
 >
-> It’s also possible for structs to store references to data owned by something
-> else, but to do so requires the use of _lifetimes_, a Rust feature that we’ll
-> discuss in Chapter 10. Lifetimes ensure that the data referenced by a struct
-> is valid for as long as the struct is. Let’s say you try to store a reference
-> in a struct without specifying lifetimes, like the following; this won’t work:
+> 구조체가 다른 곳에서 소유한 데이터에 대한 참조를 저장할 수도 있지만, 이를 위해서는 **라이프타임**이라는 Rust 기능을 사용해야 한다. 라이프타임은 구조체가 참조하는 데이터가 구조체가 유효한 동안 유효하도록 보장한다. 라이프타임을 지정하지 않고 구조체에 참조를 저장하려고 하면 다음과 같은 문제가 발생한다:
 >
 > <Listing file-name="src/main.rs">
 >
@@ -247,7 +157,7 @@ implement them on any type, including unit-like structs.
 >
 > </Listing>
 >
-> The compiler will complain that it needs lifetime specifiers:
+> 컴파일러는 라이프타임 지정자가 필요하다고 불평할 것이다:
 >
 > ```console
 > $ cargo run
@@ -283,9 +193,7 @@ implement them on any type, including unit-like structs.
 > error: could not compile `structs` (bin "structs") due to 2 previous errors
 > ```
 >
-> In Chapter 10, we’ll discuss how to fix these errors so you can store
-> references in structs, but for now, we’ll fix errors like these using owned
-> types like `String` instead of references like `&str`.
+> 10장에서는 이러한 오류를 수정해 구조체에 참조를 저장하는 방법을 다룰 것이다. 하지만 지금은 `&str` 같은 참조 대신 `String` 같은 소유 타입을 사용해 이러한 오류를 해결할 것이다.
 
 <!-- manual-regeneration
 for the error above
@@ -297,3 +205,5 @@ add `> ` before every line -->
 [tuples]: ch03-02-data-types.html#the-tuple-type
 [move]: ch04-01-what-is-ownership.html#variables-and-data-interacting-with-move
 [copy]: ch04-01-what-is-ownership.html#stack-only-data-copy
+
+

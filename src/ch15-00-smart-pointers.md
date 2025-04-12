@@ -1,53 +1,23 @@
-# Smart Pointers
+# 스마트 포인터
 
-A _pointer_ is a general concept for a variable that contains an address in
-memory. This address refers to, or “points at,” some other data. The most
-common kind of pointer in Rust is a reference, which you learned about in
-Chapter 4. References are indicated by the `&` symbol and borrow the value they
-point to. They don’t have any special capabilities other than referring to
-data, and they have no overhead.
+_포인터_는 메모리 주소를 담고 있는 변수를 통칭하는 개념이다. 이 주소는 특정 데이터를 가리키거나 참조한다. Rust에서 가장 흔히 사용하는 포인터는 4장에서 배운 참조(reference)다. 참조는 `&` 기호로 표시되며, 가리키는 값을 빌려온다. 참조는 데이터를 참조하는 기능 외에는 특별한 능력이 없고, 오버헤드도 없다.
 
-_Smart pointers_, on the other hand, are data structures that act like a
-pointer but also have additional metadata and capabilities. The concept of
-smart pointers isn’t unique to Rust: smart pointers originated in C++ and exist
-in other languages as well. Rust has a variety of smart pointers defined in the
-standard library that provide functionality beyond that provided by references.
-To explore the general concept, we’ll look at a couple of different examples of
-smart pointers, including a _reference counting_ smart pointer type. This
-pointer enables you to allow data to have multiple owners by keeping track of
-the number of owners and, when no owners remain, cleaning up the data.
+반면 _스마트 포인터_는 포인터처럼 동작하면서 추가 메타데이터와 기능을 제공하는 데이터 구조다. 스마트 포인터는 Rust에만 있는 개념이 아니다. C++에서 처음 등장했으며 다른 언어에서도 존재한다. Rust의 표준 라이브러리에는 참조보다 더 다양한 기능을 제공하는 여러 종류의 스마트 포인터가 정의되어 있다. 이번 장에서는 스마트 포인터의 일반적인 개념을 이해하기 위해 몇 가지 예를 살펴볼 것이다. 그 중 하나는 _참조 카운팅_ 스마트 포인터 타입이다. 이 포인터는 데이터의 소유자 수를 추적하고, 소유자가 없어지면 데이터를 정리함으로써 데이터가 여러 소유자를 가질 수 있게 한다.
 
-Rust, with its concept of ownership and borrowing, has an additional difference
-between references and smart pointers: while references only borrow data, in
-many cases smart pointers _own_ the data they point to.
+Rust의 소유권과 빌림 개념은 참조와 스마트 포인터 사이에 또 다른 차이를 만든다. 참조는 데이터를 빌려오지만, 스마트 포인터는 대부분의 경우 가리키는 데이터를 _소유_한다.
 
-Though we didn’t call them as such at the time, we’ve already encountered a few
-smart pointers in this book, including `String` and `Vec<T>` in Chapter 8. Both
-of these types count as smart pointers because they own some memory and allow
-you to manipulate it. They also have metadata and extra capabilities or
-guarantees. `String`, for example, stores its capacity as metadata and has the
-extra ability to ensure its data will always be valid UTF-8.
+이 책에서 이미 몇 가지 스마트 포인터를 접했지만, 당시에는 그렇게 부르지 않았다. 8장에서 다룬 `String`과 `Vec<T>`가 그 예시다. 이 두 타입은 메모리를 소유하고 이를 조작할 수 있기 때문에 스마트 포인터로 분류된다. 또한 메타데이터와 추가 기능 또는 보장을 제공한다. 예를 들어, `String`은 용량을 메타데이터로 저장하며, 데이터가 항상 유효한 UTF-8임을 보장하는 추가 기능을 갖는다.
 
-Smart pointers are usually implemented using structs. Unlike an ordinary
-struct, smart pointers implement the `Deref` and `Drop` traits. The `Deref`
-trait allows an instance of the smart pointer struct to behave like a reference
-so you can write your code to work with either references or smart pointers.
-The `Drop` trait allows you to customize the code that’s run when an instance
-of the smart pointer goes out of scope. In this chapter, we’ll discuss both of
-these traits and demonstrate why they’re important to smart pointers.
+스마트 포인터는 보통 구조체(struct)로 구현된다. 일반 구조체와 달리, 스마트 포인터는 `Deref`와 `Drop` 트레이트를 구현한다. `Deref` 트레이트는 스마트 포인터 구조체의 인스턴스가 참조처럼 동작하게 해, 코드가 참조나 스마트 포인터 둘 다와 호환되도록 한다. `Drop` 트레이트는 스마트 포인터 인스턴스가 스코프를 벗어날 때 실행될 코드를 커스텀할 수 있게 한다. 이번 장에서는 이 두 트레이트를 자세히 살펴보고, 스마트 포인터에서 왜 중요한지 설명할 것이다.
 
-Given that the smart pointer pattern is a general design pattern used
-frequently in Rust, this chapter won’t cover every existing smart pointer. Many
-libraries have their own smart pointers, and you can even write your own. We’ll
-cover the most common smart pointers in the standard library:
+스마트 포인터 패턴은 Rust에서 자주 사용되는 일반적인 디자인 패턴이므로, 이번 장에서는 모든 스마트 포인터를 다루지 않는다. 많은 라이브러리가 자체 스마트 포인터를 제공하며, 직접 스마트 포인터를 작성할 수도 있다. 이번 장에서는 표준 라이브러리의 가장 흔히 사용되는 스마트 포인터를 다룰 것이다:
 
-- `Box<T>`, for allocating values on the heap
-- `Rc<T>`, a reference counting type that enables multiple ownership
-- `Ref<T>` and `RefMut<T>`, accessed through `RefCell<T>`, a type that enforces
-  the borrowing rules at runtime instead of compile time
+- `Box<T>`: 힙에 값을 할당하기 위한 포인터
+- `Rc<T>`: 다중 소유권을 가능하게 하는 참조 카운팅 타입
+- `Ref<T>`와 `RefMut<T>`: `RefCell<T>`를 통해 접근하며, 컴파일 타임이 아닌 런타임에 빌림 규칙을 강제하는 타입
 
-In addition, we’ll cover the _interior mutability_ pattern where an immutable
-type exposes an API for mutating an interior value. We’ll also discuss
-_reference cycles_: how they can leak memory and how to prevent them.
+또한, 불변 타입이 내부 값을 변경할 수 있는 API를 제공하는 _내부 가변성_ 패턴도 살펴볼 것이다. 그리고 _참조 순환_ 문제가 어떻게 메모리 누수를 일으키는지, 그리고 이를 방지하는 방법에 대해서도 논의할 것이다.
 
-Let’s dive in!
+이제 시작해 보자!
+
+

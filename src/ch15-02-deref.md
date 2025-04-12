@@ -1,40 +1,17 @@
-## Treating Smart Pointers Like Regular References with `Deref`
+## `Deref`를 사용해 스마트 포인터를 일반 참조처럼 다루기
 
-<!-- Old link, do not remove -->
+`Deref` 트레잇을 구현하면 *역참조 연산자* `*`의 동작을 커스터마이징할 수 있다. (이 연산자는 곱셈이나 전역 연산자와 혼동하지 말아야 한다.) 스마트 포인터가 일반 참조처럼 동작하도록 `Deref`를 구현하면, 참조를 다루는 코드를 작성하고 그 코드를 스마트 포인터와 함께 사용할 수 있다.
 
-<a id="treating-smart-pointers-like-regular-references-with-the-deref-trait"></a>
+먼저 역참조 연산자가 일반 참조와 어떻게 동작하는지 살펴보자. 그런 다음 `Box<T>`처럼 동작하는 커스텀 타입을 정의하고, 역참조 연산자가 새로 정의한 타입에서 참조처럼 동작하지 않는 이유를 알아볼 것이다. `Deref` 트레잇을 구현함으로써 스마트 포인터가 참조와 유사한 방식으로 동작할 수 있게 되는 과정을 탐구할 것이다. 마지막으로 Rust의 *역참조 강제 변환(deref coercion)* 기능과 이를 통해 참조나 스마트 포인터를 다루는 방법을 살펴볼 것이다.
 
-Implementing the `Deref` trait allows you to customize the behavior of the
-_dereference operator_ `*` (not to be confused with the multiplication or glob
-operator). By implementing `Deref` in such a way that a smart pointer can be
-treated like a regular reference, you can write code that operates on
-references and use that code with smart pointers too.
+> 참고: 우리가 만들 `MyBox<T>` 타입과 실제 `Box<T>` 사이에는 한 가지 큰 차이가 있다. 우리 버전은 데이터를 힙에 저장하지 않는다. 이 예제는 `Deref`에 초점을 맞추고 있으므로, 데이터가 실제로 어디에 저장되는지는 포인터와 같은 동작보다 덜 중요하다.
 
-Let’s first look at how the dereference operator works with regular references.
-Then we’ll try to define a custom type that behaves like `Box<T>`, and see why
-the dereference operator doesn’t work like a reference on our newly defined
-type. We’ll explore how implementing the `Deref` trait makes it possible for
-smart pointers to work in ways similar to references. Then we’ll look at
-Rust’s _deref coercion_ feature and how it lets us work with either references
-or smart pointers.
 
-> Note: There’s one big difference between the `MyBox<T>` type we’re about to
-> build and the real `Box<T>`: our version will not store its data on the heap.
-> We are focusing this example on `Deref`, so where the data is actually stored
-> is less important than the pointer-like behavior.
+### 포인터를 따라가서 값에 접근하기
 
-<!-- Old link, do not remove -->
+일반적인 참조는 일종의 포인터로, 포인터를 값이 저장된 위치를 가리키는 화살표로 생각할 수 있다. 리스트 15-6에서는 `i32` 값에 대한 참조를 생성한 후, 역참조 연산자를 사용해 참조를 따라가서 값에 접근한다.
 
-<a id="following-the-pointer-to-the-value-with-the-dereference-operator"></a>
-
-### Following the Pointer to the Value
-
-A regular reference is a type of pointer, and one way to think of a pointer is
-as an arrow to a value stored somewhere else. In Listing 15-6, we create a
-reference to an `i32` value and then use the dereference operator to follow the
-reference to the value.
-
-<Listing number="15-6" file-name="src/main.rs" caption="Using the dereference operator to follow a reference to an `i32` value">
+<Listing number="15-6" file-name="src/main.rs" caption="역참조 연산자를 사용해 `i32` 값에 대한 참조를 따라가기">
 
 ```rust
 {{#rustdoc_include ../listings/ch15-smart-pointers/listing-15-06/src/main.rs}}
@@ -42,32 +19,22 @@ reference to the value.
 
 </Listing>
 
-The variable `x` holds an `i32` value `5`. We set `y` equal to a reference to
-`x`. We can assert that `x` is equal to `5`. However, if we want to make an
-assertion about the value in `y`, we have to use `*y` to follow the reference
-to the value it’s pointing to (hence _dereference_) so the compiler can compare
-the actual value. Once we dereference `y`, we have access to the integer value
-`y` is pointing to that we can compare with `5`.
+변수 `x`는 `i32` 값 `5`를 가지고 있다. `y`를 `x`에 대한 참조로 설정한다. `x`가 `5`와 같다는 것을 확인할 수 있다. 하지만 `y`에 있는 값을 확인하려면 `*y`를 사용해 참조가 가리키는 값을 따라가야 한다(이를 _역참조_라고 한다). 이렇게 해야 컴파일러가 실제 값을 비교할 수 있다. `y`를 역참조하면 `y`가 가리키는 정수 값에 접근할 수 있고, 이를 `5`와 비교할 수 있다.
 
-If we tried to write `assert_eq!(5, y);` instead, we would get this compilation
-error:
+만약 `assert_eq!(5, y);`와 같이 작성하려고 했다면, 다음과 같은 컴파일 오류가 발생한다:
 
 ```console
 {{#include ../listings/ch15-smart-pointers/output-only-01-comparing-to-reference/output.txt}}
 ```
 
-Comparing a number and a reference to a number isn’t allowed because they’re
-different types. We must use the dereference operator to follow the reference
-to the value it’s pointing to.
+숫자와 숫자에 대한 참조를 비교하는 것은 허용되지 않는다. 두 값은 서로 다른 타입이기 때문이다. 참조가 가리키는 값을 따라가기 위해 역참조 연산자를 사용해야 한다.
 
-### Using `Box<T>` Like a Reference
 
-We can rewrite the code in Listing 15-6 to use a `Box<T>` instead of a
-reference; the dereference operator used on the `Box<T>` in Listing 15-7
-functions in the same way as the dereference operator used on the reference in
-Listing 15-6:
+### `Box<T>`를 참조처럼 사용하기
 
-<Listing number="15-7" file-name="src/main.rs" caption="Using the dereference operator on a `Box<i32>`">
+Listing 15-6의 코드를 참조 대신 `Box<T>`를 사용하도록 다시 작성할 수 있다. Listing 15-7에서 `Box<T>`에 사용한 역참조 연산자는 Listing 15-6에서 참조에 사용한 역참조 연산자와 동일하게 작동한다.
+
+<Listing number="15-7" file-name="src/main.rs" caption="`Box<i32>`에 역참조 연산자 사용하기">
 
 ```rust
 {{#rustdoc_include ../listings/ch15-smart-pointers/listing-15-07/src/main.rs}}
@@ -75,25 +42,16 @@ Listing 15-6:
 
 </Listing>
 
-The main difference between Listing 15-7 and Listing 15-6 is that here we set
-`y` to be an instance of a box pointing to a copied value of `x` rather than a
-reference pointing to the value of `x`. In the last assertion, we can use the
-dereference operator to follow the box’s pointer in the same way that we did
-when `y` was a reference. Next, we’ll explore what is special about `Box<T>`
-that enables us to use the dereference operator by defining our own type.
+Listing 15-7과 Listing 15-6의 주요 차이점은 여기서 `y`를 `x`의 값을 가리키는 참조 대신 `x`의 복사된 값을 가리키는 박스의 인스턴스로 설정한다는 것이다. 마지막 단언문에서 박스의 포인터를 따라가기 위해 역참조 연산자를 사용할 수 있으며, 이는 `y`가 참조였을 때와 동일한 방식이다. 다음으로, 역참조 연산자를 사용할 수 있게 해주는 `Box<T>`의 특별한 점을 우리만의 타입을 정의하며 알아볼 것이다.
 
-### Defining Our Own Smart Pointer
 
-Let’s build a smart pointer similar to the `Box<T>` type provided by the
-standard library to experience how smart pointers behave differently from
-references by default. Then we’ll look at how to add the ability to use the
-dereference operator.
+### 커스텀 스마트 포인터 정의하기
 
-The `Box<T>` type is ultimately defined as a tuple struct with one element, so
-Listing 15-8 defines a `MyBox<T>` type in the same way. We’ll also define a
-`new` function to match the `new` function defined on `Box<T>`.
+표준 라이브러리에서 제공하는 `Box<T>` 타입과 유사한 스마트 포인터를 직접 만들어 보자. 이를 통해 스마트 포인터가 기본적으로 참조와 어떻게 다른 동작을 하는지 경험할 수 있다. 이후에는 역참조 연산자를 사용할 수 있도록 기능을 추가하는 방법을 알아볼 것이다.
 
-<Listing number="15-8" file-name="src/main.rs" caption="Defining a `MyBox<T>` type">
+`Box<T>` 타입은 결국 하나의 요소를 가진 튜플 구조체로 정의된다. 따라서 Listing 15-8에서도 동일한 방식으로 `MyBox<T>` 타입을 정의한다. 또한 `Box<T>`에 정의된 `new` 함수와 일치하도록 `new` 함수를 정의한다.
+
+<Listing number="15-8" file-name="src/main.rs" caption="`MyBox<T>` 타입 정의">
 
 ```rust
 {{#rustdoc_include ../listings/ch15-smart-pointers/listing-15-08/src/main.rs:here}}
@@ -101,17 +59,11 @@ Listing 15-8 defines a `MyBox<T>` type in the same way. We’ll also define a
 
 </Listing>
 
-We define a struct named `MyBox` and declare a generic parameter `T` because
-we want our type to hold values of any type. The `MyBox` type is a tuple struct
-with one element of type `T`. The `MyBox::new` function takes one parameter of
-type `T` and returns a `MyBox` instance that holds the value passed in.
+`MyBox`라는 구조체를 정의하고, 어떤 타입의 값도 담을 수 있도록 제네릭 매개변수 `T`를 선언한다. `MyBox` 타입은 `T` 타입의 요소 하나를 가진 튜플 구조체다. `MyBox::new` 함수는 `T` 타입의 매개변수 하나를 받아, 전달된 값을 담은 `MyBox` 인스턴스를 반환한다.
 
-Let’s try adding the `main` function in Listing 15-7 to Listing 15-8 and
-changing it to use the `MyBox<T>` type we’ve defined instead of `Box<T>`. The
-code in Listing 15-9 won’t compile because Rust doesn’t know how to dereference
-`MyBox`.
+Listing 15-7의 `main` 함수를 Listing 15-8에 추가하고, `Box<T>` 대신 우리가 정의한 `MyBox<T>` 타입을 사용하도록 수정해 보자. Listing 15-9의 코드는 Rust가 `MyBox`를 어떻게 역참조해야 할지 모르기 때문에 컴파일되지 않는다.
 
-<Listing number="15-9" file-name="src/main.rs" caption="Attempting to use `MyBox<T>` in the same way we used references and `Box<T>`">
+<Listing number="15-9" file-name="src/main.rs" caption="참조와 `Box<T>`를 사용한 것과 동일한 방식으로 `MyBox<T>` 사용 시도">
 
 ```rust,ignore,does_not_compile
 {{#rustdoc_include ../listings/ch15-smart-pointers/listing-15-09/src/main.rs:here}}
@@ -119,30 +71,24 @@ code in Listing 15-9 won’t compile because Rust doesn’t know how to derefere
 
 </Listing>
 
-Here’s the resultant compilation error:
+컴파일 결과는 다음과 같다:
 
 ```console
 {{#include ../listings/ch15-smart-pointers/listing-15-09/output.txt}}
 ```
 
-Our `MyBox<T>` type can’t be dereferenced because we haven’t implemented that
-ability on our type. To enable dereferencing with the `*` operator, we
-implement the `Deref` trait.
+`MyBox<T>` 타입은 역참조 기능을 구현하지 않았기 때문에 역참조할 수 없다. `*` 연산자를 사용해 역참조를 가능하게 하려면 `Deref` 트레잇을 구현해야 한다.
 
 <!-- Old link, do not remove -->
 
 <a id="treating-a-type-like-a-reference-by-implementing-the-deref-trait"></a>
 
-### Implementing the `Deref` Trait
 
-As discussed in [“Implementing a Trait on a Type”][impl-trait]<!-- ignore --> in
-Chapter 10, to implement a trait, we need to provide implementations for the
-trait’s required methods. The `Deref` trait, provided by the standard library,
-requires us to implement one method named `deref` that borrows `self` and
-returns a reference to the inner data. Listing 15-10 contains an implementation
-of `Deref` to add to the definition of `MyBox<T>`.
+### `Deref` 트레잇 구현하기
 
-<Listing number="15-10" file-name="src/main.rs" caption="Implementing `Deref` on `MyBox<T>`">
+[10장 "타입에 트레잇 구현하기"][impl-trait]에서 다뤘듯이, 트레잇을 구현하려면 트레잇의 필수 메서드에 대한 구현을 제공해야 한다. 표준 라이브러리에서 제공하는 `Deref` 트레잇은 `self`를 빌려서 내부 데이터에 대한 참조를 반환하는 `deref` 메서드 하나를 구현하도록 요구한다. 리스트 15-10은 `MyBox<T>` 정의에 추가할 `Deref` 구현을 보여준다.
+
+<Listing number="15-10" file-name="src/main.rs" caption="`MyBox<T>`에 `Deref` 구현하기">
 
 ```rust
 {{#rustdoc_include ../listings/ch15-smart-pointers/listing-15-10/src/main.rs:here}}
@@ -150,72 +96,34 @@ of `Deref` to add to the definition of `MyBox<T>`.
 
 </Listing>
 
-The `type Target = T;` syntax defines an associated type for the `Deref`
-trait to use. Associated types are a slightly different way of declaring a
-generic parameter, but you don’t need to worry about them for now; we’ll cover
-them in more detail in Chapter 20.
+`type Target = T;` 구문은 `Deref` 트레잇이 사용할 연관 타입을 정의한다. 연관 타입은 제네릭 매개변수를 선언하는 약간 다른 방식이지만, 지금은 걱정하지 않아도 된다. 20장에서 더 자세히 다룰 예정이다.
 
-We fill in the body of the `deref` method with `&self.0` so `deref` returns a
-reference to the value we want to access with the `*` operator; recall from
-[“Using Tuple Structs Without Named Fields to Create Different
-Types”][tuple-structs]<!-- ignore --> in Chapter 5 that `.0` accesses the first
-value in a tuple struct. The `main` function in Listing 15-9 that calls `*` on
-the `MyBox<T>` value now compiles, and the assertions pass!
+`deref` 메서드의 본문을 `&self.0`으로 채워서 `deref`가 `*` 연산자로 접근하려는 값에 대한 참조를 반환하도록 한다. [5장 "이름 없는 필드로 튜플 구조체를 사용해 다른 타입 만들기"][tuple-structs]에서 `.0`이 튜플 구조체의 첫 번째 값에 접근한다는 것을 떠올려보자. 리스트 15-9의 `main` 함수에서 `MyBox<T>` 값에 `*`를 호출하면 이제 컴파일이 되고, 단언문도 통과한다!
 
-Without the `Deref` trait, the compiler can only dereference `&` references.
-The `deref` method gives the compiler the ability to take a value of any type
-that implements `Deref` and call the `deref` method to get an `&` reference that
-it knows how to dereference.
+`Deref` 트레잇이 없으면 컴파일러는 `&` 참조만 역참조할 수 있다. `deref` 메서드는 컴파일러에게 `Deref`를 구현한 어떤 타입의 값을 가져와서 `deref` 메서드를 호출해 역참조 방법을 알고 있는 `&` 참조를 얻을 수 있는 능력을 제공한다.
 
-When we entered `*y` in Listing 15-9, behind the scenes Rust actually ran this
-code:
+리스트 15-9에서 `*y`를 입력했을 때, 러스트는 실제로 다음과 같은 코드를 실행한다:
 
 ```rust,ignore
 *(y.deref())
 ```
 
-Rust substitutes the `*` operator with a call to the `deref` method and then a
-plain dereference so we don’t have to think about whether or not we need to
-call the `deref` method. This Rust feature lets us write code that functions
-identically whether we have a regular reference or a type that implements
-`Deref`.
+러스트는 `*` 연산자를 `deref` 메서드 호출로 대체한 다음 일반 역참조를 수행한다. 따라서 우리는 `deref` 메서드를 호출해야 하는지 여부를 고민할 필요가 없다. 이 러스트 기능 덕분에 일반 참조를 사용하든 `Deref`를 구현한 타입을 사용하든 동일하게 작동하는 코드를 작성할 수 있다.
 
-The reason the `deref` method returns a reference to a value, and that the
-plain dereference outside the parentheses in `*(y.deref())` is still necessary,
-has to do with the ownership system. If the `deref` method returned the value
-directly instead of a reference to the value, the value would be moved out of
-`self`. We don’t want to take ownership of the inner value inside `MyBox<T>` in
-this case or in most cases where we use the dereference operator.
+`deref` 메서드가 값에 대한 참조를 반환하고, `*(y.deref())`에서 괄호 밖의 일반 역참조가 여전히 필요한 이유는 소유권 시스템과 관련이 있다. `deref` 메서드가 값에 대한 참조 대신 값을 직접 반환하면 값이 `self`에서 이동된다. 이 경우나 대부분의 역참조 연산자 사용 사례에서 `MyBox<T>` 내부 값의 소유권을 가져오고 싶지는 않다.
 
-Note that the `*` operator is replaced with a call to the `deref` method and
-then a call to the `*` operator just once, each time we use a `*` in our code.
-Because the substitution of the `*` operator does not recurse infinitely, we
-end up with data of type `i32`, which matches the `5` in `assert_eq!` in
-Listing 15-9.
+`*` 연산자는 `deref` 메서드 호출로 대체된 다음 `*` 연산자 호출이 한 번만 이루어진다는 점에 유의하자. `*` 연산자의 대체가 무한히 재귀하지 않기 때문에 `i32` 타입의 데이터로 끝나며, 이는 리스트 15-9의 `assert_eq!`에서 `5`와 일치한다.
 
-### Implicit Deref Coercions with Functions and Methods
 
-_Deref coercion_ converts a reference to a type that implements the `Deref`
-trait into a reference to another type. For example, deref coercion can convert
-`&String` to `&str` because `String` implements the `Deref` trait such that it
-returns `&str`. Deref coercion is a convenience Rust performs on arguments to
-functions and methods, and works only on types that implement the `Deref`
-trait. It happens automatically when we pass a reference to a particular type’s
-value as an argument to a function or method that doesn’t match the parameter
-type in the function or method definition. A sequence of calls to the `deref`
-method converts the type we provided into the type the parameter needs.
+### 함수와 메서드에서의 암시적 Deref 강제 변환
 
-Deref coercion was added to Rust so that programmers writing function and
-method calls don’t need to add as many explicit references and dereferences
-with `&` and `*`. The deref coercion feature also lets us write more code that
-can work for either references or smart pointers.
+_Deref 강제 변환_은 `Deref` 트레잇을 구현한 타입의 참조를 다른 타입의 참조로 변환한다. 예를 들어, `Deref` 강제 변환은 `&String`을 `&str`로 변환할 수 있다. 이는 `String`이 `Deref` 트레잇을 구현해 `&str`을 반환하기 때문이다. Deref 강제 변환은 함수와 메서드의 인자에 대해 Rust가 편의를 위해 수행하는 기능이며, `Deref` 트레잇을 구현한 타입에서만 동작한다. 이 변환은 함수나 메서드 정의에서 매개변수 타입과 일치하지 않는 특정 타입의 값에 대한 참조를 인자로 전달할 때 자동으로 발생한다. `deref` 메서드를 연속적으로 호출해 제공한 타입을 매개변수가 필요한 타입으로 변환한다.
 
-To see deref coercion in action, let’s use the `MyBox<T>` type we defined in
-Listing 15-8 as well as the implementation of `Deref` that we added in Listing
-15-10. Listing 15-11 shows the definition of a function that has a string slice
-parameter.
+Rust에 Deref 강제 변환이 추가된 이유는 함수와 메서드 호출을 작성할 때 프로그래머가 `&`와 `*`를 사용해 명시적으로 참조와 역참조를 추가하는 작업을 줄이기 위해서다. 또한 Deref 강제 변환 기능은 참조나 스마트 포인터 모두에 동작하는 코드를 더 많이 작성할 수 있게 해준다.
 
-<Listing number="15-11" file-name="src/main.rs" caption="A `hello` function that has the parameter `name` of type `&str`">
+Deref 강제 변환이 실제로 어떻게 동작하는지 확인하기 위해, Listing 15-8에서 정의한 `MyBox<T>` 타입과 Listing 15-10에서 추가한 `Deref` 구현을 사용해 보자. Listing 15-11은 문자열 슬라이스 타입의 매개변수를 가진 함수의 정의를 보여준다.
+
+<Listing number="15-11" file-name="src/main.rs" caption="`&str` 타입의 `name` 매개변수를 가진 `hello` 함수 정의">
 
 ```rust
 {{#rustdoc_include ../listings/ch15-smart-pointers/listing-15-11/src/main.rs:here}}
@@ -223,11 +131,9 @@ parameter.
 
 </Listing>
 
-We can call the `hello` function with a string slice as an argument, such as
-`hello("Rust");`, for example. Deref coercion makes it possible to call `hello`
-with a reference to a value of type `MyBox<String>`, as shown in Listing 15-12.
+예를 들어, `hello("Rust");`와 같이 문자열 슬라이스를 인자로 `hello` 함수를 호출할 수 있다. Deref 강제 변환 덕분에 `MyBox<String>` 타입의 값에 대한 참조를 사용해 `hello`를 호출할 수도 있다. 이는 Listing 15-12에서 확인할 수 있다.
 
-<Listing number="15-12" file-name="src/main.rs" caption="Calling `hello` with a reference to a `MyBox<String>` value, which works because of deref coercion">
+<Listing number="15-12" file-name="src/main.rs" caption="Deref 강제 변환 덕분에 `MyBox<String>` 값에 대한 참조로 `hello` 호출하기">
 
 ```rust
 {{#rustdoc_include ../listings/ch15-smart-pointers/listing-15-12/src/main.rs:here}}
@@ -235,19 +141,11 @@ with a reference to a value of type `MyBox<String>`, as shown in Listing 15-12.
 
 </Listing>
 
-Here we’re calling the `hello` function with the argument `&m`, which is a
-reference to a `MyBox<String>` value. Because we implemented the `Deref` trait
-on `MyBox<T>` in Listing 15-10, Rust can turn `&MyBox<String>` into `&String`
-by calling `deref`. The standard library provides an implementation of `Deref`
-on `String` that returns a string slice, and this is in the API documentation
-for `Deref`. Rust calls `deref` again to turn the `&String` into `&str`, which
-matches the `hello` function’s definition.
+여기서는 `&m`을 인자로 `hello` 함수를 호출한다. `&m`은 `MyBox<String>` 값에 대한 참조다. Listing 15-10에서 `MyBox<T>`에 `Deref` 트레잇을 구현했기 때문에, Rust는 `deref`를 호출해 `&MyBox<String>`을 `&String`으로 변환할 수 있다. 표준 라이브러리는 `String`에 대한 `Deref` 구현을 제공하며, 이는 문자열 슬라이스를 반환한다. 이 내용은 `Deref`의 API 문서에 나와 있다. Rust는 `deref`를 다시 호출해 `&String`을 `&str`로 변환하며, 이는 `hello` 함수의 정의와 일치한다.
 
-If Rust didn’t implement deref coercion, we would have to write the code in
-Listing 15-13 instead of the code in Listing 15-12 to call `hello` with a value
-of type `&MyBox<String>`.
+만약 Rust가 Deref 강제 변환을 구현하지 않았다면, `&MyBox<String>` 타입의 값으로 `hello`를 호출하기 위해 Listing 15-13의 코드를 작성해야 했을 것이다.
 
-<Listing number="15-13" file-name="src/main.rs" caption="The code we would have to write if Rust didn’t have deref coercion">
+<Listing number="15-13" file-name="src/main.rs" caption="Rust에 Deref 강제 변환이 없었다면 작성해야 했던 코드">
 
 ```rust
 {{#rustdoc_include ../listings/ch15-smart-pointers/listing-15-13/src/main.rs:here}}
@@ -255,47 +153,26 @@ of type `&MyBox<String>`.
 
 </Listing>
 
-The `(*m)` dereferences the `MyBox<String>` into a `String`. Then the `&` and
-`[..]` take a string slice of the `String` that is equal to the whole string to
-match the signature of `hello`. This code without deref coercions is harder to
-read, write, and understand with all of these symbols involved. Deref coercion
-allows Rust to handle these conversions for us automatically.
+`(*m)`은 `MyBox<String>`을 `String`으로 역참조한다. 그런 다음 `&`와 `[..]`는 전체 문자열과 동일한 `String`의 문자열 슬라이스를 가져와 `hello`의 시그니처와 일치시킨다. Deref 강제 변환이 없다면 이 코드는 읽기, 작성하기, 이해하기 모두 더 어려워진다. Deref 강제 변환은 Rust가 이러한 변환을 자동으로 처리할 수 있게 해준다.
 
-When the `Deref` trait is defined for the types involved, Rust will analyze the
-types and use `Deref::deref` as many times as necessary to get a reference to
-match the parameter’s type. The number of times that `Deref::deref` needs to be
-inserted is resolved at compile time, so there is no runtime penalty for taking
-advantage of deref coercion!
+관련 타입에 대해 `Deref` 트레잇이 정의되어 있다면, Rust는 타입을 분석하고 `Deref::deref`를 필요한 만큼 호출해 매개변수의 타입과 일치하는 참조를 얻는다. `Deref::deref`를 삽입해야 하는 횟수는 컴파일 타임에 결정되므로, Deref 강제 변환을 활용해도 런타임 성능에 영향을 미치지 않는다!
 
-### How Deref Coercion Interacts with Mutability
 
-Similar to how you use the `Deref` trait to override the `*` operator on
-immutable references, you can use the `DerefMut` trait to override the `*`
-operator on mutable references.
+### Deref 강제 변환과 가변성의 상호작용
 
-Rust does deref coercion when it finds types and trait implementations in three
-cases:
+불변 참조에서 `*` 연산자를 오버라이드하기 위해 `Deref` 트레잇을 사용하는 것과 유사하게, 가변 참조에서 `*` 연산자를 오버라이드하기 위해 `DerefMut` 트레잇을 사용할 수 있다.
 
-1. From `&T` to `&U` when `T: Deref<Target=U>`
-2. From `&mut T` to `&mut U` when `T: DerefMut<Target=U>`
-3. From `&mut T` to `&U` when `T: Deref<Target=U>`
+Rust는 세 가지 경우에 타입과 트레잇 구현을 발견할 때 Deref 강제 변환을 수행한다:
 
-The first two cases are the same except that the second implements mutability.
-The first case states that if you have a `&T`, and `T` implements `Deref` to
-some type `U`, you can get a `&U` transparently. The second case states that the
-same deref coercion happens for mutable references.
+1. `&T`에서 `&U`로 변환. 이때 `T: Deref<Target=U>` 조건을 만족한다.
+2. `&mut T`에서 `&mut U`로 변환. 이때 `T: DerefMut<Target=U>` 조건을 만족한다.
+3. `&mut T`에서 `&U`로 변환. 이때 `T: Deref<Target=U>` 조건을 만족한다.
 
-The third case is trickier: Rust will also coerce a mutable reference to an
-immutable one. But the reverse is _not_ possible: immutable references will
-never coerce to mutable references. Because of the borrowing rules, if you have
-a mutable reference, that mutable reference must be the only reference to that
-data (otherwise, the program wouldn’t compile). Converting one mutable
-reference to one immutable reference will never break the borrowing rules.
-Converting an immutable reference to a mutable reference would require that the
-initial immutable reference is the only immutable reference to that data, but
-the borrowing rules don’t guarantee that. Therefore, Rust can’t make the
-assumption that converting an immutable reference to a mutable reference is
-possible.
+첫 번째와 두 번째 경우는 가변성 구현 여부만 다르고 나머지는 동일하다. 첫 번째 경우는 `&T`가 있고 `T`가 `Deref`를 구현하여 어떤 타입 `U`로 변환될 수 있다면, `&U`를 투명하게 얻을 수 있다는 것을 의미한다. 두 번째 경우는 가변 참조에 대해 동일한 Deref 강제 변환이 일어난다는 것을 나타낸다.
+
+세 번째 경우는 더 복잡하다: Rust는 가변 참조를 불변 참조로도 강제 변환한다. 하지만 그 반대는 **불가능**하다: 불변 참조는 절대 가변 참조로 강제 변환되지 않는다. 빌림 규칙에 따라, 가변 참조가 있다면 그 가변 참조는 해당 데이터에 대한 유일한 참조여야 한다(그렇지 않으면 프로그램이 컴파일되지 않는다). 하나의 가변 참조를 하나의 불변 참조로 변환하는 것은 빌림 규칙을 절대 위반하지 않는다. 그러나 불변 참조를 가변 참조로 변환하려면 초기 불변 참조가 해당 데이터에 대한 유일한 불변 참조여야 하는데, 빌림 규칙이 이를 보장하지 않는다. 따라서 Rust는 불변 참조를 가변 참조로 변환하는 것이 가능하다고 가정할 수 없다.
 
 [impl-trait]: ch10-02-traits.html#implementing-a-trait-on-a-type
 [tuple-structs]: ch05-01-defining-structs.html#using-tuple-structs-without-named-fields-to-create-different-types
+
+

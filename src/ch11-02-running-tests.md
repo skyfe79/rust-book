@@ -1,68 +1,35 @@
-## Controlling How Tests Are Run
+## 테스트 실행 방식 제어하기
 
-Just as `cargo run` compiles your code and then runs the resultant binary,
-`cargo test` compiles your code in test mode and runs the resultant test
-binary. The default behavior of the binary produced by `cargo test` is to run
-all the tests in parallel and capture output generated during test runs,
-preventing the output from being displayed and making it easier to read the
-output related to the test results. You can, however, specify command line
-options to change this default behavior.
+`cargo run`이 코드를 컴파일한 후 결과 바이너리를 실행하는 것처럼, `cargo test`는 코드를 테스트 모드로 컴파일한 후 결과 테스트 바이너리를 실행한다. `cargo test`로 생성된 바이너리의 기본 동작은 모든 테스트를 병렬로 실행하고, 테스트 실행 중 생성된 출력을 캡처하여 화면에 표시하지 않는다. 이렇게 하면 테스트 결과와 관련된 출력을 더 쉽게 읽을 수 있다. 하지만 커맨드라인 옵션을 지정해 이 기본 동작을 변경할 수 있다.
 
-Some command line options go to `cargo test`, and some go to the resultant test
-binary. To separate these two types of arguments, you list the arguments that
-go to `cargo test` followed by the separator `--` and then the ones that go to
-the test binary. Running `cargo test --help` displays the options you can use
-with `cargo test`, and running `cargo test -- --help` displays the options you
-can use after the separator. Those options are also documented in [the “Tests”
-section][tests] of the [the rustc book][rustc].
+일부 커맨드라인 옵션은 `cargo test`에 전달되고, 다른 옵션은 결과 테스트 바이너리에 전달된다. 이 두 가지 유형의 인자를 구분하려면, `cargo test`에 전달할 인자를 먼저 나열한 후 구분자 `--`를 넣고, 그 다음에 테스트 바이너리에 전달할 인자를 나열한다. `cargo test --help`를 실행하면 `cargo test`와 함께 사용할 수 있는 옵션을 확인할 수 있고, `cargo test -- --help`를 실행하면 구분자 뒤에 사용할 수 있는 옵션을 확인할 수 있다. 이 옵션들은 [rustc 책][rustc]의 [“Tests” 섹션][tests]에 문서화되어 있다.
 
 [tests]: https://doc.rust-lang.org/rustc/tests/index.html
 [rustc]: https://doc.rust-lang.org/rustc/index.html
 
-### Running Tests in Parallel or Consecutively
 
-When you run multiple tests, by default they run in parallel using threads,
-meaning they finish running faster and you get feedback quicker. Because the
-tests are running at the same time, you must make sure your tests don’t depend
-on each other or on any shared state, including a shared environment, such as
-the current working directory or environment variables.
+### 테스트를 병렬 또는 순차적으로 실행하기
 
-For example, say each of your tests runs some code that creates a file on disk
-named _test-output.txt_ and writes some data to that file. Then each test reads
-the data in that file and asserts that the file contains a particular value,
-which is different in each test. Because the tests run at the same time, one
-test might overwrite the file in the time between another test writing and
-reading the file. The second test will then fail, not because the code is
-incorrect but because the tests have interfered with each other while running
-in parallel. One solution is to make sure each test writes to a different file;
-another solution is to run the tests one at a time.
+여러 테스트를 실행할 때 기본적으로 스레드를 사용해 병렬로 실행한다. 이렇게 하면 테스트가 더 빨리 완료되고 결과를 빠르게 확인할 수 있다. 하지만 테스트가 동시에 실행되기 때문에, 각 테스트가 서로 의존하거나 공유 상태(예: 현재 작업 디렉토리나 환경 변수와 같은 공유 환경)에 의존하지 않도록 주의해야 한다.
 
-If you don’t want to run the tests in parallel or if you want more fine-grained
-control over the number of threads used, you can send the `--test-threads` flag
-and the number of threads you want to use to the test binary. Take a look at
-the following example:
+예를 들어, 각 테스트가 디스크에 _test-output.txt_라는 파일을 생성하고 데이터를 쓰는 코드를 실행한다고 가정하자. 그런 다음 각 테스트는 해당 파일의 데이터를 읽고 파일에 특정 값이 포함되어 있는지 확인한다. 이때 각 테스트는 서로 다른 값을 검사한다. 테스트가 동시에 실행되면 한 테스트가 파일을 쓰는 동안 다른 테스트가 파일을 덮어쓸 수 있다. 이 경우 두 번째 테스트는 코드가 잘못된 것이 아니라 병렬 실행 중에 테스트가 서로 간섭했기 때문에 실패할 수 있다. 이를 해결하는 한 가지 방법은 각 테스트가 서로 다른 파일에 쓰도록 하는 것이다. 또 다른 방법은 테스트를 하나씩 순차적으로 실행하는 것이다.
+
+테스트를 병렬로 실행하고 싶지 않거나 사용할 스레드 수를 더 세밀하게 제어하고 싶다면 `--test-threads` 플래그와 사용할 스레드 수를 테스트 바이너리에 전달할 수 있다. 다음 예제를 살펴보자:
 
 ```console
 $ cargo test -- --test-threads=1
 ```
 
-We set the number of test threads to `1`, telling the program not to use any
-parallelism. Running the tests using one thread will take longer than running
-them in parallel, but the tests won’t interfere with each other if they share
-state.
+테스트 스레드 수를 `1`로 설정해 프로그램이 병렬 처리를 사용하지 않도록 한다. 하나의 스레드로 테스트를 실행하면 병렬로 실행할 때보다 시간이 더 오래 걸리지만, 테스트가 상태를 공유하더라도 서로 간섭하지 않는다.
 
-### Showing Function Output
 
-By default, if a test passes, Rust’s test library captures anything printed to
-standard output. For example, if we call `println!` in a test and the test
-passes, we won’t see the `println!` output in the terminal; we’ll see only the
-line that indicates the test passed. If a test fails, we’ll see whatever was
-printed to standard output with the rest of the failure message.
+### 함수 출력 보여주기
 
-As an example, Listing 11-10 has a silly function that prints the value of its
-parameter and returns 10, as well as a test that passes and a test that fails.
+기본적으로 테스트가 성공하면, Rust의 테스트 라이브러리는 표준 출력에 출력된 모든 내용을 캡처한다. 예를 들어, 테스트에서 `println!`을 호출하고 테스트가 성공하면, 터미널에서 `println!`의 출력을 볼 수 없다. 대신 테스트가 성공했다는 메시지만 보게 된다. 테스트가 실패하면, 실패 메시지와 함께 표준 출력에 출력된 내용을 확인할 수 있다.
 
-<Listing number="11-10" file-name="src/lib.rs" caption="Tests for a function that calls `println!`">
+예를 들어, 리스트 11-10에는 매개변수의 값을 출력하고 10을 반환하는 단순한 함수가 있다. 이 함수에 대한 테스트 중 하나는 성공하고, 다른 하나는 실패한다.
+
+<Listing number="11-10" file-name="src/lib.rs" caption="`println!`을 호출하는 함수에 대한 테스트">
 
 ```rust,panics,noplayground
 {{#rustdoc_include ../listings/ch11-writing-automated-tests/listing-11-10/src/lib.rs}}
@@ -70,42 +37,34 @@ parameter and returns 10, as well as a test that passes and a test that fails.
 
 </Listing>
 
-When we run these tests with `cargo test`, we’ll see the following output:
+`cargo test`로 이 테스트를 실행하면 다음과 같은 출력을 볼 수 있다:
 
 ```console
 {{#include ../listings/ch11-writing-automated-tests/listing-11-10/output.txt}}
 ```
 
-Note that nowhere in this output do we see `I got the value 4`, which is
-printed when the test that passes runs. That output has been captured. The
-output from the test that failed, `I got the value 8`, appears in the section
-of the test summary output, which also shows the cause of the test failure.
+출력 결과에서 `I got the value 4`라는 메시지를 찾을 수 없다. 이 메시지는 테스트가 성공할 때 출력되지만, 캡처되었다. 반면, 실패한 테스트의 출력인 `I got the value 8`은 테스트 요약 출력 부분에 나타나며, 테스트 실패의 원인도 함께 표시된다.
 
-If we want to see printed values for passing tests as well, we can tell Rust to
-also show the output of successful tests with `--show-output`:
+성공한 테스트의 출력값도 확인하고 싶다면, `--show-output` 플래그를 사용해 Rust에게 성공한 테스트의 출력도 보여주도록 지시할 수 있다:
 
 ```console
 $ cargo test -- --show-output
 ```
 
-When we run the tests in Listing 11-10 again with the `--show-output` flag, we
-see the following output:
+`--show-output` 플래그를 사용해 리스트 11-10의 테스트를 다시 실행하면, 다음과 같은 출력을 볼 수 있다:
 
 ```console
 {{#include ../listings/ch11-writing-automated-tests/output-only-01-show-output/output.txt}}
 ```
 
-### Running a Subset of Tests by Name
 
-Sometimes, running a full test suite can take a long time. If you’re working on
-code in a particular area, you might want to run only the tests pertaining to
-that code. You can choose which tests to run by passing `cargo test` the name
-or names of the test(s) you want to run as an argument.
+### 이름으로 테스트의 일부만 실행하기
 
-To demonstrate how to run a subset of tests, we’ll first create three tests for
-our `add_two` function, as shown in Listing 11-11, and choose which ones to run.
+전체 테스트 스위트를 실행하면 시간이 오래 걸릴 수 있다. 특정 코드 영역을 작업 중이라면 해당 코드와 관련된 테스트만 실행하고 싶을 수 있다. `cargo test`에 실행하려는 테스트의 이름을 인자로 전달하면 원하는 테스트만 선택적으로 실행할 수 있다.
 
-<Listing number="11-11" file-name="src/lib.rs" caption="Three tests with three different names">
+테스트의 일부만 실행하는 방법을 보여주기 위해, 먼저 `add_two` 함수에 대한 세 가지 테스트를 작성한다. Listing 11-11에서 이를 확인할 수 있으며, 어떤 테스트를 실행할지 선택할 수 있다.
+
+<Listing number="11-11" file-name="src/lib.rs" caption="서로 다른 이름을 가진 세 가지 테스트">
 
 ```rust,noplayground
 {{#rustdoc_include ../listings/ch11-writing-automated-tests/listing-11-11/src/lib.rs}}
@@ -113,73 +72,60 @@ our `add_two` function, as shown in Listing 11-11, and choose which ones to run.
 
 </Listing>
 
-If we run the tests without passing any arguments, as we saw earlier, all the
-tests will run in parallel:
+앞서 보았듯이, 아무런 인자 없이 테스트를 실행하면 모든 테스트가 병렬로 실행된다:
 
 ```console
 {{#include ../listings/ch11-writing-automated-tests/listing-11-11/output.txt}}
 ```
 
-#### Running Single Tests
 
-We can pass the name of any test function to `cargo test` to run only that test:
+#### 단일 테스트 실행하기
+
+`cargo test` 명령어에 특정 테스트 함수의 이름을 전달하면 해당 테스트만 실행할 수 있다:
 
 ```console
 {{#include ../listings/ch11-writing-automated-tests/output-only-02-single-test/output.txt}}
 ```
 
-Only the test with the name `one_hundred` ran; the other two tests didn’t match
-that name. The test output lets us know we had more tests that didn’t run by
-displaying `2 filtered out` at the end.
+`one_hundred`라는 이름의 테스트만 실행되었고, 나머지 두 테스트는 이름이 일치하지 않아 실행되지 않았다. 테스트 출력 결과 끝부분에 `2 filtered out`이라는 메시지가 표시되어 실행되지 않은 테스트가 두 개 있음을 알려준다.
 
-We can’t specify the names of multiple tests in this way; only the first value
-given to `cargo test` will be used. But there is a way to run multiple tests.
+이 방식으로는 여러 테스트의 이름을 동시에 지정할 수 없다. `cargo test`에 전달된 첫 번째 값만 사용되기 때문이다. 하지만 여러 테스트를 실행할 수 있는 방법이 있다.
 
-#### Filtering to Run Multiple Tests
 
-We can specify part of a test name, and any test whose name matches that value
-will be run. For example, because two of our tests’ names contain `add`, we can
-run those two by running `cargo test add`:
+#### 여러 테스트를 실행하기 위한 필터링
+
+테스트 이름의 일부를 지정하면 해당 값과 일치하는 이름을 가진 모든 테스트가 실행된다. 예를 들어, 두 테스트의 이름에 `add`가 포함되어 있으므로 `cargo test add`를 실행하면 해당 두 테스트만 실행할 수 있다:
 
 ```console
 {{#include ../listings/ch11-writing-automated-tests/output-only-03-multiple-tests/output.txt}}
 ```
 
-This command ran all tests with `add` in the name and filtered out the test
-named `one_hundred`. Also note that the module in which a test appears becomes
-part of the test’s name, so we can run all the tests in a module by filtering
-on the module’s name.
+이 커맨드는 이름에 `add`가 포함된 모든 테스트를 실행하고 `one_hundred`라는 이름의 테스트는 제외했다. 또한 테스트가 속한 모듈 이름도 테스트 이름의 일부가 되므로, 모듈 이름으로 필터링하면 해당 모듈의 모든 테스트를 실행할 수 있다.
 
-### Ignoring Some Tests Unless Specifically Requested
 
-Sometimes a few specific tests can be very time-consuming to execute, so you
-might want to exclude them during most runs of `cargo test`. Rather than
-listing as arguments all tests you do want to run, you can instead annotate the
-time-consuming tests using the `ignore` attribute to exclude them, as shown
-here:
+### 특별히 요청하지 않는 한 일부 테스트 무시하기
 
-<span class="filename">Filename: src/lib.rs</span>
+
+때로는 특정 테스트를 실행하는 데 시간이 오래 걸릴 수 있다. 이 경우 `cargo test`를 실행할 때 대부분의 경우 해당 테스트를 제외하고 싶을 수 있다. 실행하고 싶은 모든 테스트를 인수로 나열하는 대신, 시간이 오래 걸리는 테스트에 `ignore` 속성을 추가해 제외할 수 있다.
+
+<span class="filename">파일명: src/lib.rs</span>
 
 ```rust,noplayground
 {{#rustdoc_include ../listings/ch11-writing-automated-tests/no-listing-11-ignore-a-test/src/lib.rs:here}}
 ```
 
-After `#[test]`, we add the `#[ignore]` line to the test we want to exclude.
-Now when we run our tests, `it_works` runs, but `expensive_test` doesn’t:
+`#[test]` 뒤에 제외하고 싶은 테스트에 `#[ignore]` 줄을 추가한다. 이제 테스트를 실행하면 `it_works`는 실행되지만 `expensive_test`는 실행되지 않는다.
 
 ```console
 {{#include ../listings/ch11-writing-automated-tests/no-listing-11-ignore-a-test/output.txt}}
 ```
 
-The `expensive_test` function is listed as `ignored`. If we want to run only
-the ignored tests, we can use `cargo test -- --ignored`:
+`expensive_test` 함수는 `ignored`로 표시된다. 만약 무시된 테스트만 실행하고 싶다면 `cargo test -- --ignored`를 사용할 수 있다.
 
 ```console
 {{#include ../listings/ch11-writing-automated-tests/output-only-04-running-ignored/output.txt}}
 ```
 
-By controlling which tests run, you can make sure your `cargo test` results
-will be returned quickly. When you’re at a point where it makes sense to check
-the results of the `ignored` tests and you have time to wait for the results,
-you can run `cargo test -- --ignored` instead. If you want to run all tests
-whether they’re ignored or not, you can run `cargo test -- --include-ignored`.
+어떤 테스트를 실행할지 제어함으로써 `cargo test` 결과를 빠르게 확인할 수 있다. `ignored` 테스트의 결과를 확인할 필요가 있고, 결과를 기다릴 시간이 있다면 `cargo test -- --ignored`를 실행하면 된다. 무시된 테스트를 포함해 모든 테스트를 실행하고 싶다면 `cargo test -- --include-ignored`를 사용할 수 있다.
+
+

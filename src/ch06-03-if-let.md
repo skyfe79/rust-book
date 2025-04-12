@@ -1,12 +1,8 @@
-## Concise Control Flow with `if let` and `let else`
+## 간결한 제어 흐름: `if let`과 `let else`
 
-The `if let` syntax lets you combine `if` and `let` into a less verbose way to
-handle values that match one pattern while ignoring the rest. Consider the
-program in Listing 6-6 that matches on an `Option<u8>` value in the
-`config_max` variable but only wants to execute code if the value is the `Some`
-variant.
+`if let` 구문은 `if`와 `let`을 결합하여 더 간결하게 패턴 매칭을 처리할 수 있게 해준다. 특정 패턴에만 관심이 있고 나머지는 무시하려는 경우 유용하다. 예를 들어, `Option<u8>` 타입의 `config_max` 변수를 매칭할 때, 값이 `Some`인 경우에만 코드를 실행하고 싶다면 다음과 같이 작성할 수 있다.
 
-<Listing number="6-6" caption="A `match` that only cares about executing code when the value is `Some`">
+<Listing number="6-6" caption="값이 `Some`인 경우에만 코드를 실행하는 `match` 예제">
 
 ```rust
 {{#rustdoc_include ../listings/ch06-enums-and-pattern-matching/listing-06-06/src/main.rs:here}}
@@ -14,70 +10,44 @@ variant.
 
 </Listing>
 
-If the value is `Some`, we print out the value in the `Some` variant by binding
-the value to the variable `max` in the pattern. We don’t want to do anything
-with the `None` value. To satisfy the `match` expression, we have to add `_ =>
-()` after processing just one variant, which is annoying boilerplate code to
-add.
+값이 `Some`인 경우, 패턴에서 `max` 변수에 값을 바인딩하여 `Some` 내부의 값을 출력한다. `None` 값에 대해서는 아무런 동작도 수행하지 않는다. `match` 표현식을 완성하기 위해 `_ => ()`를 추가해야 하는데, 이는 불필요한 보일러플레이트 코드다.
 
-Instead, we could write this in a shorter way using `if let`. The following
-code behaves the same as the `match` in Listing 6-6:
+이를 더 간단하게 `if let`을 사용해 작성할 수 있다. 다음 코드는 Listing 6-6의 `match`와 동일한 동작을 한다:
 
 ```rust
 {{#rustdoc_include ../listings/ch06-enums-and-pattern-matching/no-listing-12-if-let/src/main.rs:here}}
 ```
 
-The syntax `if let` takes a pattern and an expression separated by an equal
-sign. It works the same way as a `match`, where the expression is given to the
-`match` and the pattern is its first arm. In this case, the pattern is
-`Some(max)`, and the `max` binds to the value inside the `Some`. We can then
-use `max` in the body of the `if let` block in the same way we used `max` in
-the corresponding `match` arm. The code in the `if let` block only runs if the
-value matches the pattern.
+`if let` 구문은 패턴과 표현식을 등호로 구분하여 사용한다. 이는 `match`와 동일하게 동작하며, 표현식은 `match`에 전달되고 패턴은 첫 번째 매치 갈래가 된다. 여기서 패턴은 `Some(max)`이며, `max`는 `Some` 내부의 값에 바인딩된다. 그런 다음 `if let` 블록 내에서 `max`를 사용할 수 있으며, 이는 `match` 갈래에서 `max`를 사용하는 것과 동일하다. `if let` 블록의 코드는 값이 패턴과 일치할 때만 실행된다.
 
-Using `if let` means less typing, less indentation, and less boilerplate code.
-However, you lose the exhaustive checking that `match` enforces. Choosing
-between `match` and `if let` depends on what you’re doing in your particular
-situation and whether gaining conciseness is an appropriate trade-off for
-losing exhaustive checking.
+`if let`을 사용하면 타이핑이 줄어들고, 들여쓰기가 감소하며, 보일러플레이트 코드가 사라진다. 하지만 `match`가 제공하는 철저한 검사 기능을 잃게 된다. `match`와 `if let` 중 어떤 것을 선택할지는 특정 상황에서 무엇을 하느냐에 달려 있으며, 간결함을 얻는 대신 철저한 검사를 포기하는 것이 적절한지 판단해야 한다.
 
-In other words, you can think of `if let` as syntax sugar for a `match` that
-runs code when the value matches one pattern and then ignores all other values.
+즉, `if let`은 특정 패턴과 일치할 때만 코드를 실행하고 나머지 값은 무시하는 `match`의 축약형이라고 생각할 수 있다.
 
-We can include an `else` with an `if let`. The block of code that goes with the
-`else` is the same as the block of code that would go with the `_` case in the
-`match` expression that is equivalent to the `if let` and `else`. Recall the
-`Coin` enum definition in Listing 6-4, where the `Quarter` variant also held a
-`UsState` value. If we wanted to count all non-quarter coins we see while also
-announcing the state of the quarters, we could do that with a `match`
-expression, like this:
+`if let`과 함께 `else`를 사용할 수도 있다. `else` 블록의 코드는 `if let`과 동등한 `match` 표현식에서 `_` 케이스에 해당하는 블록과 동일하다. Listing 6-4의 `Coin` 열거형 정의를 떠올려보자. `Quarter` 변형은 `UsState` 값을 포함하고 있다. 만약 쿼터가 아닌 동전의 수를 세면서 동시에 쿼터의 주를 알리고 싶다면, 다음과 같이 `match` 표현식을 사용할 수 있다:
 
 ```rust
 {{#rustdoc_include ../listings/ch06-enums-and-pattern-matching/no-listing-13-count-and-announce-match/src/main.rs:here}}
 ```
 
-Or we could use an `if let` and `else` expression, like this:
+또는 `if let`과 `else` 표현식을 사용해 다음과 같이 작성할 수도 있다:
 
 ```rust
 {{#rustdoc_include ../listings/ch06-enums-and-pattern-matching/no-listing-14-count-and-announce-if-let-else/src/main.rs:here}}
 ```
 
-## Staying on the “Happy Path” with `let...else`
 
-One common pattern is to perform some computation when a value is present and
-return a default value otherwise. Continuing on with our example of coins with a
-`UsState` value, if we wanted to say something funny depending on how old the
-state on the quarter was, we might introduce a method on `UsState` to check the
-age of a state, like so:
+## `let...else`로 "해피 패스" 유지하기
+
+값이 존재할 때는 특정 계산을 수행하고, 그렇지 않으면 기본값을 반환하는 패턴은 자주 사용된다. `UsState` 값을 가진 동전 예제를 계속 이어가 보자. 쿼터에 새겨진 주의 연령에 따라 재미있는 말을 하고 싶다면, `UsState`에 주의 연령을 확인하는 메서드를 추가할 수 있다.
 
 ```rust
 {{#rustdoc_include ../listings/ch06-enums-and-pattern-matching/listing-06-07/src/main.rs:state}}
 ```
 
-Then we might use `if let` to match on the type of coin, introducing a `state`
-variable within the body of the condition, as in Listing 6-7.
+그런 다음 `if let`을 사용해 동전 타입을 매칭하고, 조건문 내부에 `state` 변수를 도입할 수 있다. 이는 Listing 6-7과 같다.
 
-<Listing number="6-7" caption="Checking whether a state existing in 1900 by using conditionals nested inside an `if let`." file-name="src/main.rs">
+<Listing number="6-7" caption="`if let` 내부에 조건문을 중첩해 1900년에 존재했던 주를 확인하기." file-name="src/main.rs">
 
 ```rust
 {{#rustdoc_include ../listings/ch06-enums-and-pattern-matching/listing-06-07/src/main.rs:describe}}
@@ -85,14 +55,9 @@ variable within the body of the condition, as in Listing 6-7.
 
 </Listing>
 
-That gets the job done, but it has pushed the work into the body of the `if let`
-statement, and if the work to be done is more complicated, it might be hard to
-follow exactly how the top-level branches relate. We could also take advantage
-of the fact that expressions produce a value either to produce the `state` from
-the `if let` or to return early, as in Listing 6-8. (You could do similar with a
-`match`, too.)
+이 방법은 작업을 `if let` 문의 본문으로 밀어넣어 처리하기 때문에, 작업이 복잡해지면 최상위 분기와의 관계를 파악하기 어려워질 수 있다. 또한 표현식이 값을 생성한다는 사실을 활용해 `if let`에서 `state`를 생성하거나 조기에 반환할 수도 있다. 이는 Listing 6-8과 같다. (`match`를 사용해 비슷한 작업을 수행할 수도 있다.)
 
-<Listing number="6-8" caption="Using `if let` to produce a value or return early." file-name="src/main.rs">
+<Listing number="6-8" caption="값을 생성하거나 조기에 반환하기 위해 `if let` 사용하기." file-name="src/main.rs">
 
 ```rust
 {{#rustdoc_include ../listings/ch06-enums-and-pattern-matching/listing-06-08/src/main.rs:describe}}
@@ -100,22 +65,13 @@ the `if let` or to return early, as in Listing 6-8. (You could do similar with a
 
 </Listing>
 
-This is a bit annoying to follow in its own way, though! One branch of the `if
-let` produces a value, and the other one returns from the function entirely.
+하지만 이 방법도 따르기에는 조금 번거롭다! `if let`의 한 분기는 값을 생성하고, 다른 분기는 함수 전체에서 반환한다.
 
-To make this common pattern nicer to express, Rust has `let...else`. The
-`let...else` syntax takes a pattern on the left side and an expression on the
-right, very similar to `if let`, but it does not have an `if` branch, only an
-`else` branch. If the pattern matches, it will bind the value from the pattern
-in the outer scope. If the pattern does _not_ match, the program will flow into
-the `else` arm, which must return from the function.
+이런 일반적인 패턴을 더 깔끔하게 표현하기 위해 Rust는 `let...else`를 제공한다. `let...else` 구문은 `if let`과 매우 유사하게 왼쪽에 패턴을, 오른쪽에 표현식을 받지만, `if` 분기는 없고 `else` 분기만 있다. 패턴이 매칭되면 패턴에서 값을 외부 스코프에 바인딩한다. 패턴이 매칭되지 않으면 프로그램은 `else` 분기로 흐르며, 이 분기에서는 반드시 함수에서 반환해야 한다.
 
-In Listing 6-9, you can see how Listing 6-8 looks when using `let...else` in
-place of `if let`. Notice that it stays “on the happy path” in the main body of
-the function this way, without having significantly different control flow for
-two branches the way the `if let` did.
+Listing 6-9에서는 `if let` 대신 `let...else`를 사용해 Listing 6-8을 어떻게 표현하는지 확인할 수 있다. 이 방식은 함수의 주요 본문에서 "해피 패스"를 유지하며, `if let`처럼 두 분기 간에 크게 다른 제어 흐름을 만들지 않는다.
 
-<Listing number="6-9" caption="Using `let...else` to clarify the flow through the function." file-name="src/main.rs">
+<Listing number="6-9" caption="함수의 흐름을 명확히 하기 위해 `let...else` 사용하기." file-name="src/main.rs">
 
 ```rust
 {{#rustdoc_include ../listings/ch06-enums-and-pattern-matching/listing-06-09/src/main.rs:describe}}
@@ -123,23 +79,15 @@ two branches the way the `if let` did.
 
 </Listing>
 
-If you have a situation in which your program has logic that is too verbose to
-express using a `match`, remember that `if let` and `let...else` are in your
-Rust toolbox as well.
+만약 `match`로 표현하기에는 너무 장황한 로직이 있다면, `if let`과 `let...else`가 Rust 도구 상자에 있다는 것을 기억하라.
 
-## Summary
 
-We’ve now covered how to use enums to create custom types that can be one of a
-set of enumerated values. We’ve shown how the standard library’s `Option<T>`
-type helps you use the type system to prevent errors. When enum values have
-data inside them, you can use `match` or `if let` to extract and use those
-values, depending on how many cases you need to handle.
+## 요약
 
-Your Rust programs can now express concepts in your domain using structs and
-enums. Creating custom types to use in your API ensures type safety: the
-compiler will make certain your functions only get values of the type each
-function expects.
+지금까지 열거형(enum)을 사용해 특정 값들 중 하나를 선택할 수 있는 커스텀 타입을 만드는 방법을 알아보았다. 또한 표준 라이브러리의 `Option<T>` 타입이 어떻게 타입 시스템을 활용해 에러를 방지하는지 살펴보았다. 열거형 값 안에 데이터가 포함된 경우, `match`나 `if let`을 사용해 해당 값을 추출하고 활용할 수 있다. 이때 처리해야 하는 케이스의 수에 따라 적절한 방법을 선택하면 된다.
 
-In order to provide a well-organized API to your users that is straightforward
-to use and only exposes exactly what your users will need, let’s now turn to
-Rust’s modules.
+이제 여러분의 Rust 프로그램은 구조체(struct)와 열거형을 통해 도메인 개념을 표현할 수 있다. API에서 사용할 커스텀 타입을 만들면 타입 안전성을 보장할 수 있다. 컴파일러가 각 함수가 기대하는 타입의 값만 전달되도록 확인해 주기 때문이다.
+
+사용자에게 잘 정리된 API를 제공하고, 사용하기 간편하며, 사용자가 필요한 기능만 정확히 노출하려면 이제 Rust의 모듈 시스템을 살펴볼 차례다.
+
+

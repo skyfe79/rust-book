@@ -1,46 +1,25 @@
-## Implementing an Object-Oriented Design Pattern
+## 객체 지향 디자인 패턴 구현
 
-The _state pattern_ is an object-oriented design pattern. The crux of the
-pattern is that we define a set of states a value can have internally. The
-states are represented by a set of _state objects_, and the value’s behavior
-changes based on its state. We’re going to work through an example of a blog
-post struct that has a field to hold its state, which will be a state object
-from the set “draft”, “review”, or “published”.
+**상태 패턴**은 객체 지향 디자인 패턴 중 하나다. 이 패턴의 핵심은 값이 내부적으로 가질 수 있는 상태 집합을 정의하는 것이다. 상태는 **상태 객체** 집합으로 표현되며, 값의 동작은 현재 상태에 따라 달라진다. 이 예제에서는 블로그 포스트를 다루며, 포스트는 내부 상태를 나타내는 필드를 가진다. 상태는 "초안", "검토 중", "게시됨" 중 하나가 된다.
 
-The state objects share functionality: in Rust, of course, we use structs and
-traits rather than objects and inheritance. Each state object is responsible
-for its own behavior and for governing when it should change into another
-state. The value that holds a state object knows nothing about the different
-behavior of the states or when to transition between states.
+상태 객체는 기능을 공유한다. Rust에서는 객체와 상속 대신 구조체와 트레이트를 사용한다. 각 상태 객체는 자신의 동작과 상태 전환 시기를 관리한다. 상태 객체를 포함하는 값은 상태 간의 다른 동작이나 상태 전환 시기에 대해 알지 못한다.
 
-The advantage of using the state pattern is that, when the business
-requirements of the program change, we won’t need to change the code of the
-value holding the state or the code that uses the value. We’ll only need to
-update the code inside one of the state objects to change its rules or perhaps
-add more state objects.
+상태 패턴을 사용하면 프로그램의 비즈니스 요구사항이 변경되었을 때, 상태를 포함하는 값이나 값을 사용하는 코드를 변경할 필요가 없다. 단지 상태 객체 중 하나의 코드를 업데이트하여 규칙을 변경하거나 새로운 상태 객체를 추가하면 된다.
 
-First we’re going to implement the state pattern in a more traditional
-object-oriented way, then we’ll use an approach that’s a bit more natural in
-Rust. Let’s dig in to incrementally implement a blog post workflow using the
-state pattern.
+먼저 전통적인 객체 지향 방식으로 상태 패턴을 구현한 다음, Rust에 더 적합한 방식으로 접근한다. 상태 패턴을 사용해 블로그 포스트 워크플로우를 점진적으로 구현해보자.
 
-The final functionality will look like this:
+최종 기능은 다음과 같다:
 
-1. A blog post starts as an empty draft.
-2. When the draft is done, a review of the post is requested.
-3. When the post is approved, it gets published.
-4. Only published blog posts return content to print, so unapproved posts can’t
-   accidentally be published.
+1. 블로그 포스트는 빈 초안 상태로 시작한다.
+2. 초안이 완료되면 포스트 검토를 요청한다.
+3. 포스트가 승인되면 게시된다.
+4. 게시된 블로그 포스트만 콘텐츠를 반환하므로, 승인되지 않은 포스트가 실수로 게시되는 것을 방지한다.
 
-Any other changes attempted on a post should have no effect. For example, if we
-try to approve a draft blog post before we’ve requested a review, the post
-should remain an unpublished draft.
+그 외의 변경 시도는 아무런 효과가 없어야 한다. 예를 들어, 검토를 요청하기 전에 초안 블로그 포스트를 승인하려고 하면 포스트는 게시되지 않은 초안 상태로 유지된다.
 
-Listing 18-11 shows this workflow in code form: this is an example usage of the
-API we’ll implement in a library crate named `blog`. This won’t compile yet
-because we haven’t implemented the `blog` crate.
+리스트 18-11은 이 워크플로우를 코드로 보여준다. 이 코드는 `blog`라는 라이브러리 크레이트에서 구현할 API의 사용 예시다. 아직 `blog` 크레이트를 구현하지 않았기 때문에 이 코드는 컴파일되지 않는다.
 
-<Listing number="18-11" file-name="src/main.rs" caption="Code that demonstrates the desired behavior we want our `blog` crate to have">
+<Listing number="18-11" file-name="src/main.rs" caption="우리가 `blog` 크레이트에 구현하고자 하는 동작을 보여주는 코드">
 
 ```rust,ignore,does_not_compile
 {{#rustdoc_include ../listings/ch18-oop/listing-18-11/src/main.rs:all}}
@@ -48,42 +27,20 @@ because we haven’t implemented the `blog` crate.
 
 </Listing>
 
-We want to allow the user to create a new draft blog post with `Post::new`. We
-want to allow text to be added to the blog post. If we try to get the post’s
-content immediately, before approval, we shouldn’t get any text because the
-post is still a draft. We’ve added `assert_eq!` in the code for demonstration
-purposes. An excellent unit test for this would be to assert that a draft blog
-post returns an empty string from the `content` method, but we’re not going to
-write tests for this example.
+사용자가 `Post::new`를 통해 새로운 초안 블로그 포스트를 생성할 수 있도록 한다. 블로그 포스트에 텍스트를 추가할 수 있어야 한다. 승인 전에 포스트의 콘텐츠를 바로 가져오려고 하면, 포스트가 여전히 초안 상태이므로 텍스트를 얻지 못해야 한다. 코드에는 설명을 위해 `assert_eq!`를 추가했다. 이에 대한 훌륭한 단위 테스트는 초안 블로그 포스트가 `content` 메서드에서 빈 문자열을 반환하는지 확인하는 것이다. 하지만 이 예제에서는 테스트를 작성하지 않는다.
 
-Next, we want to enable a request for a review of the post, and we want
-`content` to return an empty string while waiting for the review. When the post
-receives approval, it should get published, meaning the text of the post will
-be returned when `content` is called.
+다음으로, 포스트 검토를 요청할 수 있도록 하고, 검토를 기다리는 동안 `content`가 빈 문자열을 반환하도록 한다. 포스트가 승인되면 게시되어, `content`가 호출될 때 포스트의 텍스트가 반환된다.
 
-Notice that the only type we’re interacting with from the crate is the `Post`
-type. This type will use the state pattern and will hold a value that will be
-one of three state objects representing the various states a post can be
-in—draft, review, or published. Changing from one state to another will be
-managed internally within the `Post` type. The states change in response to the
-methods called by our library’s users on the `Post` instance, but they don’t
-have to manage the state changes directly. Also, users can’t make a mistake with
-the states, such as publishing a post before it’s reviewed.
+크레이트에서 상호작용하는 유일한 타입은 `Post` 타입이다. 이 타입은 상태 패턴을 사용하며, 포스트가 가질 수 있는 다양한 상태(초안, 검토 중, 게시됨)를 나타내는 세 가지 상태 객체 중 하나를 값으로 가진다. 한 상태에서 다른 상태로의 전환은 `Post` 타입 내부에서 관리된다. 상태는 `Post` 인스턴스에 대해 라이브러리 사용자가 호출한 메서드에 따라 변경되지만, 사용자가 직접 상태 변경을 관리할 필요는 없다. 또한 사용자는 검토 전에 포스트를 게시하는 등의 실수를 할 수 없다.
 
-### Defining `Post` and Creating a New Instance in the Draft State
 
-Let’s get started on the implementation of the library! We know we need a
-public `Post` struct that holds some content, so we’ll start with the
-definition of the struct and an associated public `new` function to create an
-instance of `Post`, as shown in Listing 18-12. We’ll also make a private
-`State` trait that will define the behavior that all state objects for a `Post`
-must have.
+### `Post` 정의와 초기 상태로 인스턴스 생성하기
 
-Then `Post` will hold a trait object of `Box<dyn State>` inside an `Option<T>`
-in a private field named `state` to hold the state object. You’ll see why the
-`Option<T>` is necessary in a bit.
+라이브러리 구현을 시작해 보자. 우선 `Post` 구조체가 필요하며, 이 구조체는 일부 콘텐츠를 보관한다. 따라서 `Post` 구조체를 정의하고, `Post` 인스턴스를 생성하는 `new` 함수를 함께 구현한다. 또한 `Post`의 모든 상태 객체가 갖춰야 할 동작을 정의하는 `State` 트레이트를 비공개로 만든다.
 
-<Listing number="18-12" file-name="src/lib.rs" caption="Definition of a `Post` struct and a `new` function that creates a new `Post` instance, a `State` trait, and a `Draft` struct">
+`Post`는 `state`라는 비공개 필드에 `Box<dyn State>` 타입의 트레이트 객체를 `Option<T>`로 보관한다. 이렇게 `Option<T>`를 사용하는 이유는 조금 뒤에 설명한다.
+
+<Listing number="18-12" file-name="src/lib.rs" caption="`Post` 구조체와 `new` 함수 정의, `State` 트레이트, `Draft` 구조체">
 
 ```rust,noplayground
 {{#rustdoc_include ../listings/ch18-oop/listing-18-12/src/lib.rs}}
@@ -91,30 +48,16 @@ in a private field named `state` to hold the state object. You’ll see why the
 
 </Listing>
 
-The `State` trait defines the behavior shared by different post states. The
-state objects are `Draft`, `PendingReview`, and `Published`, and they will all
-implement the `State` trait. For now, the trait doesn’t have any methods, and
-we’ll start by defining just the `Draft` state because that is the state we
-want a post to start in.
+`State` 트레이트는 다양한 포스트 상태가 공유하는 동작을 정의한다. 상태 객체는 `Draft`, `PendingReview`, `Published`이며, 이들은 모두 `State` 트레이트를 구현한다. 현재는 트레이트에 메서드가 없으며, 포스트가 시작하는 상태인 `Draft` 상태부터 정의한다.
 
-When we create a new `Post`, we set its `state` field to a `Some` value that
-holds a `Box`. This `Box` points to a new instance of the `Draft` struct. This
-ensures that whenever we create a new instance of `Post`, it will start out as a
-draft. Because the `state` field of `Post` is private, there is no way to create
-a `Post` in any other state! In the `Post::new` function, we set the `content`
-field to a new, empty `String`.
+새로운 `Post`를 생성할 때, `state` 필드를 `Box`를 담은 `Some` 값으로 설정한다. 이 `Box`는 `Draft` 구조체의 새 인스턴스를 가리킨다. 이렇게 하면 `Post`의 새 인스턴스를 생성할 때마다 초기 상태가 `Draft`가 된다. `Post`의 `state` 필드는 비공개이므로, 다른 상태로 `Post`를 생성할 방법은 없다! `Post::new` 함수에서 `content` 필드는 새로운 빈 `String`으로 설정한다.
 
-### Storing the Text of the Post Content
 
-We saw in Listing 18-11 that we want to be able to call a method named
-`add_text` and pass it a `&str` that is then added as the text content of the
-blog post. We implement this as a method, rather than exposing the `content`
-field as `pub`, so that later we can implement a method that will control how
-the `content` field’s data is read. The `add_text` method is pretty
-straightforward, so let’s add the implementation in Listing 18-13 to the `impl
-Post` block.
+### 게시물 콘텐츠 텍스트 저장하기
 
-<Listing number="18-13" file-name="src/lib.rs" caption="Implementing the `add_text` method to add text to a post’s `content`">
+리스트 18-11에서 `add_text`라는 메서드를 호출하고, `&str` 타입의 값을 전달하여 블로그 게시물의 텍스트 콘텐츠로 추가할 수 있도록 하려는 것을 확인했다. 이 기능을 `content` 필드를 `pub`으로 공개하는 대신 메서드로 구현한 이유는 나중에 `content` 필드의 데이터를 읽는 방식을 제어할 수 있는 메서드를 구현하기 위함이다. `add_text` 메서드는 매우 직관적이므로, 리스트 18-13의 구현을 `impl Post` 블록에 추가해 보자.
+
+<Listing number="18-13" file-name="src/lib.rs" caption="게시물의 `content`에 텍스트를 추가하는 `add_text` 메서드 구현">
 
 ```rust,noplayground
 {{#rustdoc_include ../listings/ch18-oop/listing-18-13/src/lib.rs:here}}
@@ -122,26 +65,14 @@ Post` block.
 
 </Listing>
 
-The `add_text` method takes a mutable reference to `self` because we’re
-changing the `Post` instance that we’re calling `add_text` on. We then call
-`push_str` on the `String` in `content` and pass the `text` argument to add to
-the saved `content`. This behavior doesn’t depend on the state the post is in,
-so it’s not part of the state pattern. The `add_text` method doesn’t interact
-with the `state` field at all, but it is part of the behavior we want to
-support.
+`add_text` 메서드는 `self`에 대한 가변 참조를 받는다. 이는 `add_text`를 호출하는 `Post` 인스턴스를 변경하기 때문이다. 그런 다음 `content`에 있는 `String`에 `push_str`을 호출하고, `text` 인자를 전달하여 저장된 `content`에 추가한다. 이 동작은 게시물의 상태에 의존하지 않으므로 상태 패턴의 일부가 아니다. `add_text` 메서드는 `state` 필드와 전혀 상호작용하지 않지만, 우리가 지원하고자 하는 동작의 일부이다.
 
-### Ensuring the Content of a Draft Post Is Empty
 
-Even after we’ve called `add_text` and added some content to our post, we still
-want the `content` method to return an empty string slice because the post is
-still in the draft state, as shown on line 7 of Listing 18-11. For now, let’s
-implement the `content` method with the simplest thing that will fulfill this
-requirement: always returning an empty string slice. We’ll change this later
-once we implement the ability to change a post’s state so it can be published.
-So far, posts can only be in the draft state, so the post content should always
-be empty. Listing 18-14 shows this placeholder implementation.
+### 초안 게시물의 내용이 비어 있는지 확인하기
 
-<Listing number="18-14" file-name="src/lib.rs" caption="Adding a placeholder implementation for the `content` method on `Post` that always returns an empty string slice">
+`add_text`를 호출하고 게시물에 일부 내용을 추가한 후에도, 게시물이 아직 초안 상태이기 때문에 `content` 메서드는 빈 문자열 슬라이스를 반환해야 한다. 이는 목록 18-11의 7번째 줄에서 확인할 수 있다. 현재로서는 이 요구 사항을 충족시키기 위해 가장 간단한 방법으로 `content` 메서드를 구현한다. 즉, 항상 빈 문자열 슬라이스를 반환하는 것이다. 나중에 게시물 상태를 변경하여 게시할 수 있는 기능을 구현하면 이 부분을 수정할 예정이다. 지금은 게시물이 초안 상태에만 있을 수 있으므로, 게시물 내용은 항상 비어 있어야 한다. 목록 18-14는 이 플레이스홀더 구현을 보여준다.
+
+<Listing number="18-14" file-name="src/lib.rs" caption="`Post`에 대한 `content` 메서드의 플레이스홀더 구현 추가. 항상 빈 문자열 슬라이스를 반환한다.">
 
 ```rust,noplayground
 {{#rustdoc_include ../listings/ch18-oop/listing-18-14/src/lib.rs:here}}
@@ -149,19 +80,18 @@ be empty. Listing 18-14 shows this placeholder implementation.
 
 </Listing>
 
-With this added `content` method, everything in Listing 18-11 up to line 7
-works as intended.
+이렇게 추가된 `content` 메서드로 인해, 목록 18-11의 7번째 줄까지 모든 내용이 의도한 대로 작동한다.
 
 <!-- Old link, do not remove -->
 
 <a id="requesting-a-review-of-the-post-changes-its-state"></a>
 
-### Requesting a Review Changes the Post’s State
 
-Next, we need to add functionality to request a review of a post, which should
-change its state from `Draft` to `PendingReview`. Listing 18-15 shows this code.
+### 리뷰 요청으로 게시물 상태 변경하기
 
-<Listing number="18-15" file-name="src/lib.rs" caption="Implementing `request_review` methods on `Post` and the `State` trait">
+다음으로 게시물의 리뷰를 요청하는 기능을 추가해야 한다. 이 기능은 게시물의 상태를 `Draft`에서 `PendingReview`로 변경한다. 리스트 18-15는 이 코드를 보여준다.
+
+<Listing number="18-15" file-name="src/lib.rs" caption="`Post`와 `State` 트레잇에 `request_review` 메서드 구현">
 
 ```rust,noplayground
 {{#rustdoc_include ../listings/ch18-oop/listing-18-15/src/lib.rs:here}}
@@ -169,59 +99,30 @@ change its state from `Draft` to `PendingReview`. Listing 18-15 shows this code.
 
 </Listing>
 
-We give `Post` a public method named `request_review` that will take a mutable
-reference to `self`. Then we call an internal `request_review` method on the
-current state of `Post`, and this second `request_review` method consumes the
-current state and returns a new state.
+`Post`에 `request_review`라는 공개 메서드를 추가한다. 이 메서드는 `self`에 대한 가변 참조를 받는다. 그런 다음 `Post`의 현재 상태에 대해 내부 `request_review` 메서드를 호출한다. 이 두 번째 `request_review` 메서드는 현재 상태를 소비하고 새로운 상태를 반환한다.
 
-We add the `request_review` method to the `State` trait; all types that
-implement the trait will now need to implement the `request_review` method.
-Note that rather than having `self`, `&self`, or `&mut self` as the first
-parameter of the method, we have `self: Box<Self>`. This syntax means the
-method is only valid when called on a `Box` holding the type. This syntax takes
-ownership of `Box<Self>`, invalidating the old state so the state value of the
-`Post` can transform into a new state.
+`State` 트레잇에 `request_review` 메서드를 추가한다. 이제 이 트레잇을 구현하는 모든 타입은 `request_review` 메서드를 구현해야 한다. 메서드의 첫 번째 매개변수로 `self`, `&self`, 또는 `&mut self` 대신 `self: Box<Self>`를 사용한다. 이 구문은 해당 메서드가 `Box`에 담긴 타입에서만 호출될 수 있음을 의미한다. 이 구문은 `Box<Self>`의 소유권을 가져가므로, 이전 상태가 무효화되고 `Post`의 상태 값이 새로운 상태로 변환될 수 있다.
 
-To consume the old state, the `request_review` method needs to take ownership
-of the state value. This is where the `Option` in the `state` field of `Post`
-comes in: we call the `take` method to take the `Some` value out of the `state`
-field and leave a `None` in its place because Rust doesn’t let us have
-unpopulated fields in structs. This lets us move the `state` value out of
-`Post` rather than borrowing it. Then we’ll set the post’s `state` value to the
-result of this operation.
+이전 상태를 소비하기 위해 `request_review` 메서드는 상태 값의 소유권을 가져와야 한다. 이때 `Post`의 `state` 필드에 있는 `Option`이 사용된다. `take` 메서드를 호출해 `state` 필드에서 `Some` 값을 꺼내고 그 자리에 `None`을 남긴다. Rust는 구조체에서 비어 있는 필드를 허용하지 않기 때문이다. 이를 통해 `state` 값을 빌리는 대신 `Post`에서 이동시킬 수 있다. 그런 다음 이 작업의 결과를 `post`의 `state` 값으로 설정한다.
 
-We need to set `state` to `None` temporarily rather than setting it directly
-with code like `self.state = self.state.request_review();` to get ownership of
-the `state` value. This ensures `Post` can’t use the old `state` value after
-we’ve transformed it into a new state.
+`state` 값을 직접 `self.state = self.state.request_review();`와 같은 코드로 설정하는 대신, 일시적으로 `None`으로 설정해야 한다. 이렇게 하면 `state` 값의 소유권을 얻을 수 있다. 이는 `Post`가 상태를 새로운 상태로 변환한 후 이전 `state` 값을 사용할 수 없도록 보장한다.
 
-The `request_review` method on `Draft` returns a new, boxed instance of a new
-`PendingReview` struct, which represents the state when a post is waiting for a
-review. The `PendingReview` struct also implements the `request_review` method
-but doesn’t do any transformations. Rather, it returns itself because when we
-request a review on a post already in the `PendingReview` state, it should stay
-in the `PendingReview` state.
+`Draft`의 `request_review` 메서드는 새로운 `PendingReview` 구조체의 박스 인스턴스를 반환한다. 이 구조체는 게시물이 리뷰를 기다리는 상태를 나타낸다. `PendingReview` 구조체도 `request_review` 메서드를 구현하지만 아무런 변환을 수행하지 않는다. 대신, 이미 `PendingReview` 상태에 있는 게시물에 대해 리뷰를 요청하면 `PendingReview` 상태를 유지해야 하므로 자기 자신을 반환한다.
 
-Now we can start seeing the advantages of the state pattern: the
-`request_review` method on `Post` is the same no matter its `state` value. Each
-state is responsible for its own rules.
+이제 상태 패턴의 장점을 확인할 수 있다. `Post`의 `request_review` 메서드는 `state` 값에 관계없이 동일하다. 각 상태는 자신의 규칙을 책임진다.
 
-We’ll leave the `content` method on `Post` as is, returning an empty string
-slice. We can now have a `Post` in the `PendingReview` state as well as in the
-`Draft` state, but we want the same behavior in the `PendingReview` state.
-Listing 18-11 now works up to line 10!
+`Post`의 `content` 메서드는 그대로 두고 빈 문자열 슬라이스를 반환한다. 이제 `Post`를 `PendingReview` 상태와 `Draft` 상태로 둘 수 있다. 하지만 `PendingReview` 상태에서도 동일한 동작을 원한다. 리스트 18-11은 이제 10번째 줄까지 작동한다!
 
 <!-- Old headings. Do not remove or links may break. -->
 
 <a id="adding-the-approve-method-that-changes-the-behavior-of-content"></a>
 
-### Adding `approve` to Change the Behavior of `content`
 
-The `approve` method will be similar to the `request_review` method: it will
-set `state` to the value that the current state says it should have when that
-state is approved, as shown in Listing 18-16:
+### `content` 동작을 변경하기 위해 `approve` 추가하기
 
-<Listing number="18-16" file-name="src/lib.rs" caption="Implementing the `approve` method on `Post` and the `State` trait">
+`approve` 메서드는 `request_review` 메서드와 유사하게 동작한다. 현재 상태가 승인되었을 때 설정해야 하는 값으로 `state`를 변경한다. 이 내용은 리스트 18-16에서 확인할 수 있다:
+
+<Listing number="18-16" file-name="src/lib.rs" caption="`Post`와 `State` 트레잇에 `approve` 메서드 구현">
 
 ```rust,noplayground
 {{#rustdoc_include ../listings/ch18-oop/listing-18-16/src/lib.rs:here}}
@@ -229,23 +130,13 @@ state is approved, as shown in Listing 18-16:
 
 </Listing>
 
-We add the `approve` method to the `State` trait and add a new struct that
-implements `State`, the `Published` state.
+`State` 트레잇에 `approve` 메서드를 추가하고, `State`를 구현하는 새로운 구조체인 `Published` 상태를 정의한다.
 
-Similar to the way `request_review` on `PendingReview` works, if we call the
-`approve` method on a `Draft`, it will have no effect because `approve` will
-return `self`. When we call `approve` on `PendingReview`, it returns a new,
-boxed instance of the `Published` struct. The `Published` struct implements the
-`State` trait, and for both the `request_review` method and the `approve`
-method, it returns itself, because the post should stay in the `Published`
-state in those cases.
+`PendingReview`에서 `request_review`가 동작하는 방식과 마찬가지로, `Draft`에서 `approve` 메서드를 호출하면 아무런 효과가 없다. `approve`는 `self`를 반환하기 때문이다. `PendingReview`에서 `approve`를 호출하면 `Published` 구조체의 새로운 박스 인스턴스를 반환한다. `Published` 구조체는 `State` 트레잇을 구현하며, `request_review` 메서드와 `approve` 메서드 모두에서 `self`를 반환한다. 이 경우 포스트는 `Published` 상태로 유지되어야 하기 때문이다.
 
-Now we need to update the `content` method on `Post`. We want the value
-returned from `content` to depend on the current state of the `Post`, so we’re
-going to have the `Post` delegate to a `content` method defined on its `state`,
-as shown in Listing 18-17:
+이제 `Post`의 `content` 메서드를 업데이트해야 한다. `content`에서 반환되는 값이 `Post`의 현재 상태에 따라 달라지도록 하기 위해, `Post`가 `state`에 정의된 `content` 메서드에 위임하도록 한다. 이 내용은 리스트 18-17에서 확인할 수 있다:
 
-<Listing number="18-17" file-name="src/lib.rs" caption="Updating the `content` method on `Post` to delegate to a `content` method on `State`">
+<Listing number="18-17" file-name="src/lib.rs" caption="`Post`의 `content` 메서드를 `State`의 `content` 메서드에 위임하도록 업데이트">
 
 ```rust,ignore,does_not_compile
 {{#rustdoc_include ../listings/ch18-oop/listing-18-17/src/lib.rs:here}}
@@ -253,33 +144,15 @@ as shown in Listing 18-17:
 
 </Listing>
 
-Because the goal is to keep all of these rules inside the structs that implement
-`State`, we call a `content` method on the value in `state` and pass the post
-instance (that is, `self`) as an argument. Then we return the value that’s
-returned from using the `content` method on the `state` value.
+이 규칙들을 `State`를 구현하는 구조체 내부에 유지하기 위해, `state`의 값에 `content` 메서드를 호출하고 `post` 인스턴스(즉, `self`)를 인자로 전달한다. 그런 다음 `state` 값의 `content` 메서드를 사용해 반환된 값을 반환한다.
 
-We call the `as_ref` method on the `Option` because we want a reference to the
-value inside the `Option` rather than ownership of the value. Because `state`
-is an `Option<Box<dyn State>>`, when we call `as_ref`, an `Option<&Box<dyn
-State>>` is returned. If we didn’t call `as_ref`, we would get an error because
-we can’t move `state` out of the borrowed `&self` of the function parameter.
+`Option`에 `as_ref` 메서드를 호출하는 이유는 `Option` 내부 값의 소유권이 아닌 참조를 얻기 위해서다. `state`가 `Option<Box<dyn State>>`이기 때문에, `as_ref`를 호출하면 `Option<&Box<dyn State>>`가 반환된다. `as_ref`를 호출하지 않으면 함수 매개변수의 `&self`에서 `state`를 이동시킬 수 없기 때문에 에러가 발생한다.
 
-We then call the `unwrap` method, which we know will never panic, because we
-know the methods on `Post` ensure that `state` will always contain a `Some`
-value when those methods are done. This is one of the cases we talked about in
-[“Cases in Which You Have More Information Than the
-Compiler”][more-info-than-rustc]<!-- ignore --> in Chapter 9 when we know that a
-`None` value is never possible, even though the compiler isn’t able to
-understand that.
+그런 다음 `unwrap` 메서드를 호출하는데, 이 메서드는 절대 패닉을 일으키지 않는다. `Post`의 메서드들이 완료될 때 `state`가 항상 `Some` 값을 포함하도록 보장하기 때문이다. 이는 9장의 ["컴파일러보다 더 많은 정보를 가진 경우"][more-info-than-rustc]<!-- ignore -->에서 다룬 경우 중 하나로, 컴파일러가 이해할 수는 없지만 `None` 값이 절대 발생하지 않음을 알고 있는 상황이다.
 
-At this point, when we call `content` on the `&Box<dyn State>`, deref coercion
-will take effect on the `&` and the `Box` so the `content` method will
-ultimately be called on the type that implements the `State` trait. That means
-we need to add `content` to the `State` trait definition, and that is where
-we’ll put the logic for what content to return depending on which state we
-have, as shown in Listing 18-18:
+이 시점에서 `&Box<dyn State>`에 `content`를 호출하면, `&`와 `Box`에 대한 역참조 강제가 적용되어 `State` 트레잇을 구현하는 타입의 `content` 메서드가 최종적으로 호출된다. 이는 `State` 트레잇 정의에 `content`를 추가해야 함을 의미하며, 여기에 현재 상태에 따라 반환할 콘텐츠에 대한 로직을 넣는다. 이 내용은 리스트 18-18에서 확인할 수 있다:
 
-<Listing number="18-18" file-name="src/lib.rs" caption="Adding the `content` method to the `State` trait">
+<Listing number="18-18" file-name="src/lib.rs" caption="`State` 트레잇에 `content` 메서드 추가">
 
 ```rust,noplayground
 {{#rustdoc_include ../listings/ch18-oop/listing-18-18/src/lib.rs:here}}
@@ -287,99 +160,45 @@ have, as shown in Listing 18-18:
 
 </Listing>
 
-We add a default implementation for the `content` method that returns an empty
-string slice. That means we don’t need to implement `content` on the `Draft`
-and `PendingReview` structs. The `Published` struct will override the `content`
-method and return the value in `post.content`.
+`content` 메서드에 기본 구현을 추가해 빈 문자열 슬라이스를 반환하도록 한다. 이는 `Draft`와 `PendingReview` 구조체에서 `content`를 구현할 필요가 없음을 의미한다. `Published` 구조체는 `content` 메서드를 오버라이드하고 `post.content`의 값을 반환한다.
 
-Note that we need lifetime annotations on this method, as we discussed in
-Chapter 10. We’re taking a reference to a `post` as an argument and returning a
-reference to part of that `post`, so the lifetime of the returned reference is
-related to the lifetime of the `post` argument.
+10장에서 논의한 것처럼 이 메서드에 라이프타임 주석이 필요하다. `post`에 대한 참조를 인자로 받고 그 `post`의 일부에 대한 참조를 반환하기 때문에, 반환된 참조의 라이프타임은 `post` 인자의 라이프타임과 관련이 있다.
 
-And we’re done—all of Listing 18-11 now works! We’ve implemented the state
-pattern with the rules of the blog post workflow. The logic related to the
-rules lives in the state objects rather than being scattered throughout `Post`.
+이제 리스트 18-11의 모든 내용이 작동한다! 블로그 포스트 워크플로우의 규칙을 따라 상태 패턴을 구현했다. 규칙과 관련된 로직은 `Post` 전체에 흩어져 있지 않고 상태 객체 내부에 존재한다.
 
-> ### Why Not An Enum?
+> ### 왜 열거형을 사용하지 않았나요?
 >
-> You may have been wondering why we didn’t use an `enum` with the different
-> possible post states as variants. That’s certainly a possible solution; try
-> it and compare the end results to see which you prefer! One disadvantage of
-> using an enum is that every place that checks the value of the enum will need
-> a `match` expression or similar to handle every possible variant. This could
-> get more repetitive than this trait object solution.
+> 포스트 상태를 나타내는 열거형을 사용하지 않은 이유가 궁금할 수 있다. 이 방법도 가능한 해결책이다. 직접 시도해보고 최종 결과를 비교해보자! 열거형을 사용할 때의 단점은 열거형의 값을 확인하는 모든 곳에서 가능한 모든 변형을 처리하기 위해 `match` 표현식이나 유사한 것이 필요하다는 점이다. 이는 트레잇 객체를 사용한 해결책보다 더 반복적일 수 있다.
 
-### Trade-offs of the State Pattern
 
-We’ve shown that Rust is capable of implementing the object-oriented state
-pattern to encapsulate the different kinds of behavior a post should have in
-each state. The methods on `Post` know nothing about the various behaviors. The
-way we organized the code, we have to look in only one place to know the
-different ways a published post can behave: the implementation of the `State`
-trait on the `Published` struct.
+### 상태 패턴의 장단점
 
-If we were to create an alternative implementation that didn’t use the state
-pattern, we might instead use `match` expressions in the methods on `Post` or
-even in the `main` code that checks the state of the post and changes behavior
-in those places. That would mean we would have to look in several places to
-understand all the implications of a post being in the published state! This
-would only increase the more states we added: each of those `match` expressions
-would need another arm.
+Rust가 객체 지향의 상태 패턴을 구현할 수 있음을 확인했다. 이 패턴은 각 상태에 따라 포스트가 가져야 하는 다양한 동작을 캡슐화한다. `Post`의 메서드는 다양한 동작에 대해 전혀 알지 못한다. 코드를 이렇게 구성하면, 포스트가 발행 상태일 때 어떤 동작을 하는지 알고 싶을 때 단 한 곳만 확인하면 된다: `Published` 구조체에서 `State` 트레이트를 구현한 부분이다.
 
-With the state pattern, the `Post` methods and the places we use `Post` don’t
-need `match` expressions, and to add a new state, we would only need to add a
-new struct and implement the trait methods on that one struct.
+만약 상태 패턴을 사용하지 않는 대안적인 구현을 한다면, `Post`의 메서드나 `main` 코드에서 `match` 표현식을 사용해 포스트의 상태를 확인하고 그에 따라 동작을 변경할 수도 있다. 하지만 이렇게 하면 포스트가 발행 상태일 때의 모든 의미를 이해하기 위해 여러 곳을 살펴봐야 한다! 상태가 더 많아질수록 이 문제는 더 심각해진다: 각 `match` 표현식에 새로운 분기(arm)를 추가해야 하기 때문이다.
 
-The implementation using the state pattern is easy to extend to add more
-functionality. To see the simplicity of maintaining code that uses the state
-pattern, try a few of these suggestions:
+상태 패턴을 사용하면 `Post` 메서드와 `Post`를 사용하는 곳에서 `match` 표현식이 필요 없으며, 새로운 상태를 추가할 때는 단순히 새로운 구조체를 추가하고 해당 구조체에 트레이트 메서드를 구현하기만 하면 된다.
 
-- Add a `reject` method that changes the post’s state from `PendingReview` back
-  to `Draft`.
-- Require two calls to `approve` before the state can be changed to `Published`.
-- Allow users to add text content only when a post is in the `Draft` state.
-  Hint: have the state object responsible for what might change about the
-  content but not responsible for modifying the `Post`.
+상태 패턴을 사용한 구현은 기능을 추가하기 쉽다. 상태 패턴을 사용한 코드를 유지보수하는 것이 얼마나 간단한지 확인하기 위해, 다음 제안을 시도해 보자:
 
-One downside of the state pattern is that, because the states implement the
-transitions between states, some of the states are coupled to each other. If we
-add another state between `PendingReview` and `Published`, such as `Scheduled`,
-we would have to change the code in `PendingReview` to transition to
-`Scheduled` instead. It would be less work if `PendingReview` didn’t need to
-change with the addition of a new state, but that would mean switching to
-another design pattern.
+- `PendingReview` 상태에서 `Draft` 상태로 변경하는 `reject` 메서드를 추가한다.
+- `Published` 상태로 변경하기 전에 `approve` 메서드를 두 번 호출하도록 요구한다.
+- 포스트가 `Draft` 상태일 때만 사용자가 텍스트 콘텐츠를 추가할 수 있도록 허용한다. 힌트: 상태 객체가 콘텐츠의 변경 가능성을 책임지되, `Post`를 수정하는 책임은 지지 않도록 한다.
 
-Another downside is that we’ve duplicated some logic. To eliminate some of the
-duplication, we might try to make default implementations for the
-`request_review` and `approve` methods on the `State` trait that return `self`;
-however, this wouldn’t work: when using `State` as a trait object, the trait
-doesn’t know what the concrete `self` will be exactly, so the return type isn’t
-known at compile time. (This is one of the dyn compatibility rules mentioned
-earlier.)
+상태 패턴의 단점 중 하나는, 상태 간 전환을 상태 자체가 구현하기 때문에 일부 상태가 서로 결합된다는 점이다. 예를 들어 `PendingReview`와 `Published` 사이에 `Scheduled`와 같은 새로운 상태를 추가한다면, `PendingReview`의 코드를 수정해 `Scheduled`로 전환하도록 변경해야 한다. `PendingReview`가 새로운 상태의 추가에 따라 변경될 필요가 없다면 작업량이 줄어들겠지만, 그렇게 하려면 다른 디자인 패턴으로 전환해야 한다.
 
-Other duplication includes the similar implementations of the `request_review`
-and `approve` methods on `Post`. Both methods use `Option::take` with the
-`state` field of `Post`, and if `state` is `Some`, they delegate to the wrapped
-value’s implementation of the same method and set the new value of the `state`
-field to the result. If we had a lot of methods on `Post` that followed this
-pattern, we might consider defining a macro to eliminate the repetition (see
-[“Macros”][macros]<!-- ignore --> in Chapter 20).
+또 다른 단점은 일부 로직이 중복된다는 점이다. 이 중복을 줄이기 위해 `State` 트레이트에 `request_review`와 `approve` 메서드의 기본 구현을 추가해 `self`를 반환하도록 할 수도 있다. 하지만 이 방법은 동작하지 않는다: `State`를 트레이트 객체로 사용할 때, 트레이트는 구체적인 `self`가 무엇인지 정확히 알지 못하기 때문에 반환 타입을 컴파일 시점에 알 수 없다. (이는 앞서 언급한 dyn 호환성 규칙 중 하나다.)
 
-By implementing the state pattern exactly as it’s defined for object-oriented
-languages, we’re not taking as full advantage of Rust’s strengths as we could.
-Let’s look at some changes we can make to the `blog` crate that can make
-invalid states and transitions into compile-time errors.
+다른 중복 사례로는 `Post`의 `request_review`와 `approve` 메서드의 유사한 구현이 있다. 두 메서드 모두 `Post`의 `state` 필드에 `Option::take`를 사용하며, `state`가 `Some`이면 래핑된 값의 동일한 메서드 구현에 위임하고, `state` 필드의 새 값을 결과로 설정한다. 만약 `Post`에 이 패턴을 따르는 메서드가 많다면, 반복을 줄이기 위해 매크로를 정의하는 것을 고려할 수 있다. (20장의 [“매크로”][macros]<!-- ignore --> 참조)
 
-#### Encoding States and Behavior as Types
+객체 지향 언어를 위해 정의된 상태 패턴을 그대로 구현하면, Rust의 강점을 최대한 활용하지 못하게 된다. `blog` 크레이트를 변경해 유효하지 않은 상태와 전환을 컴파일 타임 오류로 만들 수 있는 몇 가지 방법을 살펴보자.
 
-We’ll show you how to rethink the state pattern to get a different set of
-trade-offs. Rather than encapsulating the states and transitions completely so
-outside code has no knowledge of them, we’ll encode the states into different
-types. Consequently, Rust’s type checking system will prevent attempts to use
-draft posts where only published posts are allowed by issuing a compiler error.
 
-Let’s consider the first part of `main` in Listing 18-11:
+#### 상태와 동작을 타입으로 인코딩하기
+
+이번에는 상태 패턴을 재고하여 다른 방식의 트레이드오프를 얻는 방법을 알아본다. 상태와 전환을 완전히 캡슐화해 외부 코드가 알 수 없게 하는 대신, 상태를 서로 다른 타입으로 인코딩한다. 이를 통해 Rust의 타입 검사 시스템이 컴파일러 오류를 발생시켜, 게시된 게시물만 허용되는 곳에서 초안 게시물을 사용하려는 시도를 방지한다.
+
+Listing 18-11의 `main` 함수 첫 부분을 살펴보자:
 
 <Listing file-name="src/main.rs">
 
@@ -389,17 +208,9 @@ Let’s consider the first part of `main` in Listing 18-11:
 
 </Listing>
 
-We still enable the creation of new posts in the draft state using `Post::new`
-and the ability to add text to the post’s content. But instead of having a
-`content` method on a draft post that returns an empty string, we’ll make it so
-draft posts don’t have the `content` method at all. That way, if we try to get
-a draft post’s content, we’ll get a compiler error telling us the method
-doesn’t exist. As a result, it will be impossible for us to accidentally
-display draft post content in production because that code won’t even compile.
-Listing 18-19 shows the definition of a `Post` struct and a `DraftPost` struct,
-as well as methods on each.
+`Post::new`를 사용해 초안 상태의 새 게시물을 생성하고, 게시물 내용에 텍스트를 추가하는 기능은 여전히 유지한다. 하지만 초안 게시물에서 빈 문자열을 반환하는 `content` 메서드를 제공하는 대신, 초안 게시물에는 `content` 메서드 자체를 없앤다. 이렇게 하면 초안 게시물의 내용을 가져오려고 할 때 메서드가 존재하지 않는다는 컴파일러 오류가 발생한다. 결과적으로, 초안 게시물의 내용을 실수로 프로덕션 환경에서 표시하는 일은 발생하지 않는다. 해당 코드는 컴파일조차 되지 않기 때문이다. Listing 18-19는 `Post` 구조체와 `DraftPost` 구조체의 정의, 그리고 각 구조체의 메서드를 보여준다.
 
-<Listing number="18-19" file-name="src/lib.rs" caption="A `Post` with a `content` method and `DraftPost` without a `content` method">
+<Listing number="18-19" file-name="src/lib.rs" caption="`content` 메서드가 있는 `Post`와 `content` 메서드가 없는 `DraftPost`">
 
 ```rust,noplayground
 {{#rustdoc_include ../listings/ch18-oop/listing-18-19/src/lib.rs}}
@@ -407,34 +218,18 @@ as well as methods on each.
 
 </Listing>
 
-Both the `Post` and `DraftPost` structs have a private `content` field that
-stores the blog post text. The structs no longer have the `state` field because
-we’re moving the encoding of the state to the types of the structs. The `Post`
-struct will represent a published post, and it has a `content` method that
-returns the `content`.
+`Post`와 `DraftPost` 구조체 모두 블로그 게시물 텍스트를 저장하는 `content` 필드를 가지고 있다. 이제 구조체에는 `state` 필드가 없다. 상태를 인코딩하는 방식을 구조체의 타입으로 옮겼기 때문이다. `Post` 구조체는 게시된 게시물을 나타내며, `content` 메서드를 통해 `content`를 반환한다.
 
-We still have a `Post::new` function, but instead of returning an instance of
-`Post`, it returns an instance of `DraftPost`. Because `content` is private
-and there aren’t any functions that return `Post`, it’s not possible to create
-an instance of `Post` right now.
+`Post::new` 함수는 여전히 존재하지만, `Post` 인스턴스 대신 `DraftPost` 인스턴스를 반환한다. `content` 필드는 비공개이며, `Post`를 반환하는 함수가 없기 때문에 현재로서는 `Post` 인스턴스를 생성할 수 없다.
 
-The `DraftPost` struct has an `add_text` method, so we can add text to
-`content` as before, but note that `DraftPost` does not have a `content` method
-defined! So now the program ensures all posts start as draft posts, and draft
-posts don’t have their content available for display. Any attempt to get around
-these constraints will result in a compiler error.
+`DraftPost` 구조체에는 `add_text` 메서드가 있어 이전과 마찬가지로 `content`에 텍스트를 추가할 수 있다. 하지만 `DraftPost`에는 `content` 메서드가 정의되어 있지 않다는 점에 주목하자! 이제 프로그램은 모든 게시물이 초안 상태로 시작하고, 초안 게시물의 내용은 표시할 수 없도록 보장한다. 이러한 제약을 우회하려는 모든 시도는 컴파일러 오류를 발생시킬 것이다.
 
-#### Implementing Transitions as Transformations into Different Types
 
-So how do we get a published post? We want to enforce the rule that a draft
-post has to be reviewed and approved before it can be published. A post in the
-pending review state should still not display any content. Let’s implement
-these constraints by adding another struct, `PendingReviewPost`, defining the
-`request_review` method on `DraftPost` to return a `PendingReviewPost` and
-defining an `approve` method on `PendingReviewPost` to return a `Post`, as
-shown in Listing 18-20.
+#### 트랜지션을 다른 타입으로 변환하여 구현하기
 
-<Listing number="18-20" file-name="src/lib.rs" caption="A `PendingReviewPost` that gets created by calling `request_review` on `DraftPost` and an `approve` method that turns a `PendingReviewPost` into a published `Post`">
+그렇다면 어떻게 게시물을 발행할 수 있을까? 우리는 초안 상태의 게시물이 반드시 검토와 승인을 거쳐야만 발행될 수 있도록 규칙을 강제하고 싶다. 검토 대기 중인 게시물은 여전히 어떤 내용도 표시하지 않아야 한다. 이 제약 조건을 구현하기 위해 `PendingReviewPost`라는 새로운 구조체를 추가하고, `DraftPost`에 `request_review` 메서드를 정의하여 `PendingReviewPost`를 반환하도록 한다. 또한 `PendingReviewPost`에 `approve` 메서드를 정의하여 `Post`를 반환하도록 한다. 이는 리스팅 18-20에서 확인할 수 있다.
+
+<Listing number="18-20" file-name="src/lib.rs" caption="`DraftPost`에서 `request_review`를 호출해 생성되는 `PendingReviewPost`와 `PendingReviewPost`를 발행된 `Post`로 변환하는 `approve` 메서드">
 
 ```rust,noplayground
 {{#rustdoc_include ../listings/ch18-oop/listing-18-20/src/lib.rs:here}}
@@ -442,27 +237,11 @@ shown in Listing 18-20.
 
 </Listing>
 
-The `request_review` and `approve` methods take ownership of `self`, thus
-consuming the `DraftPost` and `PendingReviewPost` instances and transforming
-them into a `PendingReviewPost` and a published `Post`, respectively. This way,
-we won’t have any lingering `DraftPost` instances after we’ve called
-`request_review` on them, and so forth. The `PendingReviewPost` struct doesn’t
-have a `content` method defined on it, so attempting to read its content
-results in a compiler error, as with `DraftPost`. Because the only way to get a
-published `Post` instance that does have a `content` method defined is to call
-the `approve` method on a `PendingReviewPost`, and the only way to get a
-`PendingReviewPost` is to call the `request_review` method on a `DraftPost`,
-we’ve now encoded the blog post workflow into the type system.
+`request_review`와 `approve` 메서드는 `self`의 소유권을 가져가므로, `DraftPost`와 `PendingReviewPost` 인스턴스를 소비하고 각각 `PendingReviewPost`와 발행된 `Post`로 변환한다. 이렇게 하면 `request_review`를 호출한 후에도 `DraftPost` 인스턴스가 남아 있지 않게 된다. `PendingReviewPost` 구조체는 `content` 메서드가 정의되어 있지 않으므로, `DraftPost`와 마찬가지로 내용을 읽으려고 하면 컴파일러 오류가 발생한다. `content` 메서드가 정의된 발행된 `Post` 인스턴스를 얻는 유일한 방법은 `PendingReviewPost`에서 `approve` 메서드를 호출하는 것이고, `PendingReviewPost`를 얻는 유일한 방법은 `DraftPost`에서 `request_review` 메서드를 호출하는 것이다. 이렇게 하여 블로그 게시물의 워크플로우를 타입 시스템에 인코딩했다.
 
-But we also have to make some small changes to `main`. The `request_review` and
-`approve` methods return new instances rather than modifying the struct they’re
-called on, so we need to add more `let post =` shadowing assignments to save
-the returned instances. We also can’t have the assertions about the draft and
-pending review posts’ contents be empty strings, nor do we need them: we can’t
-compile code that tries to use the content of posts in those states any longer.
-The updated code in `main` is shown in Listing 18-21.
+그러나 `main`에도 약간의 변경이 필요하다. `request_review`와 `approve` 메서드는 호출된 구조체를 수정하는 대신 새로운 인스턴스를 반환하므로, 반환된 인스턴스를 저장하기 위해 `let post =` 섀도잉 할당을 추가해야 한다. 또한 초안 및 검토 대기 중인 게시물의 내용이 빈 문자열이라는 단언은 더 이상 필요하지 않다. 이 상태의 게시물 내용을 사용하려는 코드는 컴파일할 수 없기 때문이다. 업데이트된 `main` 코드는 리스팅 18-21에서 확인할 수 있다.
 
-<Listing number="18-21" file-name="src/main.rs" caption="Modifications to `main` to use the new implementation of the blog post workflow">
+<Listing number="18-21" file-name="src/main.rs" caption="새로운 블로그 게시물 워크플로우 구현을 사용하도록 수정된 `main`">
 
 ```rust,ignore
 {{#rustdoc_include ../listings/ch18-oop/listing-18-21/src/main.rs}}
@@ -470,43 +249,20 @@ The updated code in `main` is shown in Listing 18-21.
 
 </Listing>
 
-The changes we needed to make to `main` to reassign `post` mean that this
-implementation doesn’t quite follow the object-oriented state pattern anymore:
-the transformations between the states are no longer encapsulated entirely
-within the `Post` implementation. However, our gain is that invalid states are
-now impossible because of the type system and the type checking that happens at
-compile time! This ensures that certain bugs, such as display of the content of
-an unpublished post, will be discovered before they make it to production.
+`post`를 재할당하기 위해 `main`에 필요한 변경 사항은 이 구현이 더 이상 객체 지향적인 상태 패턴을 따르지 않음을 의미한다. 상태 간의 변환이 `Post` 구현 내에 완전히 캡슐화되지 않았기 때문이다. 그러나 우리가 얻은 이점은 타입 시스템과 컴파일 타임에 발생하는 타입 검사 덕분에 이제 잘못된 상태가 불가능해졌다는 점이다. 이는 발행되지 않은 게시물의 내용이 표시되는 등의 특정 버그가 프로덕션 환경에 도달하기 전에 발견되도록 보장한다.
 
-Try the tasks suggested at the start of this section on the `blog` crate as it
-is after Listing 18-21 to see what you think about the design of this version
-of the code. Note that some of the tasks might be completed already in this
-design.
+리스팅 18-21 이후의 `blog` 크레이트에서 이 섹션의 시작 부분에서 제안된 작업을 시도해보고 이 버전의 코드 설계에 대해 어떻게 생각하는지 확인해보자. 이 설계에서 일부 작업은 이미 완료되었을 수도 있다.
 
-We’ve seen that even though Rust is capable of implementing object-oriented
-design patterns, other patterns, such as encoding state into the type system,
-are also available in Rust. These patterns have different trade-offs. Although
-you might be very familiar with object-oriented patterns, rethinking the
-problem to take advantage of Rust’s features can provide benefits, such as
-preventing some bugs at compile time. Object-oriented patterns won’t always be
-the best solution in Rust due to certain features, like ownership, that
-object-oriented languages don’t have.
+우리는 Rust가 객체 지향적인 디자인 패턴을 구현할 수 있지만, 타입 시스템에 상태를 인코딩하는 것과 같은 다른 패턴도 Rust에서 사용 가능하다는 것을 확인했다. 이러한 패턴은 서로 다른 장단점을 가진다. 객체 지향 패턴에 익숙할지라도, Rust의 기능을 활용하기 위해 문제를 재고하는 것은 컴파일 타임에 일부 버그를 방지하는 등의 이점을 제공할 수 있다. 소유권과 같은 객체 지향 언어에는 없는 특정 기능 때문에 Rust에서 객체 지향 패턴이 항상 최선의 해결책은 아니다.
 
-## Summary
 
-Regardless of whether you think Rust is an object-oriented language after
-reading this chapter, you now know that you can use trait objects to get some
-object-oriented features in Rust. Dynamic dispatch can give your code some
-flexibility in exchange for a bit of runtime performance. You can use this
-flexibility to implement object-oriented patterns that can help your code’s
-maintainability. Rust also has other features, like ownership, that
-object-oriented languages don’t have. An object-oriented pattern won’t always be
-the best way to take advantage of Rust’s strengths, but it is an available
-option.
+## 요약
 
-Next, we’ll look at patterns, which are another of Rust’s features that enable
-lots of flexibility. We’ve looked at them briefly throughout the book but
-haven’t seen their full capability yet. Let’s go!
+이 장을 읽고 나면 Rust가 객체 지향 언어인지 여부에 대한 의견은 각자 다를 수 있다. 그러나 이제 트레이트 객체를 사용해 Rust에서 객체 지향적 기능을 활용할 수 있다는 점은 분명히 알게 됐다. 동적 디스패치는 런타임 성능을 약간 희생하는 대신 코드에 유연성을 제공한다. 이 유연성을 활용해 코드의 유지보수성을 높이는 객체 지향 패턴을 구현할 수 있다. 또한 Rust는 소유권과 같은 객체 지향 언어에는 없는 고유한 기능도 제공한다. Rust의 강점을 최대한 활용하기 위해 객체 지향 패턴이 항상 최선의 방법은 아니지만, 선택 가능한 옵션 중 하나임은 분명하다.
+
+다음 장에서는 Rust의 또 다른 유연한 기능인 패턴에 대해 알아본다. 이 책 전반에서 간략히 살펴봤지만, 아직 그 모든 잠재력을 확인하진 못했다. 이제 본격적으로 파헤쳐보자!
 
 [more-info-than-rustc]: ch09-03-to-panic-or-not-to-panic.html#cases-in-which-you-have-more-information-than-the-compiler
 [macros]: ch20-05-macros.html#macros
+
+

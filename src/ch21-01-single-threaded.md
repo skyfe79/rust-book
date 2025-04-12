@@ -1,28 +1,15 @@
-## Building a Single-Threaded Web Server
+## 싱글스레드 웹 서버 구축
 
-We’ll start by getting a single-threaded web server working. Before we begin,
-let’s look at a quick overview of the protocols involved in building web
-servers. The details of these protocols are beyond the scope of this book, but
-a brief overview will give you the information you need.
+먼저 싱글스레드 웹 서버를 구동하는 방법부터 알아보자. 시작하기 전에, 웹 서버 구축에 사용되는 주요 프로토콜을 간략히 살펴보자. 이 프로토콜들의 세부 사항은 이 책의 범위를 벗어나지만, 간단한 개요를 통해 필요한 기본 지식을 얻을 수 있다.
 
-The two main protocols involved in web servers are _Hypertext Transfer
-Protocol_ _(HTTP)_ and _Transmission Control Protocol_ _(TCP)_. Both protocols
-are _request-response_ protocols, meaning a _client_ initiates requests and a
-_server_ listens to the requests and provides a response to the client. The
-contents of those requests and responses are defined by the protocols.
+웹 서버와 관련된 두 가지 주요 프로토콜은 **HTTP(Hypertext Transfer Protocol)**와 **TCP(Transmission Control Protocol)**다. 두 프로토콜 모두 **요청-응답** 방식으로 동작한다. 즉, **클라이언트**가 요청을 시작하면, **서버**는 해당 요청을 듣고 클라이언트에게 응답을 제공한다. 요청과 응답의 내용은 프로토콜에 의해 정의된다.
 
-TCP is the lower-level protocol that describes the details of how information
-gets from one server to another but doesn’t specify what that information is.
-HTTP builds on top of TCP by defining the contents of the requests and
-responses. It’s technically possible to use HTTP with other protocols, but in
-the vast majority of cases, HTTP sends its data over TCP. We’ll work with the
-raw bytes of TCP and HTTP requests and responses.
+TCP는 정보가 한 서버에서 다른 서버로 어떻게 전달되는지에 대한 세부 사항을 설명하는 저수준 프로토콜이지만, 정보의 내용은 정의하지 않는다. HTTP는 TCP 위에 구축되어 요청과 응답의 내용을 정의한다. 기술적으로 HTTP를 다른 프로토콜과 함께 사용할 수 있지만, 대부분의 경우 HTTP는 TCP를 통해 데이터를 전송한다. 우리는 TCP와 HTTP 요청 및 응답의 원시 바이트를 직접 다룰 것이다.
 
-### Listening to the TCP Connection
 
-Our web server needs to listen to a TCP connection, so that’s the first part
-we’ll work on. The standard library offers a `std::net` module that lets us do
-this. Let’s make a new project in the usual fashion:
+### TCP 연결 수신하기
+
+웹 서버는 TCP 연결을 수신해야 한다. 이 부분부터 시작해보자. 표준 라이브러리는 `std::net` 모듈을 제공하며, 이를 통해 TCP 연결을 처리할 수 있다. 일반적인 방식으로 새로운 프로젝트를 생성해보자:
 
 ```console
 $ cargo new hello
@@ -30,11 +17,9 @@ $ cargo new hello
 $ cd hello
 ```
 
-Now enter the code in Listing 21-1 in _src/main.rs_ to start. This code will
-listen at the local address `127.0.0.1:7878` for incoming TCP streams. When it
-gets an incoming stream, it will print `Connection established!`.
+이제 _src/main.rs_ 파일에 목록 21-1의 코드를 입력한다. 이 코드는 로컬 주소 `127.0.0.1:7878`에서 들어오는 TCP 스트림을 수신한다. 스트림이 들어오면 `Connection established!` 메시지를 출력한다.
 
-<Listing number="21-1" file-name="src/main.rs" caption="Listening for incoming streams and printing a message when we receive a stream">
+<Listing number="21-1" file-name="src/main.rs" caption="들어오는 스트림을 수신하고 스트림을 받으면 메시지를 출력">
 
 ```rust,no_run
 {{#rustdoc_include ../listings/ch21-web-server/listing-21-01/src/main.rs}}
@@ -42,56 +27,17 @@ gets an incoming stream, it will print `Connection established!`.
 
 </Listing>
 
-Using `TcpListener`, we can listen for TCP connections at the address
-`127.0.0.1:7878`. In the address, the section before the colon is an IP address
-representing your computer (this is the same on every computer and doesn’t
-represent the authors’ computer specifically), and `7878` is the port. We’ve
-chosen this port for two reasons: HTTP isn’t normally accepted on this port so
-our server is unlikely to conflict with any other web server you might have
-running on your machine, and 7878 is _rust_ typed on a telephone.
+`TcpListener`를 사용하면 `127.0.0.1:7878` 주소에서 TCP 연결을 수신할 수 있다. 이 주소에서 콜론 앞 부분은 컴퓨터의 IP 주소를 나타내며, `7878`은 포트 번호다. 이 포트를 선택한 이유는 두 가지다: HTTP는 일반적으로 이 포트에서 허용되지 않기 때문에 다른 웹 서버와 충돌할 가능성이 적고, 7878은 전화기에서 _rust_를 입력한 결과다.
 
-The `bind` function in this scenario works like the `new` function in that it
-will return a new `TcpListener` instance. The function is called `bind`
-because, in networking, connecting to a port to listen to is known as “binding
-to a port.”
+이 시나리오에서 `bind` 함수는 `new` 함수와 유사하게 새로운 `TcpListener` 인스턴스를 반환한다. 네트워크에서 포트에 연결해 수신하는 것을 "포트에 바인딩한다"고 하기 때문에 이 함수는 `bind`라고 불린다.
 
-The `bind` function returns a `Result<T, E>`, which indicates that it’s
-possible for binding to fail. For example, connecting to port 80 requires
-administrator privileges (non-administrators can listen only on ports higher
-than 1023), so if we tried to connect to port 80 without being an
-administrator, binding wouldn’t work. Binding also wouldn’t work, for example,
-if we ran two instances of our program and so had two programs listening to the
-same port. Because we’re writing a basic server just for learning purposes, we
-won’t worry about handling these kinds of errors; instead, we use `unwrap` to
-stop the program if errors happen.
+`bind` 함수는 `Result<T, E>`를 반환하며, 이는 바인딩이 실패할 수 있음을 나타낸다. 예를 들어, 포트 80에 연결하려면 관리자 권한이 필요하다(비관리자는 1023보다 높은 포트만 수신할 수 있음). 따라서 관리자 권한 없이 포트 80에 연결하려고 하면 바인딩이 실패한다. 또한 프로그램을 두 번 실행해 같은 포트를 수신하려고 해도 바인딩이 실패한다. 학습 목적으로 기본적인 서버를 작성 중이므로 이러한 오류를 처리하지 않고, 대신 `unwrap`을 사용해 오류가 발생하면 프로그램을 중단한다.
 
-The `incoming` method on `TcpListener` returns an iterator that gives us a
-sequence of streams (more specifically, streams of type `TcpStream`). A single
-_stream_ represents an open connection between the client and the server. A
-_connection_ is the name for the full request and response process in which a
-client connects to the server, the server generates a response, and the server
-closes the connection. As such, we will read from the `TcpStream` to see what
-the client sent and then write our response to the stream to send data back to
-the client. Overall, this `for` loop will process each connection in turn and
-produce a series of streams for us to handle.
+`TcpListener`의 `incoming` 메서드는 스트림 시퀀스(더 정확히는 `TcpStream` 타입의 스트림)를 제공하는 이터레이터를 반환한다. 단일 _스트림_은 클라이언트와 서버 간의 열린 연결을 나타낸다. _연결_은 클라이언트가 서버에 연결하고, 서버가 응답을 생성한 후 연결을 닫는 전체 요청 및 응답 프로세스를 의미한다. 따라서 `TcpStream`에서 클라이언트가 보낸 데이터를 읽고, 스트림에 응답을 작성해 클라이언트에게 데이터를 보낸다. 이 `for` 루프는 각 연결을 순차적으로 처리하고 처리할 스트림 시퀀스를 생성한다.
 
-For now, our handling of the stream consists of calling `unwrap` to terminate
-our program if the stream has any errors; if there aren’t any errors, the
-program prints a message. We’ll add more functionality for the success case in
-the next listing. The reason we might receive errors from the `incoming` method
-when a client connects to the server is that we’re not actually iterating over
-connections. Instead, we’re iterating over _connection attempts_. The
-connection might not be successful for a number of reasons, many of them
-operating system specific. For example, many operating systems have a limit to
-the number of simultaneous open connections they can support; new connection
-attempts beyond that number will produce an error until some of the open
-connections are closed.
+현재는 스트림 처리 시 `unwrap`을 호출해 스트림에 오류가 있으면 프로그램을 종료한다. 오류가 없으면 프로그램이 메시지를 출력한다. 다음 목록에서 성공 사례에 대한 기능을 추가할 것이다. 클라이언트가 서버에 연결할 때 `incoming` 메서드에서 오류를 받을 수 있는 이유는 연결을 반복하는 것이 아니라 _연결 시도_를 반복하기 때문이다. 여러 가지 이유로 연결이 성공하지 못할 수 있으며, 그 중 많은 이유가 운영체제에 따라 다르다. 예를 들어, 많은 운영체제는 동시에 열 수 있는 연결 수에 제한이 있다. 그 수를 초과하는 새로운 연결 시도는 일부 열린 연결이 닫힐 때까지 오류를 발생시킨다.
 
-Let’s try running this code! Invoke `cargo run` in the terminal and then load
-_127.0.0.1:7878_ in a web browser. The browser should show an error message
-like “Connection reset” because the server isn’t currently sending back any
-data. But when you look at your terminal, you should see several messages that
-were printed when the browser connected to the server!
+이 코드를 실행해보자! 터미널에서 `cargo run`을 실행한 후 웹 브라우저에서 _127.0.0.1:7878_을 로드한다. 서버가 현재 데이터를 보내고 있지 않기 때문에 브라우저는 "Connection reset"과 같은 오류 메시지를 표시한다. 하지만 터미널을 보면 브라우저가 서버에 연결할 때 출력된 여러 메시지를 볼 수 있다!
 
 ```text
      Running `target/debug/hello`
@@ -100,42 +46,22 @@ Connection established!
 Connection established!
 ```
 
-Sometimes you’ll see multiple messages printed for one browser request; the
-reason might be that the browser is making a request for the page as well as a
-request for other resources, like the _favicon.ico_ icon that appears in the
-browser tab.
+때로는 하나의 브라우저 요청에 대해 여러 메시지가 출력될 수 있다. 그 이유는 브라우저가 페이지 요청뿐만 아니라 브라우저 탭에 나타나는 _favicon.ico_ 아이콘과 같은 다른 리소스에 대한 요청도 보내기 때문일 수 있다.
 
-It could also be that the browser is trying to connect to the server multiple
-times because the server isn’t responding with any data. When `stream` goes out
-of scope and is dropped at the end of the loop, the connection is closed as
-part of the `drop` implementation. Browsers sometimes deal with closed
-connections by retrying, because the problem might be temporary.
+또한 서버가 데이터를 응답하지 않기 때문에 브라우저가 여러 번 서버에 연결을 시도할 수도 있다. 루프 끝에서 `stream`이 범위를 벗어나면 `drop` 구현의 일부로 연결이 닫힌다. 브라우저는 때때로 임시적인 문제일 수 있기 때문에 닫힌 연결을 재시도한다.
 
-Browsers also sometimes open multiple connections to the server without sending
-any requests, so that if they *do* later send requests, they can happen faster.
-When this happens, our server will see each connection, regardless of whether
-there are any requests over that connection. Many versions of Chrome-based
-browsers do this, for example; you can disable that optimization by using =
-private browsing mode or use a different browser.
+브라우저는 때때로 요청을 보내지 않고도 서버에 여러 연결을 열기도 한다. 나중에 요청을 보낼 때 더 빠르게 처리할 수 있도록 하기 위해서다. 이 경우 서버는 각 연결을 확인하지만, 해당 연결을 통해 요청이 있는지는 상관없다. 예를 들어, Chrome 기반 브라우저의 많은 버전이 이를 수행한다. 이 최적화를 비활성화하려면 시크릿 모드를 사용하거나 다른 브라우저를 사용하면 된다.
 
-The important factor is that we’ve successfully gotten a handle to a TCP
-connection!
+중요한 점은 TCP 연결에 대한 핸들을 성공적으로 얻었다는 것이다!
 
-Remember to stop the program by pressing <kbd>ctrl</kbd>-<kbd>c</kbd> when
-you’re done running a particular version of the code. Then restart the program
-by invoking the `cargo run` command after you’ve made each set of code changes
-to make sure you’re running the newest code.
+특정 버전의 코드 실행을 마쳤으면 <kbd>ctrl</kbd>-<kbd>c</kbd>를 눌러 프로그램을 중지한다. 코드를 변경한 후에는 `cargo run` 명령을 다시 실행해 최신 코드가 실행되도록 한다.
 
-### Reading the Request
 
-Let’s implement the functionality to read the request from the browser! To
-separate the concerns of first getting a connection and then taking some action
-with the connection, we’ll start a new function for processing connections. In
-this new `handle_connection` function, we’ll read data from the TCP stream and
-print it so we can see the data being sent from the browser. Change the code to
-look like Listing 21-2.
+### 요청 읽기
 
-<Listing number="21-2" file-name="src/main.rs" caption="Reading from the `TcpStream` and printing the data">
+브라우저로부터 요청을 읽는 기능을 구현해 보자! 연결을 먼저 얻고, 그 연결을 통해 어떤 작업을 수행하는 두 가지 관심사를 분리하기 위해, 새로운 함수를 만들어 연결을 처리한다. 이 새로운 `handle_connection` 함수에서 TCP 스트림으로부터 데이터를 읽고, 브라우저가 보낸 데이터를 확인할 수 있도록 출력한다. 코드를 리스트 21-2와 같이 변경한다.
+
+<Listing number="21-2" file-name="src/main.rs" caption="`TcpStream`에서 데이터를 읽고 출력하기">
 
 ```rust,no_run
 {{#rustdoc_include ../listings/ch21-web-server/listing-21-02/src/main.rs}}
@@ -143,38 +69,17 @@ look like Listing 21-2.
 
 </Listing>
 
-We bring `std::io::prelude` and `std::io::BufReader` into scope to get access
-to traits and types that let us read from and write to the stream. In the `for`
-loop in the `main` function, instead of printing a message that says we made a
-connection, we now call the new `handle_connection` function and pass the
-`stream` to it.
+`std::io::prelude`와 `std::io::BufReader`를 스코프로 가져와 스트림에서 데이터를 읽고 쓰는 데 필요한 트레잇과 타입에 접근한다. `main` 함수의 `for` 루프에서, 연결이 성공했다는 메시지를 출력하는 대신, 새로운 `handle_connection` 함수를 호출하고 `stream`을 인자로 전달한다.
 
-In the `handle_connection` function, we create a new `BufReader` instance that
-wraps a reference to the `stream`. The `BufReader` adds buffering by managing calls
-to the `std::io::Read` trait methods for us.
+`handle_connection` 함수에서는 `stream`에 대한 참조를 감싸는 새로운 `BufReader` 인스턴스를 생성한다. `BufReader`는 `std::io::Read` 트레잇 메서드 호출을 관리하며 버퍼링을 추가한다.
 
-We create a variable named `http_request` to collect the lines of the request
-the browser sends to our server. We indicate that we want to collect these
-lines in a vector by adding the `Vec<_>` type annotation.
+`http_request`라는 변수를 만들어 브라우저가 서버로 보낸 요청의 라인들을 수집한다. `Vec<_>` 타입 어노테이션을 추가하여 이 라인들을 벡터로 수집할 것임을 명시한다.
 
-`BufReader` implements the `std::io::BufRead` trait, which provides the `lines`
-method. The `lines` method returns an iterator of `Result<String,
-std::io::Error>` by splitting the stream of data whenever it sees a newline
-byte. To get each `String`, we map and `unwrap` each `Result`. The `Result`
-might be an error if the data isn’t valid UTF-8 or if there was a problem
-reading from the stream. Again, a production program should handle these errors
-more gracefully, but we’re choosing to stop the program in the error case for
-simplicity.
+`BufReader`는 `std::io::BufRead` 트레잇을 구현하며, 이 트레잇은 `lines` 메서드를 제공한다. `lines` 메서드는 데이터 스트림에서 개행 바이트를 만날 때마다 분할하여 `Result<String, std::io::Error>`의 이터레이터를 반환한다. 각 `String`을 얻기 위해, 각 `Result`를 `map`하고 `unwrap`한다. 데이터가 유효한 UTF-8이 아니거나 스트림에서 읽는 데 문제가 발생하면 `Result`는 에러가 될 수 있다. 프로덕션 프로그램에서는 이러한 에러를 더 우아하게 처리해야 하지만, 간단함을 위해 에러 발생 시 프로그램을 중단하도록 선택한다.
 
-The browser signals the end of an HTTP request by sending two newline
-characters in a row, so to get one request from the stream, we take lines until
-we get a line that is the empty string. Once we’ve collected the lines into the
-vector, we’re printing them out using pretty debug formatting so we can take a
-look at the instructions the web browser is sending to our server.
+브라우저는 두 개의 연속된 개행 문자를 보내어 HTTP 요청의 끝을 알린다. 따라서 스트림에서 하나의 요청을 얻기 위해, 빈 문자열 라인을 만날 때까지 라인을 수집한다. 라인들을 벡터로 수집한 후, 웹 브라우저가 서버로 보낸 명령어를 확인할 수 있도록 디버그 포맷으로 출력한다.
 
-Let’s try this code! Start the program and make a request in a web browser
-again. Note that we’ll still get an error page in the browser, but our
-program’s output in the terminal will now look similar to this:
+이 코드를 실행해 보자! 프로그램을 시작하고 웹 브라우저에서 다시 요청을 보낸다. 브라우저에서는 여전히 에러 페이지가 표시되지만, 터미널에서 프로그램의 출력은 다음과 비슷하게 나타난다:
 
 ```console
 $ cargo run
@@ -199,19 +104,14 @@ Request: [
 ]
 ```
 
-Depending on your browser, you might get slightly different output. Now that
-we’re printing the request data, we can see why we get multiple connections
-from one browser request by looking at the path after `GET` in the first line
-of the request. If the repeated connections are all requesting _/_, we know the
-browser is trying to fetch _/_ repeatedly because it’s not getting a response
-from our program.
+브라우저에 따라 약간 다른 출력이 나타날 수 있다. 이제 요청 데이터를 출력하고 있으므로, 요청의 첫 번째 줄에서 `GET` 뒤의 경로를 확인하여 하나의 브라우저 요청에서 여러 연결이 발생하는 이유를 알 수 있다. 반복되는 연결이 모두 _/_를 요청한다면, 프로그램이 응답을 보내지 않아 브라우저가 _/_를 반복적으로 가져오려고 한다는 것을 알 수 있다.
 
-Let’s break down this request data to understand what the browser is asking of
-our program.
+이 요청 데이터를 분석하여 브라우저가 프로그램에 무엇을 요청하는지 이해해 보자.
 
-### A Closer Look at an HTTP Request
 
-HTTP is a text-based protocol, and a request takes this format:
+### HTTP 요청 자세히 살펴보기
+
+HTTP는 텍스트 기반 프로토콜이며, 요청은 다음과 같은 형식을 따른다:
 
 ```text
 Method Request-URI HTTP-Version CRLF
@@ -219,41 +119,24 @@ headers CRLF
 message-body
 ```
 
-The first line is the _request line_ that holds information about what the
-client is requesting. The first part of the request line indicates the _method_
-being used, such as `GET` or `POST`, which describes how the client is making
-this request. Our client used a `GET` request, which means it is asking for
-information.
+첫 번째 줄은 클라이언트가 요청하는 내용을 담고 있는 _요청 라인_이다. 요청 라인의 첫 부분은 사용되는 _메서드_를 나타내며, `GET`이나 `POST`와 같은 값이 들어간다. 이는 클라이언트가 어떻게 요청을 보내는지 설명한다. 여기서는 `GET` 요청을 사용했는데, 이는 클라이언트가 정보를 요청하고 있다는 의미이다.
 
-The next part of the request line is _/_, which indicates the _uniform resource
-identifier_ _(URI)_ the client is requesting: a URI is almost, but not quite,
-the same as a _uniform resource locator_ _(URL)_. The difference between URIs
-and URLs isn’t important for our purposes in this chapter, but the HTTP spec
-uses the term URI, so we can just mentally substitute _URL_ for _URI_ here.
+요청 라인의 다음 부분은 _/_로, 클라이언트가 요청하는 _통합 자원 식별자(URI)_를 나타낸다. URI는 _통합 자원 위치(URL)_와 거의 동일하지만 완전히 같지는 않다. URI와 URL의 차이는 이 장에서 중요하지 않지만, HTTP 스펙에서는 URI라는 용어를 사용하므로 여기서는 _URI_를 _URL_로 이해하면 된다.
 
-The last part is the HTTP version the client uses, and then the request line
-ends in a CRLF sequence. (CRLF stands for _carriage return_ and _line feed_,
-which are terms from the typewriter days!) The CRLF sequence can also be
-written as `\r\n`, where `\r` is a carriage return and `\n` is a line feed. The
-_CRLF sequence_ separates the request line from the rest of the request data.
-Note that when the CRLF is printed, we see a new line start rather than `\r\n`.
+마지막 부분은 클라이언트가 사용하는 HTTP 버전이며, 요청 라인은 CRLF 시퀀스로 끝난다. (CRLF는 _캐리지 리턴_과 _라인 피드_를 의미하며, 타자기 시대의 용어이다!) CRLF 시퀀스는 `\r\n`으로도 표현할 수 있는데, 여기서 `\r`은 캐리지 리턴이고 `\n`은 라인 피드이다. _CRLF 시퀀스_는 요청 라인과 나머지 요청 데이터를 구분한다. CRLF가 출력될 때는 `\r\n` 대신 새로운 줄이 시작되는 것을 볼 수 있다.
 
-Looking at the request line data we received from running our program so far,
-we see that `GET` is the method, _/_ is the request URI, and `HTTP/1.1` is the
-version.
+지금까지 실행한 프로그램에서 받은 요청 라인 데이터를 보면, `GET`이 메서드이고 _/_가 요청 URI, `HTTP/1.1`이 버전임을 확인할 수 있다.
 
-After the request line, the remaining lines starting from `Host:` onward are
-headers. `GET` requests have no body.
+요청 라인 이후에는 `Host:`로 시작하는 헤더들이 나온다. `GET` 요청에는 본문(body)이 없다.
 
-Try making a request from a different browser or asking for a different
-address, such as _127.0.0.1:7878/test_, to see how the request data changes.
+다른 브라우저에서 요청을 보내거나 _127.0.0.1:7878/test_와 같은 다른 주소를 요청해 보면 요청 데이터가 어떻게 바뀌는지 확인할 수 있다.
 
-Now that we know what the browser is asking for, let’s send back some data!
+이제 브라우저가 무엇을 요청하는지 알았으니, 데이터를 보내보자!
 
-### Writing a Response
 
-We’re going to implement sending data in response to a client request.
-Responses have the following format:
+### 응답 작성하기
+
+클라이언트 요청에 대한 응답으로 데이터를 보내는 기능을 구현해 보자. HTTP 응답은 다음과 같은 형식을 따른다:
 
 ```text
 HTTP-Version Status-Code Reason-Phrase CRLF
@@ -261,26 +144,17 @@ headers CRLF
 message-body
 ```
 
-The first line is a _status line_ that contains the HTTP version used in the
-response, a numeric status code that summarizes the result of the request, and
-a reason phrase that provides a text description of the status code. After the
-CRLF sequence are any headers, another CRLF sequence, and the body of the
-response.
+첫 번째 줄은 _상태 줄_로, 응답에 사용된 HTTP 버전, 요청 결과를 요약한 숫자 상태 코드, 그리고 상태 코드에 대한 설명인 텍스트 문구로 구성된다. CRLF 시퀀스 이후에는 헤더, 또 다른 CRLF 시퀀스, 그리고 응답 본문이 이어진다.
 
-Here is an example response that uses HTTP version 1.1, and has a status code of
-200, an OK reason phrase, no headers, and no body:
+다음은 HTTP 버전 1.1을 사용하고, 상태 코드 200, OK 문구, 헤더와 본문이 없는 간단한 응답 예제다:
 
 ```text
 HTTP/1.1 200 OK\r\n\r\n
 ```
 
-The status code 200 is the standard success response. The text is a tiny
-successful HTTP response. Let’s write this to the stream as our response to a
-successful request! From the `handle_connection` function, remove the
-`println!` that was printing the request data and replace it with the code in
-Listing 21-3.
+상태 코드 200은 표준 성공 응답이다. 이 텍스트는 매우 간단한 성공적인 HTTP 응답이다. 이제 이 응답을 스트림에 작성해 요청에 대한 응답으로 보내보자. `handle_connection` 함수에서 요청 데이터를 출력하던 `println!`을 지우고, 아래 코드로 대체한다.
 
-<Listing number="21-3" file-name="src/main.rs" caption="Writing a tiny successful HTTP response to the stream">
+<Listing number="21-3" file-name="src/main.rs" caption="스트림에 간단한 성공 HTTP 응답 작성하기">
 
 ```rust,no_run
 {{#rustdoc_include ../listings/ch21-web-server/listing-21-03/src/main.rs:here}}
@@ -288,27 +162,16 @@ Listing 21-3.
 
 </Listing>
 
-The first new line defines the `response` variable that holds the success
-message’s data. Then we call `as_bytes` on our `response` to convert the string
-data to bytes. The `write_all` method on `stream` takes a `&[u8]` and sends
-those bytes directly down the connection. Because the `write_all` operation
-could fail, we use `unwrap` on any error result as before. Again, in a real
-application you would add error handling here.
+첫 번째 줄은 성공 메시지 데이터를 담는 `response` 변수를 정의한다. 그런 다음 `response`에 `as_bytes`를 호출해 문자열 데이터를 바이트로 변환한다. `stream`의 `write_all` 메서드는 `&[u8]` 타입을 받아 연결을 통해 해당 바이트를 직접 전송한다. `write_all` 작업이 실패할 수 있으므로, 이전과 마찬가지로 에러 결과에 `unwrap`을 사용한다. 실제 애플리케이션에서는 여기에 에러 처리를 추가해야 한다.
 
-With these changes, let’s run our code and make a request. We’re no longer
-printing any data to the terminal, so we won’t see any output other than the
-output from Cargo. When you load _127.0.0.1:7878_ in a web browser, you should
-get a blank page instead of an error. You’ve just handcoded receiving an HTTP
-request and sending a response!
+이제 코드를 실행하고 요청을 보내보자. 더 이상 터미널에 데이터를 출력하지 않으므로, Cargo의 출력 외에는 아무것도 보이지 않을 것이다. 웹 브라우저에서 _127.0.0.1:7878_을 로드하면, 에러 대신 빈 페이지가 표시될 것이다. 이제 HTTP 요청을 수신하고 응답을 보내는 기능을 직접 구현했다!
 
-### Returning Real HTML
 
-Let’s implement the functionality for returning more than a blank page. Create
-the new file _hello.html_ in the root of your project directory, not in the
-_src_ directory. You can input any HTML you want; Listing 21-4 shows one
-possibility.
+### 실제 HTML 반환하기
 
-<Listing number="21-4" file-name="hello.html" caption="A sample HTML file to return in a response">
+이제 빈 페이지 대신 실제 HTML을 반환하는 기능을 구현해보자. 프로젝트 루트 디렉토리(소스 디렉토리가 아님)에 _hello.html_ 파일을 생성한다. 원하는 HTML을 입력할 수 있으며, 목록 21-4는 하나의 예시를 보여준다.
+
+<Listing number="21-4" file-name="hello.html" caption="응답으로 반환할 샘플 HTML 파일">
 
 ```html
 {{#include ../listings/ch21-web-server/listing-21-05/hello.html}}
@@ -316,12 +179,9 @@ possibility.
 
 </Listing>
 
-This is a minimal HTML5 document with a heading and some text. To return this
-from the server when a request is received, we’ll modify `handle_connection` as
-shown in Listing 21-5 to read the HTML file, add it to the response as a body,
-and send it.
+이 HTML은 제목과 텍스트가 포함된 간단한 HTML5 문서다. 요청을 받으면 이 HTML을 서버에서 반환하기 위해 `handle_connection` 함수를 수정한다. 목록 21-5는 HTML 파일을 읽고, 이를 응답 본문에 추가한 후 전송하는 과정을 보여준다.
 
-<Listing number="21-5" file-name="src/main.rs" caption="Sending the contents of *hello.html* as the body of the response">
+<Listing number="21-5" file-name="src/main.rs" caption="*hello.html*의 내용을 응답 본문으로 전송하기">
 
 ```rust,no_run
 {{#rustdoc_include ../listings/ch21-web-server/listing-21-05/src/main.rs:here}}
@@ -329,38 +189,20 @@ and send it.
 
 </Listing>
 
-We’ve added `fs` to the `use` statement to bring the standard library’s
-filesystem module into scope. The code for reading the contents of a file to a
-string should look familiar; we used it when we read the contents of a file for
-our I/O project in Listing 12-4.
+`fs`를 `use` 문에 추가해 표준 라이브러리의 파일 시스템 모듈을 범위로 가져왔다. 파일 내용을 문자열로 읽는 코드는 익숙할 것이다. 목록 12-4에서 I/O 프로젝트를 위해 파일 내용을 읽을 때 사용했던 것과 동일하다.
 
-Next, we use `format!` to add the file’s contents as the body of the success
-response. To ensure a valid HTTP response, we add the `Content-Length` header
-which is set to the size of our response body, in this case the size of
-`hello.html`.
+다음으로, `format!`을 사용해 파일 내용을 성공 응답의 본문으로 추가한다. 유효한 HTTP 응답을 보장하기 위해 `Content-Length` 헤더를 추가한다. 이 헤더는 응답 본문의 크기로 설정되며, 여기서는 `hello.html` 파일의 크기가 된다.
 
-Run this code with `cargo run` and load _127.0.0.1:7878_ in your browser; you
-should see your HTML rendered!
+이 코드를 `cargo run`으로 실행하고 브라우저에서 _127.0.0.1:7878_을 로드하면 HTML이 렌더링되는 것을 확인할 수 있다.
 
-Currently, we’re ignoring the request data in `http_request` and just sending
-back the contents of the HTML file unconditionally. That means if you try
-requesting _127.0.0.1:7878/something-else_ in your browser, you’ll still get
-back this same HTML response. At the moment, our server is very limited and
-does not do what most web servers do. We want to customize our responses
-depending on the request and only send back the HTML file for a well-formed
-request to _/_.
+현재는 `http_request`의 요청 데이터를 무시하고 무조건 HTML 파일의 내용을 반환한다. 따라서 브라우저에서 _127.0.0.1:7878/something-else_를 요청해도 동일한 HTML 응답을 받게 된다. 지금은 서버가 매우 제한적이며 대부분의 웹 서버가 하는 일을 하지 못한다. 요청에 따라 응답을 다르게 하고, _/_에 대한 올바른 요청일 때만 HTML 파일을 반환하도록 수정할 것이다.
 
-### Validating the Request and Selectively Responding
 
-Right now, our web server will return the HTML in the file no matter what the
-client requested. Let’s add functionality to check that the browser is
-requesting _/_ before returning the HTML file and return an error if the
-browser requests anything else. For this we need to modify `handle_connection`,
-as shown in Listing 21-6. This new code checks the content of the request
-received against what we know a request for _/_ looks like and adds `if` and
-`else` blocks to treat requests differently.
+### 요청 검증과 선택적 응답
 
-<Listing number="21-6" file-name="src/main.rs" caption="Handling requests to */* differently from other requests">
+현재 웹 서버는 클라이언트가 어떤 요청을 하든 상관없이 파일에 있는 HTML을 반환한다. 이제 브라우저가 _/_ 경로를 요청할 때만 HTML 파일을 반환하고, 그 외의 요청에는 오류를 반환하는 기능을 추가해 보자. 이를 위해 `handle_connection` 함수를 수정해야 한다. Listing 21-6에서 보듯이, 새로운 코드는 수신된 요청의 내용을 검사하고 _/_ 요청과 일치하는지 확인한 후, `if`와 `else` 블록을 추가해 요청에 따라 다르게 처리한다.
+
+<Listing number="21-6" file-name="src/main.rs" caption="*/* 요청과 다른 요청을 다르게 처리하기">
 
 ```rust,no_run
 {{#rustdoc_include ../listings/ch21-web-server/listing-21-06/src/main.rs:here}}
@@ -368,32 +210,17 @@ received against what we know a request for _/_ looks like and adds `if` and
 
 </Listing>
 
-We’re only going to be looking at the first line of the HTTP request, so rather
-than reading the entire request into a vector, we’re calling `next` to get the
-first item from the iterator. The first `unwrap` takes care of the `Option` and
-stops the program if the iterator has no items. The second `unwrap` handles the
-`Result` and has the same effect as the `unwrap` that was in the `map` added in
-Listing 21-2.
+우리는 HTTP 요청의 첫 번째 줄만 확인할 것이므로, 전체 요청을 벡터로 읽어들이는 대신 `next`를 호출해 이터레이터의 첫 번째 항목을 가져온다. 첫 번째 `unwrap`은 `Option`을 처리하고, 이터레이터에 항목이 없을 경우 프로그램을 중단한다. 두 번째 `unwrap`은 `Result`를 처리하며, Listing 21-2에서 추가한 `map` 내의 `unwrap`과 동일한 효과를 가진다.
 
-Next, we check the `request_line` to see if it equals the request line of a GET
-request to the _/_ path. If it does, the `if` block returns the contents of our
-HTML file.
+다음으로, `request_line`이 _/_ 경로에 대한 GET 요청의 요청 라인과 동일한지 확인한다. 만약 일치한다면, `if` 블록이 HTML 파일의 내용을 반환한다.
 
-If the `request_line` does _not_ equal the GET request to the _/_ path, it
-means we’ve received some other request. We’ll add code to the `else` block in
-a moment to respond to all other requests.
+만약 `request_line`이 _/_ 경로에 대한 GET 요청과 일치하지 않는다면, 다른 요청이 들어온 것이다. 잠시 후 `else` 블록에 코드를 추가해 모든 다른 요청에 응답할 것이다.
 
-Run this code now and request _127.0.0.1:7878_; you should get the HTML in
-_hello.html_. If you make any other request, such as
-_127.0.0.1:7878/something-else_, you’ll get a connection error like those you
-saw when running the code in Listing 21-1 and Listing 21-2.
+이제 이 코드를 실행하고 _127.0.0.1:7878_을 요청해 보자. _hello.html_의 HTML이 반환될 것이다. 만약 _127.0.0.1:7878/something-else_와 같은 다른 요청을 하면, Listing 21-1과 Listing 21-2에서 본 것과 같은 연결 오류가 발생할 것이다.
 
-Now let’s add the code in Listing 21-7 to the `else` block to return a response
-with the status code 404, which signals that the content for the request was
-not found. We’ll also return some HTML for a page to render in the browser
-indicating the response to the end user.
+이제 Listing 21-7의 코드를 `else` 블록에 추가해, 요청한 콘텐츠를 찾을 수 없음을 나타내는 상태 코드 404와 함께 응답을 반환하자. 또한 브라우저에서 사용자에게 표시할 오류 페이지를 위한 HTML도 함께 반환할 것이다.
 
-<Listing number="21-7" file-name="src/main.rs" caption="Responding with status code 404 and an error page if anything other than */* was requested">
+<Listing number="21-7" file-name="src/main.rs" caption="*/* 이외의 요청에 대해 상태 코드 404와 오류 페이지 반환">
 
 ```rust,no_run
 {{#rustdoc_include ../listings/ch21-web-server/listing-21-07/src/main.rs:here}}
@@ -401,13 +228,9 @@ indicating the response to the end user.
 
 </Listing>
 
-Here, our response has a status line with status code 404 and the reason phrase
-`NOT FOUND`. The body of the response will be the HTML in the file _404.html_.
-You’ll need to create a _404.html_ file next to _hello.html_ for the error
-page; again feel free to use any HTML you want or use the example HTML in
-Listing 21-8.
+여기서 응답은 상태 코드 404와 이유 구문 `NOT FOUND`가 포함된 상태 라인을 가진다. 응답 본문은 _404.html_ 파일의 HTML이 될 것이다. 오류 페이지를 위해 _hello.html_ 파일 옆에 _404.html_ 파일을 생성해야 한다. 이 파일에는 원하는 HTML을 사용하거나 Listing 21-8의 예제 HTML을 사용해도 된다.
 
-<Listing number="21-8" file-name="404.html" caption="Sample content for the page to send back with any 404 response">
+<Listing number="21-8" file-name="404.html" caption="404 응답과 함께 반환할 페이지의 예제 콘텐츠">
 
 ```html
 {{#include ../listings/ch21-web-server/listing-21-07/404.html}}
@@ -415,22 +238,14 @@ Listing 21-8.
 
 </Listing>
 
-With these changes, run your server again. Requesting _127.0.0.1:7878_ should
-return the contents of _hello.html_, and any other request, like
-_127.0.0.1:7878/foo_, should return the error HTML from _404.html_.
+이 변경 사항을 적용한 후 서버를 다시 실행해 보자. _127.0.0.1:7878_을 요청하면 _hello.html_의 내용이 반환되고, _127.0.0.1:7878/foo_와 같은 다른 요청을 하면 _404.html_의 오류 HTML이 반환될 것이다.
 
-### A Touch of Refactoring
 
-At the moment, the `if` and `else` blocks have a lot of repetition: they’re both
-reading files and writing the contents of the files to the stream. The only
-differences are the status line and the filename. Let’s make the code more
-concise by pulling out those differences into separate `if` and `else` lines
-that will assign the values of the status line and the filename to variables; we
-can then use those variables unconditionally in the code to read the file and
-write the response. Listing 21-9 shows the resultant code after replacing the
-large `if` and `else` blocks.
+### 리팩토링 적용하기
 
-<Listing number="21-9" file-name="src/main.rs" caption="Refactoring the `if` and `else` blocks to contain only the code that differs between the two cases">
+현재 `if`와 `else` 블록에는 많은 중복 코드가 있다. 둘 다 파일을 읽고 파일의 내용을 스트림에 쓰는 동일한 작업을 수행한다. 유일한 차이는 상태 라인과 파일명뿐이다. 이 차이를 별도의 `if`와 `else` 라인으로 분리하여 상태 라인과 파일명을 변수에 할당하고, 이후에는 이 변수를 무조건적으로 사용해 파일을 읽고 응답을 작성하는 코드를 더 간결하게 만들어보자. 리스팅 21-9는 `if`와 `else` 블록을 리팩토링한 결과를 보여준다.
+
+<Listing number="21-9" file-name="src/main.rs" caption="두 경우에 따라 달라지는 코드만 포함하도록 `if`와 `else` 블록 리팩토링">
 
 ```rust,no_run
 {{#rustdoc_include ../listings/ch21-web-server/listing-21-09/src/main.rs:here}}
@@ -438,23 +253,12 @@ large `if` and `else` blocks.
 
 </Listing>
 
-Now the `if` and `else` blocks only return the appropriate values for the
-status line and filename in a tuple; we then use destructuring to assign these
-two values to `status_line` and `filename` using a pattern in the `let`
-statement, as discussed in Chapter 19.
+이제 `if`와 `else` 블록은 상태 라인과 파일명을 튜플로 반환한다. 그리고 19장에서 다룬 패턴을 사용해 `let` 문에서 이 두 값을 `status_line`과 `filename` 변수에 구조 분해 할당한다.
 
-The previously duplicated code is now outside the `if` and `else` blocks and
-uses the `status_line` and `filename` variables. This makes it easier to see
-the difference between the two cases, and it means we have only one place to
-update the code if we want to change how the file reading and response writing
-work. The behavior of the code in Listing 21-9 will be the same as that in
-Listing 21-7.
+이전에 중복되었던 코드는 이제 `if`와 `else` 블록 밖에 위치하며, `status_line`과 `filename` 변수를 사용한다. 이를 통해 두 경우의 차이를 더 쉽게 파악할 수 있고, 파일 읽기와 응답 쓰기 방식을 변경하고 싶을 때 한 곳만 수정하면 된다. 리스팅 21-9의 코드 동작은 리스팅 21-7과 동일하다.
 
-Awesome! We now have a simple web server in approximately 40 lines of Rust code
-that responds to one request with a page of content and responds to all other
-requests with a 404 response.
+훌륭하다! 이제 약 40줄의 Rust 코드로 간단한 웹 서버를 만들었다. 이 서버는 하나의 요청에 대해 콘텐츠 페이지를 반환하고, 다른 모든 요청에 대해 404 응답을 반환한다.
 
-Currently, our server runs in a single thread, meaning it can only serve one
-request at a time. Let’s examine how that can be a problem by simulating some
-slow requests. Then we’ll fix it so our server can handle multiple requests at
-once.
+현재 우리의 서버는 단일 스레드에서 실행되기 때문에 한 번에 하나의 요청만 처리할 수 있다. 몇 가지 느린 요청을 시뮬레이션해 이 문제를 살펴보고, 이후에 서버가 여러 요청을 동시에 처리할 수 있도록 수정해보자.
+
+

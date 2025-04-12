@@ -1,101 +1,69 @@
-# Contributing
+# 기여하기
 
-We'd love your help! Thanks for caring about the book.
+책에 관심을 가져주셔서 감사합니다. 여러분의 도움을 환영합니다!
 
-## Where to Edit
+## 편집 위치
 
-All edits should be made in the `src` directory.
+모든 편집은 `src` 디렉토리에서 이루어져야 한다.
 
-The `nostarch` directory contains snapshots for sending edits to the publishers
-of the print version. The snapshot files reflect what has been sent or not, so
-they only get updated when edits are sent to No Starch. **Do not submit pull
-requests changing files in the `nostarch` directory, they will be closed.**
+`nostarch` 디렉토리는 인쇄 버전 출판사에 편집 내용을 전송하기 위한 스냅샷을 포함한다. 스냅샷 파일은 전송 여부를 반영하므로, No Starch에 편집 내용을 보낼 때만 업데이트된다. **`nostarch` 디렉토리의 파일을 변경하는 풀 리퀘스트를 제출하지 않는다. 해당 풀 리퀘스트는 닫힐 것이다.**
 
-We use [`rustfmt`][rustfmt] to apply standard formatting to Rust code in the
-repo and [`dprint`][dprint] to apply standing formatting to the Markdown source
-and the non-Rust code in the project.
+저장소의 러스트 코드에는 표준 형식을 적용하기 위해 [`rustfmt`][rustfmt]를 사용하고, 마크다운 소스와 프로젝트의 비-러스트 코드에는 표준 형식을 적용하기 위해 [`dprint`][dprint]를 사용한다.
 
 [rustfmt]: https://github.com/rust-lang/rustfmt
 [dprint]: https://dprint.dev
 
-You will normally have `rustfmt` installed if you have a Rust toolchain
-installed; if for some reason you do not have a copy of `rustfmt`, you can add
-it by running the following command:
+러스트 툴체인이 설치되어 있다면 일반적으로 `rustfmt`도 함께 설치된다. 어떤 이유로 `rustfmt`가 없다면 다음 커맨드를 실행하여 추가할 수 있다:
 
 ```sh
 rustup component add rustfmt
 ```
 
-To install `dprint`, you can run the following command:
+`dprint`를 설치하려면 다음 커맨드를 실행할 수 있다:
 
 ```sh
 cargo install dprint
 ```
 
-Or follow the [instructions][install-dprint] on the `dprint` website.
+또는 `dprint` 웹사이트의 [지침][install-dprint]을 따를 수 있다.
 
 [install-dprint]: https://dprint.dev/install/
 
-To format Rust code, you can run `rustfmt <path to file>`, and to format other
-files, you can pass `dprint fmt <path to file>`. Many text editors also have native
-support or extensions for both `rustfmt` and `dprint`.
+러스트 코드 형식을 지정하려면 `rustfmt <파일 경로>`를 실행하고, 다른 파일 형식을 지정하려면 `dprint fmt <파일 경로>`를 전달할 수 있다. 많은 텍스트 에디터는 `rustfmt`와 `dprint` 모두에 대한 기본 지원이나 확장 기능을 제공한다.
 
-## Checking for Fixes
+## 수정 사항 확인
 
-The book rides the Rust release trains. Therefore, if you see a problem on
-https://doc.rust-lang.org/stable/book, it may already be fixed on the `main`
-branch in this repo, but the fix hasn't gone through nightly -> beta -> stable
-yet. Please check the `main` branch in this repo before reporting an issue.
+이 책은 러스트 릴리스 트레인을 따른다. 따라서 https://doc.rust-lang.org/stable/book 에서 문제를 발견했다면, 이미 이 저장소의 `main` 브랜치에서 수정되었지만 아직 nightly -> beta -> stable 과정을 거치지 않았을 수 있다. 이슈를 보고하기 전에 이 저장소의 `main` 브랜치를 확인해본다.
 
-Looking at the history for a particular file can also give more information on
-how or whether an issue has been fixed or not if you're trying to figure that
-out.
+특정 파일의 히스토리를 살펴보면 이슈가 수정되었는지 여부나 방법에 대한 추가 정보를 얻을 수 있다.
 
-Please also search open and closed issues and open and closed PRs before
-reporting a new issue or opening a new PR.
+새 이슈를 보고하거나 새 PR을 열기 전에 열린 이슈와 닫힌 이슈, 열린 PR과 닫힌 PR도 검색해본다.
 
-## Licensing
+## 라이선스
 
-This repository is under the same license as Rust itself, MIT/Apache2. You
-can find the full text of each license in the `LICENSE-*` files in this
-repository.
+이 저장소는 러스트 자체와 동일한 라이선스인 MIT/Apache2를 따른다. 각 라이선스의 전체 텍스트는 이 저장소의 `LICENSE-*` 파일에서 찾을 수 있다.
 
-## Code of Conduct
+## 행동 강령
 
-The Rust project has [a code of conduct](http://rust-lang.org/policies/code-of-conduct)
-that governs all sub-projects, including this one. Please respect it!
+러스트 프로젝트는 이 프로젝트를 포함한 모든 하위 프로젝트를 관리하는 [행동 강령](http://rust-lang.org/policies/code-of-conduct)을 가지고 있다. 이를 존중해주길 바란다!
 
-## Expectations
+## 기대 사항
 
-Because the book is [printed][nostarch], and because we want
-to keep the online version of the book close to the print version when
-possible, it may take longer than you're used to for us to address your issue
-or pull request.
+책이 [인쇄][nostarch]되기 때문에, 그리고 가능한 한 책의 온라인 버전을 인쇄 버전과 가깝게 유지하고자 하기 때문에, 이슈나 풀 리퀘스트를 처리하는 데 예상보다 더 오래 걸릴 수 있다.
 
 [nostarch]: https://nostarch.com/rust-programming-language-2nd-edition
 
-So far, we've been doing a larger revision to coincide with [Rust Editions](https://doc.rust-lang.org/edition-guide/). Between those larger
-revisions, we will only be correcting errors. If your issue or pull request
-isn't strictly fixing an error, it might sit until the next time that we're
-working on a large revision: expect on the order of months or years. Thank you
-for your patience!
+지금까지 [러스트 에디션](https://doc.rust-lang.org/edition-guide/)과 일치하는 대규모 개정을 진행해왔다. 이러한 대규모 개정 사이에는 오류만 수정할 것이다. 이슈나 풀 리퀘스트가 단순히 오류를 수정하는 것이 아니라면, 대규모 개정 작업을 다시 시작할 때까지 기다려야 할 수 있다: 몇 개월 또는 몇 년이 걸릴 수 있다. 참고해주셔서 감사하다!
 
-## Help wanted
+## 도움 요청
 
-If you're looking for ways to help that don't involve large amounts of
-reading or writing, check out the [open issues with the E-help-wanted
-label][help-wanted]. These might be small fixes to the text, Rust code,
-frontend code, or shell scripts that would help us be more efficient or
-enhance the book in some way!
+많은 양의 읽기나 쓰기가 필요하지 않은 도움을 찾고 있다면, [E-help-wanted 레이블이 있는 열린 이슈][help-wanted]를 확인해본다. 이는 텍스트, 러스트 코드, 프론트엔드 코드 또는 쉘 스크립트에 대한 작은 수정으로, 효율성을 높이거나 책을 향상시키는 데 도움이 될 것이다!
 
 [help-wanted]: https://github.com/rust-lang/book/issues?q=is%3Aopen+is%3Aissue+label%3AE-help-wanted
 
-## Translations
+## 번역
 
-We'd love help translating the book! See the [Translations] label to join in
-efforts that are currently in progress. Open a new issue to start working on
-a new language! We're waiting on [mdbook support] for multiple languages
-before we merge any in, but feel free to start!
+책 번역을 도와주면 좋겠다! 현재 진행 중인 노력에 참여하려면 [Translations] 레이블을 참조한다. 새 언어로 작업을 시작하려면 새 이슈를 열면 된다! 다중 언어를 위한 [mdbook 지원]을 기다리고 있어 병합하기 전까지는 기다려야 하지만, 자유롭게 시작할 수 있다!
 
 [Translations]: https://github.com/rust-lang/book/issues?q=is%3Aopen+is%3Aissue+label%3ATranslations
 [mdbook support]: https://github.com/rust-lang/mdBook/issues/5

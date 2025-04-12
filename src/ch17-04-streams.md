@@ -1,55 +1,26 @@
-## Streams: Futures in Sequence
+## 스트림: 순차적 Future
 
 <!-- Old headings. Do not remove or links may break. -->
 
 <a id="streams"></a>
 
-So far in this chapter, we’ve mostly stuck to individual futures. The one big
-exception was the async channel we used. Recall how we used the receiver for our
-async channel earlier in this chapter in the [“Message
-Passing”][17-02-messages]<!-- ignore --> section. The async `recv` method
-produces a sequence of items over time. This is an instance of a much more
-general pattern known as a _stream_.
+이번 장에서는 주로 개별 Future에 대해 다뤘다. 한 가지 큰 예외는 이전에 사용했던 비동기 채널이다. [“메시지 전달”][17-02-messages]<!-- ignore --> 섹션에서 비동기 채널의 리시버를 어떻게 사용했는지 기억할 것이다. 비동기 `recv` 메서드는 시간에 따라 일련의 아이템을 생성한다. 이는 _스트림_ 이라는 더 일반적인 패턴의 한 예시다.
 
-We saw a sequence of items back in Chapter 13, when we looked at the `Iterator`
-trait in [The Iterator Trait and the `next` Method][iterator-trait]<!-- ignore
---> section, but there are two differences between iterators and the async
-channel receiver. The first difference is time: iterators are synchronous, while
-the channel receiver is asynchronous. The second is the API. When working
-directly with `Iterator`, we call its synchronous `next` method. With the
-`trpl::Receiver` stream in particular, we called an asynchronous `recv` method
-instead. Otherwise, these APIs feel very similar, and that similarity
-isn’t a coincidence. A stream is like an asynchronous form of iteration. Whereas
-the `trpl::Receiver` specifically waits to receive messages, though, the
-general-purpose stream API is much broader: it provides the next item the
-way `Iterator` does, but asynchronously.
+13장에서 `Iterator` 트레이트를 다룰 때 일련의 아이템을 본 적이 있다. 하지만 이터레이터와 비동기 채널 리시버 사이에는 두 가지 차이점이 있다. 첫 번째 차이점은 시간이다. 이터레이터는 동기적이지만, 채널 리시버는 비동기적이다. 두 번째 차이점은 API다. `Iterator`를 직접 사용할 때는 동기적인 `next` 메서드를 호출한다. 반면 `trpl::Receiver` 스트림에서는 비동기적인 `recv` 메서드를 대신 호출한다. 그 외에는 이 두 API가 매우 유사하며, 이 유사성은 우연이 아니다. 스트림은 비동기적인 형태의 이터레이션과 같다. `trpl::Receiver`가 특정 메시지를 수신하기 위해 대기하는 반면, 일반적인 스트림 API는 훨씬 더 넓은 범위를 제공한다. 이 API는 `Iterator`와 같은 방식으로 다음 아이템을 제공하지만, 비동기적으로 작동한다.
 
-The similarity between iterators and streams in Rust means we can actually
-create a stream from any iterator. As with an iterator, we can work with a
-stream by calling its `next` method and then awaiting the output, as in Listing
-17-30.
+Rust에서 이터레이터와 스트림의 유사성은 실제로 어떤 이터레이터든 스트림으로 변환할 수 있다는 것을 의미한다. 이터레이터와 마찬가지로, 스트림의 `next` 메서드를 호출하고 출력을 기다리는 방식으로 작업할 수 있다. 이는 아래 예제 17-30에서 확인할 수 있다.
 
-<Listing number="17-30" caption="Creating a stream from an iterator and printing its values" file-name="src/main.rs">
+<예제 번호="17-30" 설명="이터레이터로부터 스트림을 생성하고 값을 출력하는 예제" 파일 이름="src/main.rs">
 
 ```rust,ignore,does_not_compile
 {{#rustdoc_include ../listings/ch17-async-await/listing-17-30/src/main.rs:stream}}
 ```
 
-</Listing>
+</예제>
 
-We start with an array of numbers, which we convert to an iterator and then call
-`map` on to double all the values. Then we convert the iterator into a stream
-using the `trpl::stream_from_iter` function. Next, we loop over the items in the
-stream as they arrive with the `while let` loop.
+숫자 배열로 시작해 이터레이터로 변환한 후, `map`을 호출해 모든 값을 두 배로 만든다. 그런 다음 `trpl::stream_from_iter` 함수를 사용해 이터레이터를 스트림으로 변환한다. 다음으로, `while let` 루프를 사용해 스트림의 아이템이 도착할 때마다 반복한다.
 
-Unfortunately, when we try to run the code, it doesn’t compile, but instead it
-reports that there’s no `next` method available:
-
-<!-- manual-regeneration
-cd listings/ch17-async-await/listing-17-30
-cargo build
-copy only the error output
--->
+안타깝게도 이 코드를 실행하려고 하면 컴파일되지 않고, `next` 메서드가 없다는 오류가 발생한다.
 
 ```console
 error[E0599]: no method named `next` found for struct `Iter` in the current scope
@@ -77,65 +48,40 @@ help: there is a method `try_next` with a similar name
    |                                        ~~~~~~~~
 ```
 
-As this output explains, the reason for the compiler error is that we need the
-right trait in scope to be able to use the `next` method. Given our discussion
-so far, you might reasonably expect that trait to be `Stream`, but it’s actually
-`StreamExt`. Short for _extension_, `Ext` is a common pattern in the
-Rust community for extending one trait with another.
+이 출력에서 설명하듯, 컴파일러 오류의 원인은 `next` 메서드를 사용하려면 적절한 트레이트가 스코프 내에 있어야 한다는 것이다. 지금까지의 논의를 고려하면, 이 트레이트가 `Stream`일 것이라고 예상할 수 있지만, 실제로는 `StreamExt`다. _extension_ 의 약자인 `Ext`는 Rust 커뮤니티에서 한 트레이트를 다른 트레이트로 확장하는 일반적인 패턴이다.
 
-We’ll explain the `Stream` and `StreamExt` traits in a bit more detail at the
-end of the chapter, but for now all you need to know is that the `Stream` trait
-defines a low-level interface that effectively combines the `Iterator` and
-`Future` traits. `StreamExt` supplies a higher-level set of APIs on top of
-`Stream`, including the `next` method as well as other utility methods similar
-to those provided by the `Iterator` trait. `Stream` and `StreamExt` are not yet
-part of Rust’s standard library, but most ecosystem crates use the same
-definition.
+`Stream`과 `StreamExt` 트레이트에 대해서는 이 장의 끝에서 좀 더 자세히 설명할 것이다. 지금은 `Stream` 트레이트가 `Iterator`와 `Future` 트레이트를 효과적으로 결합한 저수준 인터페이스를 정의한다는 것만 알면 된다. `StreamExt`는 `Stream` 위에 `next` 메서드와 `Iterator` 트레이트에서 제공하는 유틸리티 메서드와 유사한 고수준 API 세트를 제공한다. `Stream`과 `StreamExt`는 아직 Rust의 표준 라이브러리에 포함되지 않았지만, 대부분의 생태계 크레이트가 동일한 정의를 사용한다.
 
-The fix to the compiler error is to add a `use` statement for `trpl::StreamExt`,
-as in Listing 17-31.
+컴파일러 오류를 수정하려면 `trpl::StreamExt`에 대한 `use` 문을 추가해야 한다. 이는 아래 예제 17-31에서 확인할 수 있다.
 
-<Listing number="17-31" caption="Successfully using an iterator as the basis for a stream" file-name="src/main.rs">
+<예제 번호="17-31" 설명="이터레이터를 스트림의 기반으로 성공적으로 사용하는 예제" 파일 이름="src/main.rs">
 
 ```rust
 {{#rustdoc_include ../listings/ch17-async-await/listing-17-31/src/main.rs:all}}
 ```
 
-</Listing>
+</예제>
 
-With all those pieces put together, this code works the way we want! What’s
-more, now that we have `StreamExt` in scope, we can use all of its utility
-methods, just as with iterators. For example, in Listing 17-32, we use the
-`filter` method to filter out everything but multiples of three and five.
+이 모든 조각을 합치면, 이 코드는 원하는 대로 작동한다! 더 나아가, 이제 `StreamExt`가 스코프 내에 있으므로, 이터레이터와 마찬가지로 모든 유틸리티 메서드를 사용할 수 있다. 예를 들어, 예제 17-32에서는 `filter` 메서드를 사용해 3과 5의 배수만 남기도록 필터링한다.
 
-<Listing number="17-32" caption="Filtering a stream with the `StreamExt::filter` method" file-name="src/main.rs">
+<예제 번호="17-32" 설명="`StreamExt::filter` 메서드로 스트림 필터링하기" 파일 이름="src/main.rs">
 
 ```rust
 {{#rustdoc_include ../listings/ch17-async-await/listing-17-32/src/main.rs:all}}
 ```
 
-</Listing>
+</예제>
 
-Of course, this isn’t very interesting, since we could do the same with normal
-iterators and without any async at all. Let’s look at what
-we can do that _is_ unique to streams.
+물론, 이는 일반 이터레이터로도 할 수 있고, 비동기와는 전혀 무관하므로 그다지 흥미롭지 않다. 이제 스트림만의 고유한 기능을 살펴보자.
 
-### Composing Streams
 
-Many concepts are naturally represented as streams: items becoming available in
-a queue, chunks of data being pulled incrementally from the filesystem when the
-full data set is too large for the computer’s memory, or data arriving over the
-network over time. Because streams are futures, we can use them with any other
-kind of future and combine them in interesting ways. For example, we can batch
-up events to avoid triggering too many network calls, set timeouts on sequences
-of long-running operations, or throttle user interface events to avoid doing
-needless work.
+### 스트림 합성하기
 
-Let’s start by building a little stream of messages as a stand-in for a stream
-of data we might see from a WebSocket or another real-time communication
-protocol, as shown in Listing 17-33.
+많은 개념은 자연스럽게 스트림으로 표현할 수 있다. 큐에서 아이템이 사용 가능해지는 경우, 전체 데이터가 컴퓨터 메모리보다 클 때 파일 시스템에서 데이터를 점진적으로 가져오는 경우, 네트워크를 통해 시간이 지남에 따라 데이터가 도착하는 경우 등이 그 예이다. 스트림은 Future이기 때문에 다른 종류의 Future와 함께 사용할 수 있고, 흥미로운 방식으로 조합할 수 있다. 예를 들어, 너무 많은 네트워크 호출을 방지하기 위해 이벤트를 일괄 처리하거나, 장기 실행 작업 시퀀스에 타임아웃을 설정하거나, 불필요한 작업을 피하기 위해 사용자 인터페이스 이벤트를 조절할 수 있다.
 
-<Listing number="17-33" caption="Using the `rx` receiver as a `ReceiverStream`" file-name="src/main.rs">
+먼저 WebSocket이나 다른 실시간 통신 프로토콜에서 볼 수 있는 데이터 스트림을 대체할 메시지 스트림을 만들어 보자. 이는 리스팅 17-33에 나와 있다.
+
+<Listing number="17-33" caption="`rx` 수신기를 `ReceiverStream`으로 사용하기" file-name="src/main.rs">
 
 ```rust
 {{#rustdoc_include ../listings/ch17-async-await/listing-17-33/src/main.rs:all}}
@@ -143,19 +89,13 @@ protocol, as shown in Listing 17-33.
 
 </Listing>
 
-First, we create a function called `get_messages` that returns `impl Stream<Item
-= String>`. For its implementation, we create an async channel, loop over the
-first 10 letters of the English alphabet, and send them across the channel.
+먼저 `get_messages`라는 함수를 만들고, 이 함수는 `impl Stream<Item = String>`을 반환한다. 구현에서는 비동기 채널을 생성하고, 영어 알파벳의 첫 10글자를 반복하며 채널을 통해 전송한다.
 
-We also use a new type: `ReceiverStream`, which converts the `rx` receiver from
-the `trpl::channel` into a `Stream` with a `next` method. Back in `main`, we use
-a `while let` loop to print all the messages from the stream.
+또한 `ReceiverStream`이라는 새로운 타입을 사용한다. 이 타입은 `trpl::channel`의 `rx` 수신기를 `next` 메서드가 있는 `Stream`으로 변환한다. `main` 함수에서는 `while let` 루프를 사용해 스트림에서 모든 메시지를 출력한다.
 
-When we run this code, we get exactly the results we would expect:
+이 코드를 실행하면 예상한 결과를 얻을 수 있다:
 
-<!-- Not extracting output because changes to this output aren't significant;
-the changes are likely to be due to the threads running differently rather than
-changes in the compiler -->
+<!-- 출력을 추출하지 않음. 이 출력의 변경은 중요하지 않으며, 컴파일러의 변경보다는 스레드가 다르게 실행되었기 때문일 가능성이 높음 -->
 
 ```text
 Message: 'a'
@@ -170,12 +110,9 @@ Message: 'i'
 Message: 'j'
 ```
 
-Again, we could do this with the regular `Receiver` API or even the regular
-`Iterator` API, though, so let’s add a feature that requires streams: adding a
-timeout that applies to every item in the stream, and a delay on the items we
-emit, as shown in Listing 17-34.
+하지만 이 작업은 일반 `Receiver` API나 심지어 일반 `Iterator` API로도 할 수 있다. 따라서 스트림이 필요한 기능을 추가해 보자: 스트림의 각 아이템에 타임아웃을 적용하고, 전송하는 아이템에 지연을 추가한다. 이는 리스팅 17-34에 나와 있다.
 
-<Listing number="17-34" caption="Using the `StreamExt::timeout` method to set a time limit on the items in a stream" file-name="src/main.rs">
+<Listing number="17-34" caption="스트림의 아이템에 시간 제한을 설정하기 위해 `StreamExt::timeout` 메서드 사용하기" file-name="src/main.rs">
 
 ```rust
 {{#rustdoc_include ../listings/ch17-async-await/listing-17-34/src/main.rs:timeout}}
@@ -183,21 +120,11 @@ emit, as shown in Listing 17-34.
 
 </Listing>
 
-We start by adding a timeout to the stream with the `timeout` method, which
-comes from the `StreamExt` trait. Then we update the body of the `while let`
-loop, because the stream now returns a `Result`. The `Ok` variant indicates a
-message arrived in time; the `Err` variant indicates that the timeout elapsed
-before any message arrived. We `match` on that result and either print the
-message when we receive it successfully or print a notice about the timeout.
-Finally, notice that we pin the messages after applying the timeout to them,
-because the timeout helper produces a stream that needs to be pinned to be
-polled.
+먼저 `StreamExt` 트레이트의 `timeout` 메서드를 사용해 스트림에 타임아웃을 추가한다. 그런 다음 `while let` 루프의 본문을 업데이트한다. 이제 스트림은 `Result`를 반환한다. `Ok` 변형은 메시지가 시간 내에 도착했음을 나타내고, `Err` 변형은 타임아웃이 지나기 전에 메시지가 도착하지 않았음을 나타낸다. 이 결과를 `match`로 처리하고, 메시지를 성공적으로 받으면 출력하고, 타임아웃이 발생하면 알림을 출력한다. 마지막으로, 타임아웃을 적용한 후 메시지를 고정한다. 타임아웃 헬퍼는 폴링되기 위해 고정이 필요한 스트림을 생성하기 때문이다.
 
-However, because there are no delays between messages, this timeout does not
-change the behavior of the program. Let’s add a variable delay to the messages
-we send, as shown in Listing 17-35.
+하지만 메시지 사이에 지연이 없기 때문에 이 타임아웃은 프로그램의 동작을 변경하지 않는다. 이제 전송하는 메시지에 변수 지연을 추가해 보자. 이는 리스팅 17-35에 나와 있다.
 
-<Listing number="17-35" caption="Sending messages through `tx` with an async delay without making `get_messages` an async function" file-name="src/main.rs">
+<Listing number="17-35" caption="`get_messages`를 비동기 함수로 만들지 않고 `tx`를 통해 메시지를 비동기 지연과 함께 전송하기" file-name="src/main.rs">
 
 ```rust
 {{#rustdoc_include ../listings/ch17-async-await/listing-17-35/src/main.rs:messages}}
@@ -205,40 +132,17 @@ we send, as shown in Listing 17-35.
 
 </Listing>
 
-In `get_messages`, we use the `enumerate` iterator method with the `messages`
-array so that we can get the index of each item we’re sending along with the
-item itself. Then we apply a 100-millisecond delay to even-index items and a
-300-millisecond delay to odd-index items to simulate the different delays we
-might see from a stream of messages in the real world. Because our timeout is
-for 200 milliseconds, this should affect half of the messages.
+`get_messages` 함수에서 `messages` 배열과 함께 `enumerate` 이터레이터 메서드를 사용해 전송하는 각 아이템의 인덱스와 아이템 자체를 얻는다. 그런 다음 짝수 인덱스 아이템에는 100밀리초 지연을, 홀수 인덱스 아이템에는 300밀리초 지연을 적용해 실제 세계의 메시지 스트림에서 볼 수 있는 다양한 지연을 시뮬레이트한다. 타임아웃이 200밀리초이기 때문에 이는 메시지의 절반에 영향을 미칠 것이다.
 
-To sleep between messages in the `get_messages` function without blocking, we
-need to use async. However, we can’t make `get_messages` itself into an async
-function, because then we’d return a `Future<Output = Stream<Item = String>>`
-instead of a `Stream<Item = String>>`. The caller would have to await
-`get_messages` itself to get access to the stream. But remember: everything in a
-given future happens linearly; concurrency happens _between_ futures. Awaiting
-`get_messages` would require it to send all the messages, including the sleep
-delay between each message, before returning the receiver stream. As a result,
-the timeout would be useless. There would be no delays in the stream itself;
-they would all happen before the stream was even available.
+`get_messages` 함수에서 메시지 사이에 블로킹 없이 지연을 추가하려면 비동기를 사용해야 한다. 하지만 `get_messages` 자체를 비동기 함수로 만들 수는 없다. 그렇게 하면 `Future<Output = Stream<Item = String>>`을 반환하게 되고, 스트림 자체가 아니라 스트림에 접근하려면 `get_messages`를 기다려야 하기 때문이다. 하지만 기억하자: 주어진 Future 내의 모든 작업은 선형적으로 발생한다. 동시성은 Future _사이_에서 발생한다. `get_messages`를 기다리면 모든 메시지와 각 메시지 사이의 지연을 전송한 후에야 수신 스트림을 반환하게 된다. 결과적으로 타임아웃은 쓸모 없게 된다. 스트림 자체에는 지연이 없을 것이다. 모든 지연은 스트림이 사용 가능해지기 전에 발생할 것이다.
 
-Instead, we leave `get_messages` as a regular function that returns a stream,
-and we spawn a task to handle the async `sleep` calls.
+대신, `get_messages`를 스트림을 반환하는 일반 함수로 두고, 비동기 `sleep` 호출을 처리하는 작업을 생성한다.
 
-> Note: Calling `spawn_task` in this way works because we already set up our
-> runtime; had we not, it would cause a panic. Other implementations choose
-> different tradeoffs: they might spawn a new runtime and avoid the panic but
-> end up with a bit of extra overhead, or they may simply not provide a
-> standalone way to spawn tasks without reference to a runtime. Make sure you
-> know what tradeoff your runtime has chosen and write your code accordingly!
+> 참고: 이 방식으로 `spawn_task`를 호출하는 것은 런타임을 이미 설정했기 때문에 가능하다. 그렇지 않으면 패닉이 발생할 것이다. 다른 구현은 다른 트레이드오프를 선택한다: 새로운 런타임을 생성하고 패닉을 피하지만 약간의 추가 오버헤드를 발생시키거나, 런타임에 대한 참조 없이 작업을 생성할 수 있는 독립적인 방법을 제공하지 않을 수도 있다. 사용하는 런타임이 어떤 트레이드오프를 선택했는지 알고 그에 맞게 코드를 작성해야 한다!
 
-Now our code has a much more interesting result. Between every other pair of
-messages, a `Problem: Elapsed(())` error.
+이제 코드의 결과가 훨씬 더 흥미로워진다. 매번 다른 메시지 쌍 사이에 `Problem: Elapsed(())` 오류가 발생한다.
 
-<!-- Not extracting output because changes to this output aren't significant;
-the changes are likely to be due to the threads running differently rather than
-changes in the compiler -->
+<!-- 출력을 추출하지 않음. 이 출력의 변경은 중요하지 않으며, 컴파일러의 변경보다는 스레드가 다르게 실행되었기 때문일 가능성이 높음 -->
 
 ```text
 Message: 'a'
@@ -258,27 +162,16 @@ Problem: Elapsed(())
 Message: 'j'
 ```
 
-The timeout doesn’t prevent the messages from arriving in the end. We still get
-all of the original messages, because our channel is _unbounded_: it can hold as
-many messages as we can fit in memory. If the message doesn’t arrive before the
-timeout, our stream handler will account for that, but when it polls the stream
-again, the message may now have arrived.
+타임아웃은 메시지가 결국 도착하는 것을 막지 않는다. 여전히 모든 원래 메시지를 받는다. 왜냐하면 채널이 _무제한_이기 때문이다: 메모리에 맞는 한 많은 메시지를 보유할 수 있다. 메시지가 타임아웃 전에 도착하지 않으면 스트림 핸들러는 이를 처리하지만, 스트림을 다시 폴링할 때 메시지가 도착했을 수 있다.
 
-You can get different behavior if needed by using other kinds of channels or
-other kinds of streams more generally. Let’s see one of those in practice by
-combining a stream of time intervals with this stream of messages.
+필요한 경우 다른 종류의 채널이나 일반적으로 다른 종류의 스트림을 사용해 다른 동작을 얻을 수 있다. 이제 시간 간격 스트림과 이 메시지 스트림을 결합해 실제로 하나를 살펴보자.
 
-### Merging Streams
 
-First, let’s create another stream, which will emit an item every millisecond if
-we let it run directly. For simplicity, we can use the `sleep` function to send
-a message on a delay and combine it with the same approach we used in
-`get_messages` of creating a stream from a channel. The difference is that this
-time, we’re going to send back the count of intervals that have elapsed, so the
-return type will be `impl Stream<Item = u32>`, and we can call the function
-`get_intervals` (see Listing 17-36).
+### 스트림 병합하기
 
-<Listing number="17-36" caption="Creating a stream with a counter that will be emitted once every millisecond" file-name="src/main.rs">
+먼저, 직접 실행할 경우 매 밀리초마다 아이템을 방출하는 스트림을 생성한다. 간단하게 `sleep` 함수를 사용해 메시지를 지연 전송하고, `get_messages`에서 사용한 채널 기반 스트림 생성 방식을 활용한다. 이번에는 경과한 간격의 카운트를 반환하므로, 반환 타입은 `impl Stream<Item = u32>`가 되고, 이 함수를 `get_intervals`라고 부른다(리스트 17-36 참조).
+
+<Listing number="17-36" caption="매 밀리초마다 카운트를 방출하는 스트림 생성" file-name="src/main.rs">
 
 ```rust
 {{#rustdoc_include ../listings/ch17-async-await/listing-17-36/src/main.rs:intervals}}
@@ -286,22 +179,13 @@ return type will be `impl Stream<Item = u32>`, and we can call the function
 
 </Listing>
 
-We start by defining a `count` in the task. (We could define it outside the
-task, too, but it’s clearer to limit the scope of any given variable.) Then we
-create an infinite loop. Each iteration of the loop asynchronously sleeps for
-one millisecond, increments the count, and then sends it over the channel.
-Because this is all wrapped in the task created by `spawn_task`, all of
-it—including the infinite loop—will get cleaned up along with the runtime.
+먼저 태스크 내부에 `count`를 정의한다. (태스크 외부에서 정의할 수도 있지만, 변수의 범위를 제한하는 것이 더 명확하다.) 그런 다음 무한 루프를 생성한다. 루프의 각 반복은 비동기적으로 1밀리초 동안 대기하고, 카운트를 증가시킨 후 채널을 통해 전송한다. 이 모든 것이 `spawn_task`로 생성된 태스크에 포함되므로, 무한 루프를 포함한 모든 것이 런타임과 함께 정리된다.
 
-This kind of infinite loop, which ends only when the whole runtime gets torn
-down, is fairly common in async Rust: many programs need to keep running
-indefinitely. With async, this doesn’t block anything else, as long as there is
-at least one await point in each iteration through the loop.
+이런 종류의 무한 루프는 전체 런타임이 종료될 때까지 계속 실행되며, 비동기 Rust에서 꽤 흔히 볼 수 있다. 많은 프로그램이 무한히 실행되어야 하기 때문이다. 비동기에서는 루프의 각 반복에 최소 하나의 await 포인트가 있으면 다른 작업을 블로킹하지 않는다.
 
-Now, back in our main function’s async block, we can attempt to merge the
-`messages` and `intervals` streams, as shown in Listing 17-37.
+이제 메인 함수의 async 블록으로 돌아가 `messages`와 `intervals` 스트림을 병합해 본다(리스트 17-37 참조).
 
-<Listing number="17-37" caption="Attempting to merge the `messages` and `intervals` streams" file-name="src/main.rs">
+<Listing number="17-37" caption="`messages`와 `intervals` 스트림 병합 시도" file-name="src/main.rs">
 
 ```rust,ignore,does_not_compile
 {{#rustdoc_include ../listings/ch17-async-await/listing-17-37/src/main.rs:main}}
@@ -309,26 +193,11 @@ Now, back in our main function’s async block, we can attempt to merge the
 
 </Listing>
 
-We start by calling `get_intervals`. Then we merge the `messages` and
-`intervals` streams with the `merge` method, which combines multiple streams
-into one stream that produces items from any of the source streams as soon as
-the items are available, without imposing any particular ordering. Finally, we
-loop over that combined stream instead of over `messages`.
+먼저 `get_intervals`를 호출한다. 그런 다음 `messages`와 `intervals` 스트림을 `merge` 메서드로 병합한다. 이 메서드는 여러 스트림을 하나로 합치며, 소스 스트림에서 아이템이 사용 가능해지면 순서에 관계없이 즉시 방출한다. 마지막으로 `messages` 대신 병합된 스트림을 루프로 처리한다.
 
-At this point, neither `messages` nor `intervals` needs to be pinned or mutable,
-because both will be combined into the single `merged` stream. However, this
-call to `merge` doesn’t compile! (Neither does the `next` call in the `while
-let` loop, but we’ll come back to that.) This is because the two streams have
-different types. The `messages` stream has the type `Timeout<impl Stream<Item =
-String>>`, where `Timeout` is the type that implements `Stream` for a `timeout`
-call. The `intervals` stream has the type `impl Stream<Item = u32>`. To merge
-these two streams, we need to transform one of them to match the other. We’ll
-rework the intervals stream, because messages is already in the basic format we
-want and has to handle timeout errors (see Listing 17-38).
+이 시점에서 `messages`와 `intervals`는 고정되거나 변경 가능할 필요가 없다. 두 스트림이 단일 `merged` 스트림으로 결합되기 때문이다. 그러나 이 `merge` 호출은 컴파일되지 않는다! (`while let` 루프의 `next` 호출도 마찬가지지만, 이 문제는 나중에 다시 다룬다.) 이는 두 스트림의 타입이 다르기 때문이다. `messages` 스트림은 `Timeout<impl Stream<Item = String>>` 타입을 가지며, `Timeout`은 `timeout` 호출에 대해 `Stream`을 구현한 타입이다. `intervals` 스트림은 `impl Stream<Item = u32>` 타입을 가진다. 이 두 스트림을 병합하려면 하나의 타입을 다른 타입과 맞춰야 한다. `messages`는 이미 원하는 기본 형식이며 타임아웃 오류를 처리해야 하므로, `intervals` 스트림을 수정한다(리스트 17-38 참조).
 
-<!-- We cannot directly test this one, because it never stops. -->
-
-<Listing number="17-38" caption="Aligning the type of the the `intervals` stream with the type of the `messages` stream" file-name="src/main.rs">
+<Listing number="17-38" caption="`intervals` 스트림의 타입을 `messages` 스트림과 맞추기" file-name="src/main.rs">
 
 ```rust,ignore
 {{#rustdoc_include ../listings/ch17-async-await/listing-17-38/src/main.rs:main}}
@@ -336,21 +205,7 @@ want and has to handle timeout errors (see Listing 17-38).
 
 </Listing>
 
-First, we can use the `map` helper method to transform the `intervals` into a
-string. Second, we need to match the `Timeout` from `messages`. Because we don’t
-actually _want_ a timeout for `intervals`, though, we can just create a timeout
-which is longer than the other durations we are using. Here, we create a
-10-second timeout with `Duration::from_secs(10)`. Finally, we need to make
-`stream` mutable, so that the `while let` loop’s `next` calls can iterate
-through the stream, and pin it so that it’s safe to do so. That gets us _almost_
-to where we need to be. Everything type checks. If you run this, though, there
-will be two problems. First, it will never stop! You’ll need to stop it with
-<span class="keystroke">ctrl-c</span>. Second, the messages from the English
-alphabet will be buried in the midst of all the interval counter messages:
-
-<!-- Not extracting output because changes to this output aren't significant;
-the changes are likely to be due to the tasks running differently rather than
-changes in the compiler -->
+먼저 `map` 헬퍼 메서드를 사용해 `intervals`를 문자열로 변환한다. 두 번째로, `messages`의 `Timeout`과 일치시켜야 한다. 그러나 `intervals`에 실제로 타임아웃을 원하지 않으므로, 사용 중인 다른 지속 시간보다 긴 타임아웃을 생성한다. 여기서는 `Duration::from_secs(10)`로 10초 타임아웃을 생성한다. 마지막으로 `while let` 루프의 `next` 호출이 스트림을 반복할 수 있도록 `stream`을 변경 가능하게 만들고, 안전하게 처리할 수 있도록 고정한다. 이렇게 하면 거의 필요한 지점에 도달한다. 모든 것이 타입 검사를 통과한다. 그러나 이 코드를 실행하면 두 가지 문제가 발생한다. 첫째, 절대 멈추지 않는다! <span class="keystroke">ctrl-c</span>로 중지해야 한다. 둘째, 영어 알파벳 메시지가 모든 간격 카운터 메시지 사이에 묻힌다.
 
 ```text
 --snip--
@@ -364,9 +219,9 @@ Interval: 43
 --snip--
 ```
 
-Listing 17-39 shows one way to solve these last two problems.
+리스트 17-39는 이 두 문제를 해결하는 한 가지 방법을 보여준다.
 
-<Listing number="17-39" caption="Using `throttle` and `take` to manage the merged streams" file-name="src/main.rs">
+<Listing number="17-39" caption="`throttle`과 `take`를 사용해 병합된 스트림 관리" file-name="src/main.rs">
 
 ```rust
 {{#rustdoc_include ../listings/ch17-async-await/listing-17-39/src/main.rs:throttle}}
@@ -374,30 +229,11 @@ Listing 17-39 shows one way to solve these last two problems.
 
 </Listing>
 
-First, we use the `throttle` method on the `intervals` stream so that it doesn’t
-overwhelm the `messages` stream. _Throttling_ is a way of limiting the rate at
-which a function will be called—or, in this case, how often the stream will be
-polled. Once every 100 milliseconds should do, because that’s roughly how often
-our messages arrive.
+먼저 `intervals` 스트림에 `throttle` 메서드를 적용해 `messages` 스트림을 압도하지 않도록 한다. _쓰로틀링_은 함수 호출 빈도를 제한하는 방법이다. 이 경우 스트림이 폴링되는 빈도를 제한한다. 메시지가 대략 100밀리초마다 도착하므로, 100밀리초마다 한 번씩 처리하도록 설정한다.
 
-To limit the number of items we will accept from a stream, we apply the `take`
-method to the `merged` stream, because we want to limit the final output, not
-just one stream or the other.
+스트림에서 받을 아이템의 수를 제한하기 위해 `merged` 스트림에 `take` 메서드를 적용한다. 최종 출력만 제한하려는 것이지, 하나의 스트림만 제한하려는 것이 아니기 때문이다.
 
-Now when we run the program, it stops after pulling 20 items from the stream,
-and the intervals don’t overwhelm the messages. We also don’t get `Interval:
-100` or `Interval: 200` or so on, but instead get `Interval: 1`, `Interval: 2`,
-and so on—even though we have a source stream that _can_ produce an event every
-millisecond. That’s because the `throttle` call produces a new stream that wraps
-the original stream so that the original stream gets polled only at the throttle
-rate, not its own “native” rate. We don’t have a bunch of unhandled interval
-messages we’re choosing to ignore. Instead, we never produce those interval
-messages in the first place! This is the inherent “laziness” of Rust’s futures
-at work again, allowing us to choose our performance characteristics.
-
-<!-- Not extracting output because changes to this output aren't significant;
-the changes are likely to be due to the threads running differently rather than
-changes in the compiler -->
+이제 프로그램을 실행하면 스트림에서 20개의 아이템을 가져온 후 멈추고, 간격 메시지가 메시지를 압도하지 않는다. 또한 `Interval: 100`이나 `Interval: 200` 같은 메시지 대신 `Interval: 1`, `Interval: 2` 등이 출력된다. 원본 스트림이 매 밀리초마다 이벤트를 생성할 수 있음에도 불구하고 말이다. 이는 `throttle` 호출이 원본 스트림을 감싸는 새로운 스트림을 생성하기 때문이다. 원본 스트림은 자체 "기본" 속도가 아니라 쓰로틀 속도로만 폴링된다. 처리되지 않은 간격 메시지를 무시하는 것이 아니라, 처음부터 그런 메시지를 생성하지 않는다. 이는 Rust 퓨처의 고유한 "게으름"이 다시 작동하는 것으로, 성능 특성을 선택할 수 있게 해준다.
 
 ```text
 Interval: 1
@@ -422,16 +258,9 @@ Problem: Elapsed(())
 Interval: 12
 ```
 
-There’s one last thing we need to handle: errors! With both of these
-channel-based streams, the `send` calls could fail when the other side of the
-channel closes—and that’s just a matter of how the runtime executes the futures
-that make up the stream. Up until now, we’ve ignored this possibility by calling
-`unwrap`, but in a well-behaved app, we should explicitly handle the error, at
-minimum by ending the loop so we don’t try to send any more messages. Listing
-17-40 shows a simple error strategy: print the issue and then `break` from the
-loops.
+마지막으로 처리해야 할 것은 오류다! 이 두 채널 기반 스트림에서 `send` 호출은 채널의 반대쪽이 닫히면 실패할 수 있다. 이는 스트림을 구성하는 퓨처가 런타임에서 어떻게 실행되는지에 달려 있다. 지금까지는 `unwrap`을 호출해 이 가능성을 무시했지만, 잘 동작하는 앱에서는 최소한 루프를 종료해 더 이상 메시지를 보내지 않도록 명시적으로 오류를 처리해야 한다. 리스트 17-40은 간단한 오류 처리 전략을 보여준다. 문제를 출력한 후 루프에서 `break`한다.
 
-<Listing number="17-40" caption="Handling errors and shutting down the loops">
+<Listing number="17-40" caption="오류 처리 및 루프 종료">
 
 ```rust
 {{#rustdoc_include ../listings/ch17-async-await/listing-17-40/src/main.rs:errors}}
@@ -439,12 +268,11 @@ loops.
 
 </Listing>
 
-As usual, the correct way to handle a message send error will vary; just make
-sure you have a strategy.
+일반적으로 메시지 전송 오류를 처리하는 올바른 방법은 다양하므로, 반드시 전략을 세워야 한다.
 
-Now that we’ve seen a bunch of async in practice, let’s take a step back and dig
-into a few of the details of how `Future`, `Stream`, and the other key traits
-Rust uses to make async work.
+이제 실제로 비동기 코드를 많이 살펴봤으니, 한 걸음 물러나 `Future`, `Stream`, 그리고 Rust가 비동기를 가능하게 하는 다른 주요 트레이트의 세부 사항을 깊이 있게 알아본다.
 
 [17-02-messages]: ch17-02-concurrency-with-async.html#message-passing
 [iterator-trait]: ch13-02-iterators.html#the-iterator-trait-and-the-next-method
+
+

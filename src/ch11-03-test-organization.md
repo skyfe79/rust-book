@@ -1,63 +1,35 @@
-## Test Organization
+## 테스트 조직화
 
-As mentioned at the start of the chapter, testing is a complex discipline, and
-different people use different terminology and organization. The Rust community
-thinks about tests in terms of two main categories: unit tests and integration
-tests. _Unit tests_ are small and more focused, testing one module in isolation
-at a time, and can test private interfaces. _Integration tests_ are entirely
-external to your library and use your code in the same way any other external
-code would, using only the public interface and potentially exercising multiple
-modules per test.
+이 장의 시작 부분에서 언급했듯이, 테스트는 복잡한 분야이며 사람마다 사용하는 용어와 조직화 방식이 다르다. Rust 커뮤니티는 테스트를 크게 두 가지 범주로 나누어 생각한다: 단위 테스트와 통합 테스트. **단위 테스트**는 작고 집중적이며, 한 번에 하나의 모듈을 독립적으로 테스트하고, 비공개 인터페이스도 테스트할 수 있다. **통합 테스트**는 라이브러리 외부에서 이루어지며, 다른 외부 코드가 사용하는 방식과 동일하게 코드를 사용한다. 통합 테스트는 공개 인터페이스만을 사용하며, 하나의 테스트에서 여러 모듈을 동시에 테스트할 수도 있다.
 
-Writing both kinds of tests is important to ensure that the pieces of your
-library are doing what you expect them to, separately and together.
+두 종류의 테스트를 모두 작성하는 것은 라이브러리의 각 부분이 개별적으로 그리고 함께 작동할 때 기대한 대로 동작하는지 확인하는 데 중요하다.
 
-### Unit Tests
 
-The purpose of unit tests is to test each unit of code in isolation from the
-rest of the code to quickly pinpoint where code is and isn’t working as
-expected. You’ll put unit tests in the _src_ directory in each file with the
-code that they’re testing. The convention is to create a module named `tests`
-in each file to contain the test functions and to annotate the module with
-`cfg(test)`.
+### 유닛 테스트
 
-#### The Tests Module and `#[cfg(test)]`
+유닛 테스트의 목적은 코드의 각 단위를 독립적으로 테스트하여 예상대로 작동하는지 여부를 빠르게 파악하는 것이다. 유닛 테스트는 테스트 대상 코드가 있는 파일과 동일한 _src_ 디렉토리에 위치시킨다. 일반적인 관례는 각 파일에 `tests`라는 모듈을 만들어 테스트 함수를 포함시키고, 이 모듈에 `cfg(test)`를 어노테이션으로 추가하는 것이다.
 
-The `#[cfg(test)]` annotation on the `tests` module tells Rust to compile and
-run the test code only when you run `cargo test`, not when you run `cargo
-build`. This saves compile time when you only want to build the library and
-saves space in the resultant compiled artifact because the tests are not
-included. You’ll see that because integration tests go in a different
-directory, they don’t need the `#[cfg(test)]` annotation. However, because unit
-tests go in the same files as the code, you’ll use `#[cfg(test)]` to specify
-that they shouldn’t be included in the compiled result.
 
-Recall that when we generated the new `adder` project in the first section of
-this chapter, Cargo generated this code for us:
+#### 테스트 모듈과 `#[cfg(test)]`
 
-<span class="filename">Filename: src/lib.rs</span>
+`tests` 모듈에 있는 `#[cfg(test)]` 어노테이션은 `cargo test`를 실행할 때만 테스트 코드를 컴파일하고 실행하도록 Rust에 지시한다. `cargo build`를 실행할 때는 테스트 코드가 포함되지 않는다. 이렇게 하면 라이브러리만 빌드하고자 할 때 컴파일 시간을 절약할 수 있으며, 테스트 코드가 포함되지 않기 때문에 최종 컴파일 결과물의 크기도 줄어든다. 통합 테스트는 별도의 디렉터리에 위치하기 때문에 `#[cfg(test)]` 어노테이션이 필요하지 않다. 반면, 단위 테스트는 코드와 같은 파일에 위치하기 때문에 `#[cfg(test)]`를 사용해 컴파일 결과에 포함되지 않도록 지정해야 한다.
+
+이 장의 첫 번째 섹션에서 새로운 `adder` 프로젝트를 생성했을 때, Cargo가 자동으로 생성한 코드를 다시 살펴보자:
+
+<span class="filename">파일명: src/lib.rs</span>
 
 ```rust,noplayground
 {{#rustdoc_include ../listings/ch11-writing-automated-tests/listing-11-01/src/lib.rs}}
 ```
 
-On the automatically generated `tests` module, the attribute `cfg` stands for
-_configuration_ and tells Rust that the following item should only be included
-given a certain configuration option. In this case, the configuration option is
-`test`, which is provided by Rust for compiling and running tests. By using the
-`cfg` attribute, Cargo compiles our test code only if we actively run the tests
-with `cargo test`. This includes any helper functions that might be within this
-module, in addition to the functions annotated with `#[test]`.
+자동으로 생성된 `tests` 모듈에서 `cfg` 속성은 _configuration_을 의미하며, 특정 구성 옵션이 주어졌을 때만 다음 항목을 포함하도록 Rust에 지시한다. 이 경우 구성 옵션은 `test`이며, Rust가 테스트를 컴파일하고 실행하기 위해 제공한다. `cfg` 속성을 사용하면 `cargo test`로 테스트를 실행할 때만 테스트 코드를 컴파일한다. 이는 `#[test]`로 어노테이션된 함수뿐만 아니라 이 모듈 내에 있는 모든 헬퍼 함수도 포함한다.
 
-#### Testing Private Functions
 
-There’s debate within the testing community about whether or not private
-functions should be tested directly, and other languages make it difficult or
-impossible to test private functions. Regardless of which testing ideology you
-adhere to, Rust’s privacy rules do allow you to test private functions.
-Consider the code in Listing 11-12 with the private function `internal_adder`.
+#### 비공개 함수 테스트
 
-<Listing number="11-12" file-name="src/lib.rs" caption="Testing a private function">
+테스트 커뮤니티에서는 비공개 함수를 직접 테스트해야 하는지에 대한 논쟁이 있다. 다른 프로그래밍 언어에서는 비공개 함수를 테스트하기 어렵거나 불가능한 경우가 많다. 그러나 Rust의 접근 제어 규칙은 비공개 함수도 테스트할 수 있도록 허용한다. 비공개 함수 `internal_adder`를 포함한 Listing 11-12의 코드를 살펴보자.
+
+<Listing number="11-12" file-name="src/lib.rs" caption="비공개 함수 테스트">
 
 ```rust,noplayground
 {{#rustdoc_include ../listings/ch11-writing-automated-tests/listing-11-12/src/lib.rs}}
@@ -65,35 +37,19 @@ Consider the code in Listing 11-12 with the private function `internal_adder`.
 
 </Listing>
 
-Note that the `internal_adder` function is not marked as `pub`. Tests are just
-Rust code, and the `tests` module is just another module. As we discussed in
-[“Paths for Referring to an Item in the Module Tree”][paths]<!-- ignore -->,
-items in child modules can use the items in their ancestor modules. In this
-test, we bring all of the `tests` module’s parent’s items into scope with `use
-super::*`, and then the test can call `internal_adder`. If you don’t think
-private functions should be tested, there’s nothing in Rust that will compel you
-to do so.
+`internal_adder` 함수는 `pub`으로 표시되지 않았다. 테스트는 단순히 Rust 코드이며, `tests` 모듈은 또 다른 모듈일 뿐이다. [“모듈 트리에서 항목 참조하기”][paths]<!-- ignore -->에서 논의한 바와 같이, 자식 모듈의 항목은 상위 모듈의 항목을 사용할 수 있다. 이 테스트에서는 `use super::*`를 통해 `tests` 모듈의 상위 모듈 항목을 스코프로 가져오고, `internal_adder`를 호출할 수 있다. 비공개 함수를 테스트하지 않으려는 경우, Rust는 이를 강제하지 않는다.
 
-### Integration Tests
 
-In Rust, integration tests are entirely external to your library. They use your
-library in the same way any other code would, which means they can only call
-functions that are part of your library’s public API. Their purpose is to test
-whether many parts of your library work together correctly. Units of code that
-work correctly on their own could have problems when integrated, so test
-coverage of the integrated code is important as well. To create integration
-tests, you first need a _tests_ directory.
+### 통합 테스트
 
-#### The _tests_ Directory
+Rust에서 통합 테스트는 라이브러리 외부에 완전히 분리되어 있다. 통합 테스트는 다른 코드와 마찬가지로 라이브러리를 사용하며, 이는 라이브러리의 공개 API에 속한 함수만 호출할 수 있다는 의미다. 통합 테스트의 목적은 라이브러리의 여러 부분이 올바르게 함께 작동하는지 확인하는 것이다. 각각의 코드 단위가 독립적으로는 정상적으로 작동하더라도 통합 시 문제가 발생할 수 있으므로, 통합된 코드에 대한 테스트 커버리지도 중요하다. 통합 테스트를 생성하려면 먼저 _tests_ 디렉토리가 필요하다.
 
-We create a _tests_ directory at the top level of our project directory, next
-to _src_. Cargo knows to look for integration test files in this directory. We
-can then make as many test files as we want, and Cargo will compile each of the
-files as an individual crate.
 
-Let’s create an integration test. With the code in Listing 11-12 still in the
-_src/lib.rs_ file, make a _tests_ directory, and create a new file named
-_tests/integration_test.rs_. Your directory structure should look like this:
+#### _tests_ 디렉토리
+
+프로젝트 디렉토리의 최상위 레벨에 _src_ 디렉토리 옆에 _tests_ 디렉토리를 만든다. Cargo는 이 디렉토리에서 통합 테스트 파일을 찾는다. 필요한 만큼 테스트 파일을 만들 수 있으며, Cargo는 각 파일을 개별 크레이트로 컴파일한다.
+
+통합 테스트를 만들어 보자. _src/lib.rs_ 파일에 있는 코드를 그대로 유지한 상태에서 _tests_ 디렉토리를 만들고, _tests/integration_test.rs_ 파일을 생성한다. 디렉토리 구조는 다음과 같아야 한다:
 
 ```text
 adder
@@ -105,9 +61,9 @@ adder
     └── integration_test.rs
 ```
 
-Enter the code in Listing 11-13 into the _tests/integration_test.rs_ file.
+_tests/integration_test.rs_ 파일에 다음 코드를 입력한다.
 
-<Listing number="11-13" file-name="tests/integration_test.rs" caption="An integration test of a function in the `adder` crate">
+<Listing number="11-13" file-name="tests/integration_test.rs" caption="`adder` 크레이트의 함수를 테스트하는 통합 테스트">
 
 ```rust,ignore
 {{#rustdoc_include ../listings/ch11-writing-automated-tests/listing-11-13/tests/integration_test.rs}}
@@ -115,85 +71,50 @@ Enter the code in Listing 11-13 into the _tests/integration_test.rs_ file.
 
 </Listing>
 
-Each file in the _tests_ directory is a separate crate, so we need to bring our
-library into each test crate’s scope. For that reason we add `use
-adder::add_two;` at the top of the code, which we didn’t need in the unit tests.
+_tests_ 디렉토리의 각 파일은 별도의 크레이트이므로, 라이브러리를 각 테스트 크레이트의 스코프로 가져와야 한다. 그래서 코드 상단에 `use adder::add_two;`를 추가한다. 이 과정은 단위 테스트에서는 필요하지 않다.
 
-We don’t need to annotate any code in _tests/integration_test.rs_ with
-`#[cfg(test)]`. Cargo treats the _tests_ directory specially and compiles files
-in this directory only when we run `cargo test`. Run `cargo test` now:
+_tests/integration_test.rs_ 파일의 코드에 `#[cfg(test)]`를 붙일 필요는 없다. Cargo는 _tests_ 디렉토리를 특별히 취급하며, `cargo test`를 실행할 때만 이 디렉토리의 파일을 컴파일한다. 이제 `cargo test`를 실행해 보자:
 
 ```console
 {{#include ../listings/ch11-writing-automated-tests/listing-11-13/output.txt}}
 ```
 
-The three sections of output include the unit tests, the integration test, and
-the doc tests. Note that if any test in a section fails, the following sections
-will not be run. For example, if a unit test fails, there won’t be any output
-for integration and doc tests because those tests will only be run if all unit
-tests are passing.
+출력 결과는 세 부분으로 나뉜다: 단위 테스트, 통합 테스트, 문서 테스트. 한 섹션의 테스트가 실패하면 다음 섹션은 실행되지 않는다. 예를 들어, 단위 테스트가 실패하면 통합 테스트와 문서 테스트는 실행되지 않는다.
 
-The first section for the unit tests is the same as we’ve been seeing: one line
-for each unit test (one named `internal` that we added in Listing 11-12) and
-then a summary line for the unit tests.
+단위 테스트 섹션의 첫 부분은 이전과 동일하다: 각 단위 테스트에 대한 한 줄(Listing 11-12에서 추가한 `internal` 테스트)과 단위 테스트 결과 요약 줄이 표시된다.
 
-The integration tests section starts with the line `Running
-tests/integration_test.rs`. Next, there is a line for each test function in
-that integration test and a summary line for the results of the integration
-test just before the `Doc-tests adder` section starts.
+통합 테스트 섹션은 `Running tests/integration_test.rs` 줄로 시작한다. 그 다음에는 통합 테스트 파일의 각 테스트 함수에 대한 줄과 통합 테스트 결과 요약 줄이 표시된다. 그 후 `Doc-tests adder` 섹션이 시작된다.
 
-Each integration test file has its own section, so if we add more files in the
-_tests_ directory, there will be more integration test sections.
+각 통합 테스트 파일은 별도의 섹션을 가지므로, _tests_ 디렉토리에 더 많은 파일을 추가하면 통합 테스트 섹션도 늘어난다.
 
-We can still run a particular integration test function by specifying the test
-function’s name as an argument to `cargo test`. To run all the tests in a
-particular integration test file, use the `--test` argument of `cargo test`
-followed by the name of the file:
+특정 통합 테스트 함수만 실행하려면 `cargo test`에 테스트 함수 이름을 인자로 전달한다. 특정 통합 테스트 파일의 모든 테스트를 실행하려면 `cargo test`의 `--test` 인자 뒤에 파일 이름을 붙인다:
 
 ```console
 {{#include ../listings/ch11-writing-automated-tests/output-only-05-single-integration/output.txt}}
 ```
 
-This command runs only the tests in the _tests/integration_test.rs_ file.
+이 명령어는 _tests/integration_test.rs_ 파일의 테스트만 실행한다.
 
-#### Submodules in Integration Tests
 
-As you add more integration tests, you might want to make more files in the
-_tests_ directory to help organize them; for example, you can group the test
-functions by the functionality they’re testing. As mentioned earlier, each file
-in the _tests_ directory is compiled as its own separate crate, which is useful
-for creating separate scopes to more closely imitate the way end users will be
-using your crate. However, this means files in the _tests_ directory don’t
-share the same behavior as files in _src_ do, as you learned in Chapter 7
-regarding how to separate code into modules and files.
+#### 통합 테스트에서의 서브모듈
 
-The different behavior of _tests_ directory files is most noticeable when you
-have a set of helper functions to use in multiple integration test files and
-you try to follow the steps in the [“Separating Modules into Different
-Files”][separating-modules-into-files]<!-- ignore --> section of Chapter 7 to
-extract them into a common module. For example, if we create _tests/common.rs_
-and place a function named `setup` in it, we can add some code to `setup` that
-we want to call from multiple test functions in multiple test files:
+통합 테스트를 추가하면서, 테스트를 체계적으로 관리하기 위해 _tests_ 디렉터리에 더 많은 파일을 만들고 싶을 수 있다. 예를 들어, 테스트 기능에 따라 테스트 함수를 그룹화할 수 있다. 앞서 언급했듯이, _tests_ 디렉터리의 각 파일은 별도의 크레이트로 컴파일된다. 이는 엔드 유저가 크레이트를 사용하는 방식을 더 정확히 모방하기 위해 별도의 스코프를 만드는 데 유용하다. 하지만 이는 _tests_ 디렉터리의 파일들이 _src_ 디렉터리의 파일들과 동일한 동작을 공유하지 않는다는 것을 의미한다. 이는 7장에서 코드를 모듈과 파일로 분리하는 방법을 배울 때 이미 다룬 내용이다.
 
-<span class="filename">Filename: tests/common.rs</span>
+_tests_ 디렉터리 파일들의 다른 동작은 여러 통합 테스트 파일에서 사용할 헬퍼 함수 세트가 있고, 이를 공통 모듈로 추출하기 위해 7장의 [“모듈을 다른 파일로 분리하기”][separating-modules-into-files]<!-- ignore --> 섹션의 단계를 따르려고 할 때 가장 두드러진다. 예를 들어, _tests/common.rs_ 파일을 만들고 그 안에 `setup`이라는 함수를 추가한다면, 여러 테스트 파일의 여러 테스트 함수에서 호출하고 싶은 코드를 `setup`에 추가할 수 있다:
+
+<span class="filename">파일명: tests/common.rs</span>
 
 ```rust,noplayground
 {{#rustdoc_include ../listings/ch11-writing-automated-tests/no-listing-12-shared-test-code-problem/tests/common.rs}}
 ```
 
-When we run the tests again, we’ll see a new section in the test output for the
-_common.rs_ file, even though this file doesn’t contain any test functions nor
-did we call the `setup` function from anywhere:
+테스트를 다시 실행하면, _common.rs_ 파일에 대한 새로운 섹션이 테스트 출력에 나타난다. 이 파일은 테스트 함수를 포함하지도 않았고, `setup` 함수를 어디에서도 호출하지 않았음에도 불구하고:
 
 ```console
 {{#include ../listings/ch11-writing-automated-tests/no-listing-12-shared-test-code-problem/output.txt}}
 ```
 
-Having `common` appear in the test results with `running 0 tests` displayed for
-it is not what we wanted. We just wanted to share some code with the other
-integration test files. To avoid having `common` appear in the test output,
-instead of creating _tests/common.rs_, we’ll create _tests/common/mod.rs_. The
-project directory now looks like this:
+`common`이 테스트 결과에 나타나고 `running 0 tests`가 표시되는 것은 원하는 바가 아니다. 단지 다른 통합 테스트 파일과 일부 코드를 공유하고 싶었을 뿐이다. `common`이 테스트 출력에 나타나지 않도록 하려면, _tests/common.rs_ 파일을 만드는 대신 _tests/common/mod.rs_ 파일을 만든다. 이제 프로젝트 디렉터리는 다음과 같이 보인다:
 
 ```text
 ├── Cargo.lock
@@ -206,57 +127,34 @@ project directory now looks like this:
     └── integration_test.rs
 ```
 
-This is the older naming convention that Rust also understands that we mentioned
-in [“Alternate File Paths”][alt-paths]<!-- ignore --> in Chapter 7. Naming the
-file this way tells Rust not to treat the `common` module as an integration test
-file. When we move the `setup` function code into _tests/common/mod.rs_ and
-delete the _tests/common.rs_ file, the section in the test output will no longer
-appear. Files in subdirectories of the _tests_ directory don’t get compiled as
-separate crates or have sections in the test output.
+이것은 7장의 [“대체 파일 경로”][alt-paths]<!-- ignore -->에서 언급한 Rust가 이해하는 오래된 명명 규칙이다. 파일을 이렇게 명명하면 Rust는 `common` 모듈을 통합 테스트 파일로 취급하지 않는다. `setup` 함수 코드를 _tests/common/mod.rs_로 옮기고 _tests/common.rs_ 파일을 삭제하면, 테스트 출력의 해당 섹션은 더 이상 나타나지 않는다. _tests_ 디렉터리의 하위 디렉터리에 있는 파일들은 별도의 크레이트로 컴파일되지 않으며, 테스트 출력에 섹션이 나타나지 않는다.
 
-After we’ve created _tests/common/mod.rs_, we can use it from any of the
-integration test files as a module. Here’s an example of calling the `setup`
-function from the `it_adds_two` test in _tests/integration_test.rs_:
+_tests/common/mod.rs_ 파일을 생성한 후에는, 이를 모듈로 사용해 어떤 통합 테스트 파일에서든 사용할 수 있다. 다음은 _tests/integration_test.rs_ 파일의 `it_adds_two` 테스트에서 `setup` 함수를 호출하는 예제다:
 
-<span class="filename">Filename: tests/integration_test.rs</span>
+<span class="filename">파일명: tests/integration_test.rs</span>
 
 ```rust,ignore
 {{#rustdoc_include ../listings/ch11-writing-automated-tests/no-listing-13-fix-shared-test-code-problem/tests/integration_test.rs}}
 ```
 
-Note that the `mod common;` declaration is the same as the module declaration
-we demonstrated in Listing 7-21. Then, in the test function, we can call the
-`common::setup()` function.
+`mod common;` 선언은 Listing 7-21에서 보여준 모듈 선언과 동일하다. 그런 다음 테스트 함수에서 `common::setup()` 함수를 호출할 수 있다.
 
-#### Integration Tests for Binary Crates
 
-If our project is a binary crate that only contains a _src/main.rs_ file and
-doesn’t have a _src/lib.rs_ file, we can’t create integration tests in the
-_tests_ directory and bring functions defined in the _src/main.rs_ file into
-scope with a `use` statement. Only library crates expose functions that other
-crates can use; binary crates are meant to be run on their own.
+#### 바이너리 크레이트의 통합 테스트
 
-This is one of the reasons Rust projects that provide a binary have a
-straightforward _src/main.rs_ file that calls logic that lives in the
-_src/lib.rs_ file. Using that structure, integration tests _can_ test the
-library crate with `use` to make the important functionality available. If the
-important functionality works, the small amount of code in the _src/main.rs_
-file will work as well, and that small amount of code doesn’t need to be tested.
+프로젝트가 _src/main.rs_ 파일만 포함하고 있고 _src/lib.rs_ 파일이 없는 바이너리 크레이트라면, _tests_ 디렉토리에서 통합 테스트를 작성하고 _src/main.rs_ 파일에 정의된 함수를 `use` 문으로 가져올 수 없다. 다른 크레이트가 사용할 수 있는 함수를 노출하는 것은 라이브러리 크레이트뿐이다. 바이너리 크레이트는 독립적으로 실행되도록 설계되었다.
 
-## Summary
+이것이 Rust 프로젝트에서 바이너리를 제공할 때 _src/main.rs_ 파일이 _src/lib.rs_ 파일에 있는 로직을 호출하는 간단한 구조를 사용하는 이유 중 하나이다. 이러한 구조를 사용하면 통합 테스트에서 `use`를 통해 라이브러리 크레이트를 테스트하고 주요 기능을 사용할 수 있다. 주요 기능이 제대로 동작한다면, _src/main.rs_ 파일에 있는 소량의 코드도 잘 동작할 것이며, 이 작은 코드는 테스트할 필요가 없다.
 
-Rust’s testing features provide a way to specify how code should function to
-ensure it continues to work as you expect, even as you make changes. Unit tests
-exercise different parts of a library separately and can test private
-implementation details. Integration tests check that many parts of the library
-work together correctly, and they use the library’s public API to test the code
-in the same way external code will use it. Even though Rust’s type system and
-ownership rules help prevent some kinds of bugs, tests are still important to
-reduce logic bugs having to do with how your code is expected to behave.
 
-Let’s combine the knowledge you learned in this chapter and in previous
-chapters to work on a project!
+## 요약
+
+Rust의 테스트 기능은 코드가 예상대로 동작하는지 확인할 수 있는 방법을 제공한다. 이를 통해 코드를 변경하더라도 기존 기능이 정상적으로 작동하는지 보장할 수 있다. 유닛 테스트는 라이브러리의 각 부분을 개별적으로 검증하며, 비공개 구현 세부 사항도 테스트할 수 있다. 통합 테스트는 라이브러리의 여러 부분이 함께 올바르게 동작하는지 확인하며, 외부 코드에서 사용하는 방식과 동일하게 공개 API를 통해 테스트를 수행한다. Rust의 타입 시스템과 소유권 규칙이 특정 종류의 버그를 방지해 주지만, 코드의 예상 동작과 관련된 논리적 버그를 줄이기 위해 테스트는 여전히 중요하다.
+
+이 장과 이전 장에서 배운 지식을 활용해 프로젝트를 진행해 보자!
 
 [paths]: ch07-03-paths-for-referring-to-an-item-in-the-module-tree.html
 [separating-modules-into-files]: ch07-05-separating-modules-into-different-files.html
 [alt-paths]: ch07-05-separating-modules-into-different-files.html#alternate-file-paths
+
+

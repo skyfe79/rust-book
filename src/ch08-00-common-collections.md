@@ -1,25 +1,15 @@
-# Common Collections
+# 일반적인 컬렉션
 
-Rust’s standard library includes a number of very useful data structures called
-_collections_. Most other data types represent one specific value, but
-collections can contain multiple values. Unlike the built-in array and tuple
-types, the data that these collections point to is stored on the heap, which
-means the amount of data does not need to be known at compile time and can grow
-or shrink as the program runs. Each kind of collection has different
-capabilities and costs, and choosing an appropriate one for your current
-situation is a skill you’ll develop over time. In this chapter, we’ll discuss
-three collections that are used very often in Rust programs:
+Rust의 표준 라이브러리는 _컬렉션_이라고 불리는 매우 유용한 데이터 구조를 제공한다. 대부분의 다른 데이터 타입은 하나의 특정 값을 나타내지만, 컬렉션은 여러 값을 포함할 수 있다. 내장된 배열과 튜플 타입과 달리, 이러한 컬렉션이 가리키는 데이터는 힙에 저장된다. 이는 데이터의 양이 컴파일 타임에 알 필요가 없으며 프로그램 실행 중에 늘어나거나 줄어들 수 있음을 의미한다. 각 컬렉션은 서로 다른 기능과 비용을 가지며, 현재 상황에 적합한 컬렉션을 선택하는 것은 시간이 지남에 따라 개발될 기술이다. 이 장에서는 Rust 프로그램에서 자주 사용되는 세 가지 컬렉션에 대해 논의할 것이다:
 
-- A _vector_ allows you to store a variable number of values next to each other.
-- A _string_ is a collection of characters. We’ve mentioned the `String` type
-  previously, but in this chapter we’ll talk about it in depth.
-- A _hash map_ allows you to associate a value with a specific key. It’s a
-  particular implementation of the more general data structure called a _map_.
+- _벡터_는 서로 연속된 위치에 가변적인 수의 값을 저장할 수 있게 해준다.
+- _문자열_은 문자들의 컬렉션이다. 이전에 `String` 타입을 언급했지만, 이 장에서는 이를 깊이 있게 다룬다.
+- _해시 맵_은 특정 키와 값을 연결할 수 있게 해준다. 이는 일반적으로 _맵_이라고 불리는 데이터 구조의 특정 구현이다.
 
-To learn about the other kinds of collections provided by the standard library,
-see [the documentation][collections].
+표준 라이브러리에서 제공하는 다른 종류의 컬렉션에 대해 알고 싶다면 [문서][collections]를 참고하라.
 
-We’ll discuss how to create and update vectors, strings, and hash maps, as well
-as what makes each special.
+이 장에서는 벡터, 문자열, 해시 맵을 생성하고 업데이트하는 방법뿐만 아니라 각각의 특징에 대해서도 논의할 것이다.
 
 [collections]: ../std/collections/index.html
+
+

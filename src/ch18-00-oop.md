@@ -1,17 +1,9 @@
-# Object-Oriented Programming Features
+# 객체 지향 프로그래밍의 특징
 
 <!-- Old link, do not remove -->
 
 <a id="object-oriented-programming-features-of-rust"></a>
 
-Object-oriented programming (OOP) is a way of modeling programs. Objects as a
-programmatic concept were introduced in the programming language Simula in the
-1960s. Those objects influenced Alan Kay’s programming architecture in which
-objects pass messages to each other. To describe this architecture, he coined
-the term _object-oriented programming_ in 1967. Many competing definitions
-describe what OOP is, and by some of these definitions Rust is object oriented
-but by others it is not. In this chapter, we’ll explore certain characteristics
-that are commonly considered object oriented and how those characteristics
-translate to idiomatic Rust. We’ll then show you how to implement an
-object-oriented design pattern in Rust and discuss the trade-offs of doing so
-versus implementing a solution using some of Rust’s strengths instead.
+객체 지향 프로그래밍(OOP)은 프로그램을 모델링하는 하나의 방식이다. 프로그래밍 개념으로서의 객체는 1960년대 Simula 프로그래밍 언어에서 처음 소개되었다. 이러한 객체 개념은 Alan Kay의 프로그래밍 아키텍처에 영향을 미쳤는데, 그의 아키텍처에서는 객체들이 서로 메시지를 주고받는다. 이 아키텍처를 설명하기 위해 그는 1967년에 '객체 지향 프로그래밍'이라는 용어를 만들었다. OOP를 정의하는 많은 경쟁적인 설명이 존재하며, 어떤 정의에 따르면 Rust는 객체 지향적이라고 할 수 있지만, 다른 정의에서는 그렇지 않다. 이 장에서는 일반적으로 객체 지향적이라고 여겨지는 특성들이 무엇인지 살펴보고, 이러한 특성들이 Rust의 관용적인 코드로 어떻게 표현되는지 알아본다. 그리고 Rust에서 객체 지향 디자인 패턴을 구현하는 방법을 보여주고, Rust의 강점을 활용한 다른 해결책과 비교했을 때의 장단점에 대해 논의한다.
+
+
